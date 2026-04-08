@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from src.processing.ingest import FileMetadata, normalize_frame
+from src.processing.ingest import FileMetadata, _read_pdf_tables, normalize_frame
 
 
 def test_normalize_frame_from_wide_table():
@@ -42,3 +42,15 @@ def test_normalize_frame_handles_duplicate_normalized_columns():
     )
     assert not result.empty
     assert set(result.columns) == {"year", "region", "indicator_name", "value", "source_file"}
+
+
+def test_read_pdf_tables_handles_invalid_pdf(monkeypatch, tmp_path):
+    pdf_file = tmp_path / "invalid.pdf"
+    pdf_file.write_bytes(b"not a real pdf")
+
+    def raise_open(*args, **kwargs):
+        raise ValueError("bad pdf")
+
+    monkeypatch.setattr("src.processing.ingest.pdfplumber.open", raise_open)
+    frames = _read_pdf_tables(pdf_file)
+    assert frames == []

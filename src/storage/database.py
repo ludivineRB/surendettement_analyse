@@ -6,7 +6,7 @@ import os
 from typing import Iterable
 
 import pandas as pd
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import Session, sessionmaker
 
 from src.storage.models import Base, SurendettementData
@@ -52,6 +52,18 @@ def save_dataframe(df: pd.DataFrame) -> int:
     return inserted
 
 
+def get_existing_source_files() -> set[str]:
+    """Return already ingested source_file names."""
+    engine = get_engine()
+    inspector = inspect(engine)
+    if not inspector.has_table("surendettement_data"):
+        return set()
+
+    with engine.connect() as connection:
+        rows = connection.execute(text("SELECT DISTINCT source_file FROM surendettement_data"))
+        return {row[0] for row in rows if row[0]}
+
+
 def _safe_int(value):
     try:
         if pd.isna(value):
@@ -68,4 +80,3 @@ def _safe_float(value):
         return float(value)
     except (TypeError, ValueError):
         return None
-

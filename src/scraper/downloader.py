@@ -53,9 +53,15 @@ class FileDownloader:
                 return candidate
             counter += 1
 
-    def download_file(self, link: ParsedLink) -> Optional[Path]:
+    def download_file(self, link: ParsedLink, skip_existing: bool = True) -> Optional[Path]:
         """Download one file and return local path or None on failure."""
-        target_path = self._ensure_unique_path(self.build_filename(link))
+        desired_name = self.build_filename(link)
+        direct_target = self.output_dir / desired_name
+        if skip_existing and direct_target.exists():
+            self.logger.info("Skipping existing file for %s -> %s", link.url, direct_target)
+            return direct_target
+
+        target_path = direct_target if skip_existing else self._ensure_unique_path(desired_name)
         errors: list[str] = []
         for candidate_url in self._candidate_urls(link.url):
             try:

@@ -12,6 +12,7 @@ import pdfplumber
 
 from src.processing.clean import normalize_columns
 from src.processing.transform import append_source_file
+from src.utils.logger import get_logger
 
 YEAR_PATTERN = re.compile(r"(19|20)\d{2}")
 
@@ -30,6 +31,7 @@ INDICATOR_ALIASES = (
 VALUE_ALIASES = ("value", "valeur", "nombre", "nb", "montant", "taux")
 
 TARGET_COLUMNS = ["year", "region", "indicator_name", "value", "source_file"]
+LOGGER = get_logger(__name__)
 
 
 @dataclass(slots=True)
@@ -47,13 +49,17 @@ def infer_year_from_name(path: Path) -> Optional[int]:
 def load_file_frames(path: Path) -> List[pd.DataFrame]:
     """Load raw file into one or more dataframes."""
     suffix = path.suffix.lower()
-    if suffix == ".xlsx":
-        return _read_excel_all_sheets(path)
-    if suffix == ".csv":
-        return _read_csv(path)
-    if suffix == ".pdf":
-        return _read_pdf_tables(path)
-    return []
+    try:
+        if suffix == ".xlsx":
+            return _read_excel_all_sheets(path)
+        if suffix == ".csv":
+            return _read_csv(path)
+        if suffix == ".pdf":
+            return _read_pdf_tables(path)
+        return []
+    except Exception as exc:
+        LOGGER.warning("Failed to parse %s: %s", path, exc)
+        return []
 
 
 def _read_excel_all_sheets(path: Path) -> List[pd.DataFrame]:
@@ -75,17 +81,21 @@ def _read_csv(path: Path) -> List[pd.DataFrame]:
 
 def _read_pdf_tables(path: Path) -> List[pd.DataFrame]:
     frames: List[pd.DataFrame] = []
-    with pdfplumber.open(path) as pdf:
-        for page in pdf.pages:
-            tables = page.extract_tables() or []
-            for table in tables:
-                if not table or len(table) < 2:
-                    continue
-                header = table[0]
-                rows = table[1:]
-                frame = pd.DataFrame(rows, columns=header)
-                if not frame.empty:
-                    frames.append(frame)
+    try:
+        with pdfplumber.open(path) as pdf:
+            for page in pdf.pages:
+                tables = page.extract_tables() or []
+                for table in tables:
+                    if not table or len(table) < 2:
+                        continue
+                    header = table[0]
+                    rows = table[1:]
+                    frame = pd.DataFrame(rows, columns=header)
+                    if not frame.empty:
+                        frames.append(frame)
+    except Exception as exc:
+        LOGGER.warning("Skipping unreadable PDF %s: %s", path, exc)
+        return []
     return frames
 
 

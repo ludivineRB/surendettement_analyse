@@ -12,7 +12,7 @@ from src.processing.transform import build_unified_frame
 from src.processing.validation import validate_non_empty, validate_schema
 from src.scraper.downloader import FileDownloader
 from src.scraper.spider import BanqueFranceSpider
-from src.storage.database import init_db, save_dataframe
+from src.storage.database import get_existing_source_files, init_db, save_dataframe
 from src.utils.config import PipelineConfig
 from src.utils.logger import configure_logging, get_logger
 
@@ -22,12 +22,18 @@ class PipelineRunSummary:
     pages_crawled: int = 0
     files_discovered: int = 0
     files_downloaded: int = 0
+    files_already_ingested: int = 0
+    files_selected_for_processing: int = 0
     normalized_frames: int = 0
     final_rows: int = 0
     rows_inserted: int = 0
 
 
-def run_pipeline(skip_crawl: bool = False, max_files: int | None = None) -> PipelineRunSummary:
+def run_pipeline(
+    skip_crawl: bool = False,
+    max_files: int | None = None,
+    only_new_data: bool = True,
+) -> PipelineRunSummary:
     """Execute crawl -> download -> parse -> normalize -> store."""
     config = PipelineConfig.from_env()
     logger = get_logger("pipeline")
@@ -48,7 +54,7 @@ def run_pipeline(skip_crawl: bool = False, max_files: int | None = None) -> Pipe
 
         downloader = FileDownloader(config=config)
         for link in candidate_files:
-            local_path = downloader.download_file(link)
+            local_path = downloader.download_file(link, skip_existing=True)
             if not local_path:
                 continue
             downloaded_paths.append(local_path)
@@ -64,7 +70,22 @@ def run_pipeline(skip_crawl: bool = False, max_files: int | None = None) -> Pipe
     if max_files and skip_crawl:
         downloaded_paths = downloaded_paths[:max_files]
 
-    normalized_frames = normalize_files(downloaded_paths, metadata_map=metadata_map)
+    # Remove path duplicates while preserving order.
+    unique_paths = list(dict.fromkeys(downloaded_paths))
+
+    selected_paths = unique_paths
+    if only_new_data:
+        existing_sources = get_existing_source_files()
+        selected_paths = [path for path in unique_paths if path.name not in existing_sources]
+        summary.files_already_ingested = len(unique_paths) - len(selected_paths)
+        logger.info(
+            "Already ingested files skipped: %d | Remaining files to process: %d",
+            summary.files_already_ingested,
+            len(selected_paths),
+        )
+
+    summary.files_selected_for_processing = len(selected_paths)
+    normalized_frames = normalize_files(selected_paths, metadata_map=metadata_map)
     summary.normalized_frames = len(normalized_frames)
     unified = build_unified_frame(normalized_frames)
     summary.final_rows = len(unified)
@@ -108,6 +129,11 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         default=None,
         help="Optional log level override (e.g. INFO, DEBUG).",
     )
+    parser.add_argument(
+        "--reprocess-all",
+        action="store_true",
+        help="Process all discovered/raw files, including files already present in database.",
+    )
     return parser
 
 
@@ -120,13 +146,19 @@ def main() -> None:
     else:
         configure_logging(PipelineConfig.from_env().log_level)
 
-    summary = run_pipeline(skip_crawl=args.skip_crawl, max_files=args.max_files)
+    summary = run_pipeline(
+        skip_crawl=args.skip_crawl,
+        max_files=args.max_files,
+        only_new_data=not args.reprocess_all,
+    )
     print(
         (
             "Pipeline completed | "
             f"pages_crawled={summary.pages_crawled} "
             f"files_discovered={summary.files_discovered} "
             f"files_downloaded={summary.files_downloaded} "
+            f"files_already_ingested={summary.files_already_ingested} "
+            f"files_selected_for_processing={summary.files_selected_for_processing} "
             f"normalized_frames={summary.normalized_frames} "
             f"final_rows={summary.final_rows} "
             f"rows_inserted={summary.rows_inserted}"

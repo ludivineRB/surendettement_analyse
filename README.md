@@ -88,6 +88,12 @@ Useful options:
 # Re-process existing files in data/raw without crawling/downloading
 .venv/bin/python -m src.pipeline --skip-crawl
 
+# Resume mode (default): process only files not yet ingested in DB
+.venv/bin/python -m src.pipeline --skip-crawl --max-files 200
+
+# Force full reprocessing (including already ingested source_file names)
+.venv/bin/python -m src.pipeline --skip-crawl --reprocess-all
+
 # Enable debug logs
 .venv/bin/python -m src.pipeline --log-level DEBUG
 ```
@@ -95,6 +101,9 @@ Useful options:
 Default SQLite database file:
 
 - `data/processed/surendettement.db`
+
+Note:
+- Invalid/corrupted PDFs are skipped with a warning and no longer stop the pipeline.
 
 Switch to PostgreSQL (example):
 

@@ -1,4 +1,5 @@
 from src.scraper.downloader import FileDownloader
+from src.scraper.parser import ParsedLink
 from src.utils.config import PipelineConfig
 
 
@@ -10,3 +11,24 @@ def test_candidate_urls_adds_espaces2_fallback():
     assert urls[0] == "https://www.espaces2.banque-france.fr/system/files/report.pdf"
     assert urls[1] == "https://espaces2.banque-france.fr/system/files/report.pdf"
 
+
+def test_download_file_skips_existing_target(tmp_path):
+    config = PipelineConfig()
+    config.output_raw_dir = tmp_path
+    downloader = FileDownloader(config=config)
+
+    existing = tmp_path / "bdf_2025_typologie.pdf"
+    existing.write_bytes(b"already here")
+
+    link = ParsedLink(
+        url="https://www.banque-france.fr/system/files/typologie-2025.pdf",
+        text="typologie 2025",
+        is_file=True,
+        extension=".pdf",
+        relevance_score=1,
+        year=2025,
+        region=None,
+        dataset_type="typologie",
+    )
+    path = downloader.download_file(link, skip_existing=True)
+    assert path == existing
