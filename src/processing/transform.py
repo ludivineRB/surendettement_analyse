@@ -8,7 +8,7 @@ from typing import List
 import pandas as pd
 
 
-TARGET_COLUMNS = ["year", "region", "indicator_name", "value", "source_file"]
+TARGET_COLUMNS = ["year", "departement", "indicator_name", "value", "source_file"]
 
 
 def build_unified_frame(frames: List[pd.DataFrame]) -> pd.DataFrame:
@@ -17,6 +17,8 @@ def build_unified_frame(frames: List[pd.DataFrame]) -> pd.DataFrame:
         return pd.DataFrame(columns=TARGET_COLUMNS)
 
     unified = pd.concat(frames, ignore_index=True)
+    if "departement" not in unified.columns and "region" in unified.columns:
+        unified["departement"] = unified["region"]
     for col in TARGET_COLUMNS:
         if col not in unified.columns:
             unified[col] = pd.NA
@@ -28,4 +30,3 @@ def append_source_file(df: pd.DataFrame, source_path: Path) -> pd.DataFrame:
     transformed = df.copy()
     transformed["source_file"] = source_path.name
     return transformed
-

@@ -32,6 +32,7 @@ VALUE_ALIASES = ("value", "valeur", "nombre", "nb", "montant", "taux")
 
 TARGET_COLUMNS = ["year", "region", "indicator_name", "value", "source_file"]
 LOGGER = get_logger(__name__)
+NON_BREAKING_SPACE = "\u00a0"
 
 
 @dataclass(slots=True)
@@ -63,7 +64,11 @@ def load_file_frames(path: Path) -> List[pd.DataFrame]:
 
 
 def _read_excel_all_sheets(path: Path) -> List[pd.DataFrame]:
-    workbook = pd.read_excel(path, sheet_name=None)
+    try:
+        workbook = pd.read_excel(path, sheet_name=None, engine="openpyxl")
+    except ImportError as exc:
+        LOGGER.warning("openpyxl is required to read Excel file %s: %s", path, exc)
+        return []
     frames: List[pd.DataFrame] = []
     for _, frame in workbook.items():
         if frame is not None and not frame.empty:
@@ -82,17 +87,53 @@ def _read_csv(path: Path) -> List[pd.DataFrame]:
 def _read_pdf_tables(path: Path) -> List[pd.DataFrame]:
     frames: List[pd.DataFrame] = []
     try:
-        with pdfplumber.open(path) as pdf:
-            for page in pdf.pages:
-                tables = page.extract_tables() or []
-                for table in tables:
-                    if not table or len(table) < 2:
-                        continue
-                    header = table[0]
-                    rows = table[1:]
-                    frame = pd.DataFrame(rows, columns=header)
-                    if not frame.empty:
-                        frames.append(frame)
+        with path.open("rb") as handle:
+            signature = handle.read(4)
+        if signature != b"%PDF":
+            LOGGER.warning("Skipping non-PDF content with .pdf extension: %s", path)
+            return []
+    except Exception as exc:
+        LOGGER.warning("Failed to read PDF bytes %s: %s", path, exc)
+        return []
+
+    table_settings_options = [
+        None,
+        {
+            "vertical_strategy": "lines",
+            "horizontal_strategy": "lines",
+            "snap_tolerance": 3,
+            "intersection_tolerance": 3,
+        },
+        {
+            "vertical_strategy": "text",
+            "horizontal_strategy": "text",
+            "min_words_vertical": 2,
+            "min_words_horizontal": 1,
+            "snap_tolerance": 3,
+        },
+    ]
+
+    try:
+        with path.open("rb") as handle:
+            with pdfplumber.open(handle) as pdf:
+                for page in pdf.pages:
+                    page_tables: List[list[list[str | None]]] = []
+                    for settings in table_settings_options:
+                        tables = page.extract_tables(table_settings=settings) or []
+                        if tables:
+                            page_tables = tables
+                            break
+
+                    for table in page_tables:
+                        frame = _table_to_frame(table)
+                        if frame is not None and not frame.empty:
+                            frames.append(frame)
+    except AttributeError as exc:
+        if "bytes" in str(exc) and "name" in str(exc):
+            LOGGER.warning("Skipping malformed PDF %s: %s", path, exc)
+            return []
+        LOGGER.warning("Skipping unreadable PDF %s: %s", path, exc)
+        return []
     except Exception as exc:
         LOGGER.warning("Skipping unreadable PDF %s: %s", path, exc)
         return []
@@ -114,6 +155,8 @@ def normalize_frame(
 
     year_col = _find_first_column(cleaned, YEAR_ALIASES)
     region_col = _find_first_column(cleaned, REGION_ALIASES)
+    if not region_col:
+        region_col = _infer_geography_column(cleaned, year_col=year_col)
     indicator_col = _find_first_column(cleaned, INDICATOR_ALIASES)
     value_col = _find_first_column(cleaned, VALUE_ALIASES)
 
@@ -138,7 +181,7 @@ def normalize_frame(
         metadata.dataset_type
     )
 
-    normalized["value"] = pd.to_numeric(normalized.get("value"), errors="coerce")
+    normalized["value"] = _coerce_numeric_series(normalized.get("value"))
     normalized = normalized.dropna(subset=["value"], how="all")
     normalized = append_source_file(normalized, source_file)
 
@@ -236,7 +279,7 @@ def _coerce_year_series(series: Optional[pd.Series]) -> pd.Series:
 def _detect_numeric_columns(df: pd.DataFrame) -> List[str]:
     candidates: List[str] = []
     for column in df.columns:
-        converted = pd.to_numeric(df[column], errors="coerce")
+        converted = _coerce_numeric_series(df[column])
         ratio = converted.notna().mean() if len(converted) else 0
         if ratio >= 0.6:
             candidates.append(column)
@@ -257,3 +300,46 @@ def _deduplicate_columns(df: pd.DataFrame) -> pd.DataFrame:
     deduped = df.copy()
     deduped.columns = new_columns
     return deduped
+
+
+def _table_to_frame(table: list[list[str | None]]) -> Optional[pd.DataFrame]:
+    if not table or len(table) < 2:
+        return None
+    header = [(_normalize_cell_text(col) or f"col_{idx}") for idx, col in enumerate(table[0])]
+    rows = [[_normalize_cell_text(cell) for cell in row] for row in table[1:]]
+    frame = pd.DataFrame(rows, columns=header)
+    frame = frame.dropna(axis=1, how="all").dropna(axis=0, how="all")
+    return frame if not frame.empty else None
+
+
+def _normalize_cell_text(value: object) -> Optional[str]:
+    if value is None:
+        return None
+    text = str(value).replace("\n", " ").replace(NON_BREAKING_SPACE, " ")
+    text = re.sub(r"\s+", " ", text).strip()
+    return text or None
+
+
+def _coerce_numeric_series(series: Optional[pd.Series]) -> pd.Series:
+    if series is None:
+        return pd.Series(dtype="float64")
+    prepared = (
+        series.astype(str)
+        .str.replace(NON_BREAKING_SPACE, "", regex=False)
+        .str.replace(" ", "", regex=False)
+        .str.replace(",", ".", regex=False)
+        .str.replace(r"[^0-9\.\-]", "", regex=True)
+    )
+    return pd.to_numeric(prepared, errors="coerce")
+
+
+def _infer_geography_column(df: pd.DataFrame, year_col: Optional[str]) -> Optional[str]:
+    for column in df.columns:
+        if column == year_col:
+            continue
+        as_text = df[column].astype(str).str.strip()
+        text_ratio = (as_text != "").mean()
+        numeric_ratio = _coerce_numeric_series(df[column]).notna().mean()
+        if text_ratio >= 0.7 and numeric_ratio <= 0.4:
+            return column
+    return None

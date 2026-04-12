@@ -38,7 +38,7 @@ def save_dataframe(df: pd.DataFrame) -> int:
         records: Iterable[SurendettementData] = (
             SurendettementData(
                 year=_safe_int(row.get("year")),
-                region=row.get("region"),
+                region=row.get("departement") or row.get("region"),
                 indicator=row.get("indicator_name") or row.get("indicator") or "unknown",
                 value=_safe_float(row.get("value")),
                 source_file=row.get("source_file") or "unknown",

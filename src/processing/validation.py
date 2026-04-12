@@ -15,7 +15,7 @@ class ValidationResult:
 
 
 def validate_schema(df: pd.DataFrame) -> ValidationResult:
-    expected = {"year", "region", "indicator_name", "value", "source_file"}
+    expected = {"year", "departement", "indicator_name", "value", "source_file"}
     missing = sorted(expected.difference(df.columns))
     if missing:
         return ValidationResult(False, [f"Missing columns: {', '.join(missing)}"])
@@ -26,4 +26,3 @@ def validate_non_empty(df: pd.DataFrame) -> ValidationResult:
     if df.empty:
         return ValidationResult(False, ["Dataset is empty"])
     return ValidationResult(True, [])
-
