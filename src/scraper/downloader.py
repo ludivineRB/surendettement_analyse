@@ -22,6 +22,16 @@ def _slugify(value: str, default: str = "unknown") -> str:
     return value or default
 
 
+def _build_source_slug(link: ParsedLink) -> str:
+    path_stem = Path(urlparse(link.url).path).stem
+    source_slug = _slugify(path_stem, default="")
+    if source_slug:
+        return source_slug[:80]
+
+    text_slug = _slugify(link.text, default="document")
+    return text_slug[:80]
+
+
 class FileDownloader:
     """Download discovered files to raw storage with a deterministic naming convention."""
 
@@ -35,9 +45,10 @@ class FileDownloader:
     def build_filename(self, link: ParsedLink) -> str:
         year = str(link.year or infer_year(link.url) or "unknown")
         dataset_type = _slugify(link.dataset_type or infer_dataset_type(link.text, link.url))
+        source_slug = _build_source_slug(link)
         ext = link.extension if link.extension else Path(urlparse(link.url).path).suffix.lower()
         ext = ext if ext in {".xlsx", ".csv", ".pdf"} else ".bin"
-        return f"bdf_{year}_{dataset_type}{ext}"
+        return f"bdf_{year}_{dataset_type}_{source_slug}{ext}"
 
     def _ensure_unique_path(self, desired_name: str) -> Path:
         path = self.output_dir / desired_name

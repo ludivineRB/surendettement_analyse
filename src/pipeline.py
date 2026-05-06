@@ -29,6 +29,20 @@ class PipelineRunSummary:
     rows_inserted: int = 0
 
 
+def _is_surendettement_candidate_name(value: str) -> bool:
+    normalized = value.lower()
+    return "surendettement" in normalized or "typologie" in normalized
+
+
+def _is_relevant_surendettement_link(text: str, url: str) -> bool:
+    haystack = f"{text} {url}".lower()
+    return _is_surendettement_candidate_name(haystack)
+
+
+def _is_relevant_raw_path(path: Path) -> bool:
+    return _is_surendettement_candidate_name(path.name)
+
+
 def run_pipeline(
     skip_crawl: bool = False,
     max_files: int | None = None,
@@ -43,14 +57,17 @@ def run_pipeline(
     metadata_map: Dict[Path, FileMetadata] = {}
 
     if skip_crawl:
-        downloaded_paths = sorted(config.output_raw_dir.glob("*"))
+        downloaded_paths = [path for path in sorted(config.output_raw_dir.glob("*")) if _is_relevant_raw_path(path)]
         logger.info("Skipping crawl: using %d existing raw files from %s", len(downloaded_paths), config.output_raw_dir)
     else:
         spider = BanqueFranceSpider(config=config)
         crawl_result = spider.crawl()
         summary.pages_crawled = len(crawl_result.pages)
         summary.files_discovered = len(crawl_result.files)
-        candidate_files = crawl_result.files[:max_files] if max_files else crawl_result.files
+        relevant_files = [
+            link for link in crawl_result.files if _is_relevant_surendettement_link(link.text, link.url)
+        ]
+        candidate_files = relevant_files[:max_files] if max_files else relevant_files
 
         downloader = FileDownloader(config=config)
         for link in candidate_files:
@@ -65,7 +82,12 @@ def run_pipeline(
             )
 
         summary.files_downloaded = len(downloaded_paths)
-        logger.info("Discovered files: %d | Downloaded files: %d", summary.files_discovered, summary.files_downloaded)
+        logger.info(
+            "Discovered files: %d | Relevant surendettement files: %d | Downloaded files: %d",
+            summary.files_discovered,
+            len(relevant_files),
+            summary.files_downloaded,
+        )
 
     if max_files and skip_crawl:
         downloaded_paths = downloaded_paths[:max_files]

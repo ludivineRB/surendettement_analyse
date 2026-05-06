@@ -17,7 +17,7 @@ from src.utils.logger import get_logger
 YEAR_PATTERN = re.compile(r"(19|20)\d{2}")
 
 YEAR_ALIASES = ("year", "annee", "année", "exercice")
-REGION_ALIASES = ("region", "région", "territoire", "departement", "département")
+DEPARTEMENT_ALIASES = ("departement", "département", "region", "région", "territoire")
 INDICATOR_ALIASES = (
     "indicator_name",
     "indicator",
@@ -30,7 +30,7 @@ INDICATOR_ALIASES = (
 )
 VALUE_ALIASES = ("value", "valeur", "nombre", "nb", "montant", "taux")
 
-TARGET_COLUMNS = ["year", "region", "indicator_name", "value", "source_file"]
+TARGET_COLUMNS = ["year", "departement", "indicator_name", "value", "source_file"]
 LOGGER = get_logger(__name__)
 NON_BREAKING_SPACE = "\u00a0"
 
@@ -154,16 +154,16 @@ def normalize_frame(
         return pd.DataFrame(columns=TARGET_COLUMNS)
 
     year_col = _find_first_column(cleaned, YEAR_ALIASES)
-    region_col = _find_first_column(cleaned, REGION_ALIASES)
-    if not region_col:
-        region_col = _infer_geography_column(cleaned, year_col=year_col)
+    departement_col = _find_first_column(cleaned, DEPARTEMENT_ALIASES)
+    if not departement_col:
+        departement_col = _infer_geography_column(cleaned, year_col=year_col)
     indicator_col = _find_first_column(cleaned, INDICATOR_ALIASES)
     value_col = _find_first_column(cleaned, VALUE_ALIASES)
 
     normalized = _reshape_to_long(
         cleaned=cleaned,
         year_col=year_col,
-        region_col=region_col,
+        geography_col=departement_col,
         indicator_col=indicator_col,
         value_col=value_col,
     )
@@ -172,10 +172,10 @@ def normalize_frame(
     if normalized["year"].isna().all():
         normalized["year"] = metadata.year or infer_year_from_name(source_file)
 
-    if "region" not in normalized.columns:
-        normalized["region"] = pd.NA
-    if normalized["region"].isna().all() and metadata.region:
-        normalized["region"] = metadata.region
+    if "departement" not in normalized.columns:
+        normalized["departement"] = pd.NA
+    if normalized["departement"].isna().all() and metadata.region:
+        normalized["departement"] = metadata.region
 
     normalized["indicator_name"] = normalized.get("indicator_name", pd.Series([pd.NA] * len(normalized))).fillna(
         metadata.dataset_type
@@ -221,7 +221,7 @@ def _find_first_column(df: pd.DataFrame, aliases: Iterable[str]) -> Optional[str
 def _reshape_to_long(
     cleaned: pd.DataFrame,
     year_col: Optional[str],
-    region_col: Optional[str],
+    geography_col: Optional[str],
     indicator_col: Optional[str],
     value_col: Optional[str],
 ) -> pd.DataFrame:
@@ -229,8 +229,8 @@ def _reshape_to_long(
 
     if year_col:
         base["year"] = cleaned[year_col]
-    if region_col:
-        base["region"] = cleaned[region_col]
+    if geography_col:
+        base["departement"] = cleaned[geography_col]
 
     if value_col:
         base["value"] = cleaned[value_col]
@@ -252,13 +252,13 @@ def _reshape_to_long(
         return base
 
     if len(numeric_columns) > 1:
-        id_vars = [col for col in [year_col, region_col] if col]
+        id_vars = [col for col in [year_col, geography_col] if col]
         melted = cleaned.melt(id_vars=id_vars, value_vars=numeric_columns, var_name="indicator_name", value_name="value")
         renamed = pd.DataFrame()
         if year_col:
             renamed["year"] = melted[year_col]
-        if region_col:
-            renamed["region"] = melted[region_col]
+        if geography_col:
+            renamed["departement"] = melted[geography_col]
         renamed["indicator_name"] = melted["indicator_name"]
         renamed["value"] = melted["value"]
         return renamed
