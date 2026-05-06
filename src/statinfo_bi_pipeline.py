@@ -6,12 +6,14 @@ import argparse
 import re
 from pathlib import Path
 from typing import Iterable, Optional
+from urllib.parse import urldefrag, urljoin, urlparse
 
 import pandas as pd
 import pdfplumber
+import requests
 
 from src.scraper.downloader import FileDownloader
-from src.scraper.spider import BanqueFranceSpider
+from src.scraper.parser import ParsedLink, infer_year
 from src.utils.config import PipelineConfig
 from src.utils.logger import configure_logging, get_logger
 
@@ -20,6 +22,8 @@ DEFAULT_STATINFO_URL = (
     "?theme%5B7168%5D=7168&sub_theme%5B7226%5D=7226"
 )
 DEFAULT_OUTPUT_CSV = Path("data/processed/statinfo_departements_bi.csv")
+MONTHLY_PUBLICATION_SLUG_PATTERN = re.compile(r"depots-dans-les-regions-francaises-(\d{4})-(\d{2})", re.IGNORECASE)
+SUPPORTED_PDF_EXTENSIONS = {".pdf"}
 
 DEPARTEMENT_PATTERN = re.compile(r"^(?P<code>\d{2,3}[A-Bab]?)\s+(?P<name>.+)$")
 YEAR_PATTERN = re.compile(r"(19|20)\d{2}")
@@ -54,37 +58,49 @@ def run_statinfo_bi_pipeline(
 ) -> tuple[int, int, int, int]:
     logger = get_logger("statinfo_bi_pipeline")
     config = PipelineConfig.from_env()
-    config.start_urls = [start_url]
-    config.max_depth = min(config.max_depth, 2)
-    config.max_pages = min(config.max_pages, 250)
-    config.file_extensions = [".pdf"]
 
     crawled_pages = 0
     downloaded_paths: list[Path] = []
 
     if skip_crawl:
-        downloaded_paths = sorted(config.output_raw_dir.glob("*.pdf"))
+        downloaded_paths = [
+            path for path in sorted(config.output_raw_dir.glob("*.pdf")) if _is_target_raw_pdf(path)
+        ]
         if max_files:
             downloaded_paths = downloaded_paths[:max_files]
         logger.info("Skip crawl enabled: using %d existing PDFs from %s", len(downloaded_paths), config.output_raw_dir)
     else:
-        spider = BanqueFranceSpider(config=config)
-        crawl_result = spider.crawl()
-        crawled_pages = len(crawl_result.pages)
-        pdf_links = [link for link in crawl_result.files if link.extension.lower() == ".pdf"]
+        listing_html = _fetch_html(start_url, config=config)
+        publication_links = _extract_monthly_publication_links(listing_html=listing_html, base_url=start_url)
         if max_files:
-            pdf_links = pdf_links[:max_files]
+            publication_links = publication_links[:max_files]
+        crawled_pages = 1 + len(publication_links)
 
-        logger.info("Crawled pages: %d | Candidate PDF links: %d", len(crawl_result.pages), len(pdf_links))
+        logger.info("Listing page parsed | Monthly publication pages selected: %d", len(publication_links))
 
         downloader = FileDownloader(config=config)
-        for link in pdf_links:
+        for publication_url in publication_links:
+            publication_html = _fetch_html(publication_url, config=config)
+            pdf_url = _extract_publication_pdf_url(publication_html=publication_html, base_url=publication_url)
+            if not pdf_url:
+                logger.warning("No PDF found on publication page: %s", publication_url)
+                continue
+            link = ParsedLink(
+                url=pdf_url,
+                text=publication_url.rsplit("/", 1)[-1],
+                is_file=True,
+                extension=Path(urlparse(pdf_url).path).suffix.lower(),
+                relevance_score=1,
+                year=infer_year(publication_url, pdf_url),
+                region=None,
+                dataset_type="depots_regions",
+            )
             path = downloader.download_file(link, skip_existing=True)
             if path:
                 downloaded_paths.append(path)
 
-    selected_paths = [p for p in downloaded_paths if _is_target_statinfo_pdf(p)]
-    logger.info("Downloaded PDFs: %d | Target STAT INFO PDFs: %d", len(downloaded_paths), len(selected_paths))
+    selected_paths = downloaded_paths
+    logger.info("Target monthly PDFs selected: %d", len(selected_paths))
 
     rows: list[dict] = []
     files_with_department_rows = 0
@@ -122,21 +138,91 @@ def run_statinfo_bi_pipeline(
     return crawled_pages, len(selected_paths), files_with_department_rows, len(out_df)
 
 
-def _is_target_statinfo_pdf(path: Path) -> bool:
-    try:
-        with pdfplumber.open(str(path)) as pdf:
-            if not pdf.pages:
-                return False
-            text = " ".join((pdf.pages[i].extract_text() or "") for i in range(min(3, len(pdf.pages))))
-    except Exception:
-        return False
+def _fetch_html(url: str, config: PipelineConfig) -> str:
+    response = requests.get(
+        url,
+        headers={"User-Agent": config.user_agent},
+        timeout=config.timeout_seconds,
+    )
+    response.raise_for_status()
+    return response.text
 
-    normalized = _normalize_text(text)
-    if "depots et comptes d epargne dans les regions francaises" in normalized:
-        return True
 
-    required_tokens = ["stat", "info", "depots", "epargne", "regions", "francaises"]
-    return all(token in normalized for token in required_tokens)
+def _extract_monthly_publication_links(listing_html: str, base_url: str) -> list[str]:
+    hrefs = re.findall(r'href=["\']([^"\']+)["\']', listing_html, flags=re.IGNORECASE)
+    urls: list[str] = []
+    seen: set[str] = set()
+    for href in hrefs:
+        absolute_url = _normalize_absolute_url(base_url, href)
+        if not MONTHLY_PUBLICATION_SLUG_PATTERN.search(absolute_url):
+            continue
+        if absolute_url in seen:
+            continue
+        seen.add(absolute_url)
+        urls.append(absolute_url)
+
+    fallback_html = _unescape_html_for_pattern_search(listing_html)
+    for match in MONTHLY_PUBLICATION_SLUG_PATTERN.finditer(fallback_html):
+        year, month = match.groups()
+        absolute_url = f"https://www.banque-france.fr/fr/statistiques/monnaie/depots-dans-les-regions-francaises-{year}-{month}"
+        if absolute_url in seen:
+            continue
+        seen.add(absolute_url)
+        urls.append(absolute_url)
+
+    return sorted(urls, reverse=True)
+
+
+def _extract_publication_pdf_url(publication_html: str, base_url: str) -> Optional[str]:
+    fallback_html = _unescape_html_for_pattern_search(publication_html)
+    expected_pdf_name = _expected_pdf_name_from_publication_url(base_url)
+    if expected_pdf_name:
+        exact_pdf_pattern = re.compile(
+            rf'(https://www\.banque-france\.fr[^\s"\']*{re.escape(expected_pdf_name)}|/[^"\'>\s]*{re.escape(expected_pdf_name)})',
+            re.IGNORECASE,
+        )
+        match = exact_pdf_pattern.search(fallback_html)
+        if match:
+            return _normalize_absolute_url(base_url, match.group(1))
+
+    hrefs = re.findall(r'href=["\']([^"\']+)["\']', publication_html, flags=re.IGNORECASE)
+    pdf_urls: list[str] = []
+    for href in hrefs:
+        absolute_url = _normalize_absolute_url(base_url, href)
+        if Path(urlparse(absolute_url).path).suffix.lower() not in SUPPORTED_PDF_EXTENSIONS:
+            continue
+        pdf_urls.append(absolute_url)
+
+    prioritized = [
+        url for url in pdf_urls if all(token in _normalize_text(url) for token in ["depots", "regions"])
+    ]
+    if prioritized:
+        return prioritized[0]
+    return pdf_urls[0] if pdf_urls else None
+
+
+def _normalize_absolute_url(base_url: str, href: str) -> str:
+    absolute = urljoin(base_url, href.strip())
+    normalized, _ = urldefrag(absolute)
+    return normalized
+
+
+def _expected_pdf_name_from_publication_url(publication_url: str) -> Optional[str]:
+    match = MONTHLY_PUBLICATION_SLUG_PATTERN.search(publication_url)
+    if not match:
+        return None
+    year, month = match.groups()
+    return f"FR_Stat_Info_Depots_Regions_{year}_{month}.pdf"
+
+
+def _unescape_html_for_pattern_search(html: str) -> str:
+    return html.replace("\\/", "/")
+
+
+def _is_target_raw_pdf(path: Path) -> bool:
+    normalized = _normalize_text(path.name)
+    required_tokens = ["depots", "regions"]
+    return path.suffix.lower() == ".pdf" and all(token in normalized for token in required_tokens)
 
 
 def _extract_department_rows(path: Path) -> list[dict]:
