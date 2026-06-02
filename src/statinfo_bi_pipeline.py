@@ -25,12 +25,45 @@ DEFAULT_OUTPUT_CSV = Path("data/processed/statinfo_departements_bi.csv")
 MONTHLY_PUBLICATION_SLUG_PATTERN = re.compile(r"depots-dans-les-regions-francaises-(\d{4})-(\d{2})", re.IGNORECASE)
 SUPPORTED_PDF_EXTENSIONS = {".pdf"}
 
-DEPARTEMENT_PATTERN = re.compile(r"^(?P<code>\d{2,3}[A-Bab]?)\s+(?P<name>.+)$")
+DEPARTEMENT_PATTERN = re.compile(r"^(?P<code>(?:\d{2,3}|\d[A-Bab]))\s+(?P<name>.+)$")
 YEAR_PATTERN = re.compile(r"(19|20)\d{2}")
+TEXT_NUMBER_PATTERN = re.compile(r"-?\d+(?:[,.]\d+)")
 MONTH_PATTERN = re.compile(
     r"(janvier|fevrier|février|mars|avril|mai|juin|juillet|aout|août|septembre|octobre|novembre|decembre|décembre)",
     re.IGNORECASE,
 )
+REFERENCE_PERIOD_PATTERN = re.compile(
+    rf"au\s+31\s+(?P<month>{MONTH_PATTERN.pattern})\s+(?P<year>(?:19|20)\d{{2}})",
+    re.IGNORECASE,
+)
+DEPOSITS_REGION_INDICATORS = [
+    "Comptes ordinaires créditeurs",
+    "Autres livrets (1)",
+    "Livrets d'épargne populaire",
+    "Livrets de développement durable",
+    "C.E.L",
+    "Comptes espèces PEA, PER divers",
+    "Plans d'épargne populaire",
+    "Comptes créditeurs à terme",
+    "P.E.L",
+    "Bons de caisse et d'épargne (2)",
+    "TOTAL",
+]
+REGION_LABELS = {
+    "Auvergne Rhône Alpes",
+    "Bourgogne Franche Comté",
+    "Bretagne",
+    "Centre Val de Loire",
+    "Corse",
+    "Grand Est",
+    "Hauts de France",
+    "Ile de France",
+    "Normandie",
+    "Nouvelle Aquitaine",
+    "Occitanie",
+    "Pays de la Loire",
+    "Provence Alpes Côte d'Azur",
+}
 
 TABLE_SETTINGS = [
     None,
@@ -230,10 +263,20 @@ def _extract_department_rows(path: Path) -> list[dict]:
     try:
         with pdfplumber.open(str(path)) as pdf:
             first_page_text = pdf.pages[0].extract_text() or ""
-            reference_year = _extract_year(first_page_text, fallback=path.name)
-            reference_month = _extract_month(first_page_text)
+            reference_year, reference_month = _extract_reference_period(first_page_text, fallback=path.name)
 
             for page_index, page in enumerate(pdf.pages, start=1):
+                text_rows = _extract_rows_from_text_page(
+                    text=page.extract_text(x_tolerance=1, y_tolerance=3) or "",
+                    reference_year=reference_year,
+                    reference_month=reference_month,
+                    source_file=path.name,
+                    page_number=page_index,
+                )
+                if text_rows:
+                    extracted_rows.extend(text_rows)
+                    continue
+
                 table = _extract_best_table(page)
                 if not table:
                     continue
@@ -249,6 +292,95 @@ def _extract_department_rows(path: Path) -> list[dict]:
     except Exception:
         return []
     return extracted_rows
+
+
+def _extract_rows_from_text_page(
+    text: str,
+    reference_year: Optional[int],
+    reference_month: Optional[str],
+    source_file: str,
+    page_number: int,
+) -> list[dict]:
+    current_region: Optional[str] = None
+    pending_geo_prefix: Optional[str] = None
+    output: list[dict] = []
+
+    for raw_line in text.splitlines():
+        line = _normalize_cell(raw_line)
+        if not line:
+            continue
+
+        combined_line = f"{pending_geo_prefix} {line}" if pending_geo_prefix else line
+        parsed = _parse_text_data_line(combined_line)
+        if parsed is None and pending_geo_prefix:
+            parsed = _parse_text_data_line(line)
+
+        if parsed:
+            label, values = parsed
+            pending_geo_prefix = None
+            region_label = _as_known_region_label(label)
+            if region_label:
+                current_region = region_label
+                continue
+
+            match = DEPARTEMENT_PATTERN.match(label)
+            if not match:
+                continue
+
+            dep_code = match.group("code").upper()
+            dep_name = match.group("name").strip()
+            for indicator_name, value in zip(DEPOSITS_REGION_INDICATORS, values):
+                output.append(
+                    {
+                        "reference_year": reference_year,
+                        "reference_month": reference_month,
+                        "region": current_region,
+                        "departement_code": dep_code,
+                        "departement_name": dep_name,
+                        "indicator_name": indicator_name,
+                        "value": value,
+                        "source_file": source_file,
+                        "page_number": page_number,
+                    }
+                )
+            continue
+
+        pending_geo_prefix = line if _is_possible_split_geo_prefix(line) else None
+
+    return output
+
+
+def _parse_text_data_line(line: str) -> Optional[tuple[str, list[float]]]:
+    matches = list(TEXT_NUMBER_PATTERN.finditer(line))
+    if len(matches) != len(DEPOSITS_REGION_INDICATORS):
+        return None
+
+    label = line[: matches[0].start()].strip()
+    if not label:
+        return None
+
+    values = [_parse_number(match.group(0)) for match in matches]
+    if any(value is None for value in values):
+        return None
+    return label, [float(value) for value in values if value is not None]
+
+
+def _is_possible_split_geo_prefix(line: str) -> bool:
+    if DEPARTEMENT_PATTERN.match(line):
+        return True
+
+    normalized = _normalize_text(line)
+    if not normalized:
+        return False
+    return any(_normalize_text(region).startswith(normalized) for region in REGION_LABELS)
+
+
+def _as_known_region_label(value: str) -> Optional[str]:
+    normalized_value = _normalize_text(value)
+    for region in REGION_LABELS:
+        if _normalize_text(region) == normalized_value:
+            return region
+    return None
 
 
 def _extract_best_table(page) -> Optional[list[list[Optional[str]]]]:
@@ -422,6 +554,13 @@ def _extract_year(text: str, fallback: str) -> Optional[int]:
 def _extract_month(text: str) -> Optional[str]:
     match = MONTH_PATTERN.search(text)
     return match.group(1).lower() if match else None
+
+
+def _extract_reference_period(text: str, fallback: str) -> tuple[Optional[int], Optional[str]]:
+    match = REFERENCE_PERIOD_PATTERN.search(text)
+    if match:
+        return int(match.group("year")), match.group("month").lower()
+    return _extract_year(text, fallback=fallback), _extract_month(text)
 
 
 def _normalize_text(text: str) -> str:
