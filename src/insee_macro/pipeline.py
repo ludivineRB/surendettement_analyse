@@ -120,13 +120,26 @@ def download_latest_or_year(year: int, page_url: str = INSEE_DOSSIER_COMPLET_PAG
     paths = PipelinePaths.for_year(year)
     paths.raw_dir.mkdir(parents=True, exist_ok=True)
     output_path = paths.raw_dir / candidate.filename
+    if output_path.exists() and not _is_valid_download(output_path):
+        output_path.unlink()
+
     if not output_path.exists():
+        temp_path = output_path.with_suffix(output_path.suffix + ".part")
+        if temp_path.exists():
+            temp_path.unlink()
         with requests.get(candidate.url, stream=True, timeout=600) as download:
             download.raise_for_status()
-            with output_path.open("wb") as output:
+            with temp_path.open("wb") as output:
                 for chunk in download.iter_content(1024 * 1024):
                     if chunk:
                         output.write(chunk)
+        if not _is_valid_download(temp_path):
+            temp_path.unlink(missing_ok=True)
+            raise RuntimeError(
+                f"Downloaded file is incomplete or invalid: {candidate.url}. "
+                "Rerun the download command."
+            )
+        temp_path.replace(output_path)
 
     manifest = {
         "source": "INSEE",
@@ -152,6 +165,12 @@ def extract_raw_source(year: int, source_path: Path | None = None) -> Path:
         raise FileNotFoundError(f"No downloaded source found in {paths.raw_dir}")
 
     if source_path.suffix.lower() == ".zip":
+        if not zipfile.is_zipfile(source_path):
+            raise zipfile.BadZipFile(
+                f"{source_path} is not a complete ZIP archive. "
+                "Rerun: python -m src.insee_macro.pipeline download "
+                f"--year {year}"
+            )
         with zipfile.ZipFile(source_path) as archive:
             archive.extractall(paths.raw_dir / "extracted")
         return _find_main_csv(paths.raw_dir / "extracted")
@@ -427,6 +446,14 @@ def _sha256(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def _is_valid_download(path: Path) -> bool:
+    if path.suffix.lower() == ".zip":
+        return zipfile.is_zipfile(path)
+    if path.suffix.lower() == ".csv":
+        return path.stat().st_size > 0
+    return path.exists() and path.stat().st_size > 0
 
 
 def _first_existing(columns: Iterable[str], candidates: list[str]) -> str | None:

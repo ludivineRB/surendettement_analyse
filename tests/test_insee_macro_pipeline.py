@@ -71,3 +71,18 @@ def test_aggregate_departements_uses_sum_and_mean_rules(tmp_path: Path, monkeypa
     assert pop == 300
     assert tx_chom == 6
     assert (pipeline.PipelinePaths.for_year(2098).departements_long_csv).exists()
+
+
+def test_extract_raw_source_reports_incomplete_zip(tmp_path: Path, monkeypatch):
+    _isolate_pipeline_roots(tmp_path, monkeypatch)
+    raw_dir = pipeline.PipelinePaths.for_year(2097).raw_dir
+    raw_dir.mkdir(parents=True)
+    bad_zip = raw_dir / "dossier_complet.zip"
+    bad_zip.write_bytes(b"PK\x03\x04not-complete")
+
+    try:
+        pipeline.extract_raw_source(2097)
+    except Exception as exc:
+        assert "not a complete ZIP archive" in str(exc)
+    else:
+        raise AssertionError("Expected incomplete ZIP to fail explicitly")
