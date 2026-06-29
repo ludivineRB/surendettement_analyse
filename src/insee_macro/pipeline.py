@@ -231,30 +231,53 @@ def build_communes_long(year: int, source_csv: Path | None = None, chunksize: in
     return communes
 
 
-def aggregate_departements(year: int) -> pd.DataFrame:
+def aggregate_departements(year: int, chunksize: int = 1_000_000) -> pd.DataFrame:
     paths = PipelinePaths.for_year(year)
     paths.gold_dir.mkdir(parents=True, exist_ok=True)
-    communes = pd.read_csv(paths.communes_long_csv, dtype={"departement_code": str, "commune_code": str})
     dictionary = pd.read_csv(paths.indicator_dictionary_csv)
-    enriched = communes.merge(
-        dictionary[["indicator_code", "indicator_name", "indicator_group", "aggregation_rule"]],
-        on="indicator_code",
-        how="left",
-    )
+    aggregation_rules = dictionary.set_index("indicator_code")["aggregation_rule"].to_dict()
 
-    dept_names = _department_names(enriched)
-    pieces = []
-    for rule, group in enriched.groupby("aggregation_rule", dropna=False):
-        grouped = group.groupby(["reference_year", "departement_code", "indicator_code"], as_index=False)
-        if rule == "mean":
-            aggregated = grouped["value"].mean()
-        else:
-            aggregated = grouped["value"].sum()
-        aggregated["aggregation_rule"] = rule or "sum"
-        pieces.append(aggregated)
+    partials = []
+    usecols = ["reference_year", "departement_code", "indicator_code", "value"]
+    for chunk in pd.read_csv(
+        paths.communes_long_csv,
+        usecols=usecols,
+        dtype={"departement_code": str, "indicator_code": str},
+        chunksize=chunksize,
+        low_memory=False,
+    ):
+        chunk["value"] = pd.to_numeric(chunk["value"], errors="coerce")
+        chunk = chunk[chunk["value"].notna()].copy()
+        if chunk.empty:
+            continue
+        chunk["aggregation_rule"] = chunk["indicator_code"].map(aggregation_rules).fillna("sum")
+        partial = (
+            chunk.groupby(
+                ["reference_year", "departement_code", "indicator_code", "aggregation_rule"],
+                as_index=False,
+            )["value"]
+            .agg(value_sum="sum", value_count="count")
+        )
+        partials.append(partial)
 
-    departements = pd.concat(pieces, ignore_index=True) if pieces else _empty_departements_long()
-    departements = departements.merge(dept_names, on="departement_code", how="left")
+    if not partials:
+        departements = _empty_departements_long()
+    else:
+        totals = (
+            pd.concat(partials, ignore_index=True)
+            .groupby(["reference_year", "departement_code", "indicator_code", "aggregation_rule"], as_index=False)
+            .agg(value_sum=("value_sum", "sum"), value_count=("value_count", "sum"))
+        )
+        totals["value"] = totals["value_sum"]
+        mean_mask = totals["aggregation_rule"].eq("mean")
+        totals.loc[mean_mask, "value"] = (
+            totals.loc[mean_mask, "value_sum"] / totals.loc[mean_mask, "value_count"]
+        )
+        departements = totals[
+            ["reference_year", "departement_code", "indicator_code", "aggregation_rule", "value"]
+        ].copy()
+
+    departements["departement_name"] = pd.NA
     departements = departements.merge(
         dictionary[["indicator_code", "indicator_name", "indicator_group"]],
         on="indicator_code",
@@ -505,6 +528,8 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         subparser = subparsers.add_parser(command)
         subparser.add_argument("--year", type=int, required=True)
         subparser.add_argument("--source-csv", default=None)
+        if command in {"transform", "aggregate"}:
+            subparser.add_argument("--chunksize", type=int, default=None)
         if command == "run":
             subparser.add_argument("--skip-download", action="store_true")
 
@@ -521,10 +546,10 @@ def main() -> None:
         path = extract_raw_source(args.year, source_path=source_csv)
         print(f"Extracted source CSV: {path}")
     elif args.command == "transform":
-        df = build_communes_long(args.year, source_csv=source_csv)
+        df = build_communes_long(args.year, source_csv=source_csv, chunksize=args.chunksize or 25_000)
         print(f"Communes long rows: {len(df)}")
     elif args.command == "aggregate":
-        df = aggregate_departements(args.year)
+        df = aggregate_departements(args.year, chunksize=args.chunksize or 1_000_000)
         print(f"Department rows: {len(df)}")
     elif args.command == "quality":
         print(build_quality_report(args.year))
