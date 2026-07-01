@@ -31,7 +31,6 @@ CSV_SEPARATOR = ";"
 RAW_ROOT = Path("data/raw/insee_macro/dossier_complet")
 SILVER_ROOT = Path("data/processed/insee_macro/silver")
 GOLD_ROOT = Path("data/processed/insee_macro/gold")
-MART_ROOT = Path("data/processed/marts")
 
 GEO_COLUMNS = {
     "CODGEO",
