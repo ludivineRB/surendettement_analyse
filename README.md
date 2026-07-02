@@ -136,3 +136,51 @@ print(f"Files downloaded: {len(downloaded)}")
 ```bash
 .venv/bin/python -m pytest -q
 ```
+
+## Dashboard Streamlit
+
+Le projet contient une première application Streamlit pour explorer les données de surendettement et les indicateurs macro-économiques par année et par département.
+
+### Installation
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+### Lancement
+
+```bash
+streamlit run app.py
+```
+
+### Configuration de l'API
+
+Par défaut, le dashboard tente de lire l'API locale :
+
+```text
+http://127.0.0.1:8000/api/data/joined
+```
+
+Pour utiliser une autre URL, créer un fichier `.env` local :
+
+```bash
+SURENDETTEMENT_API_URL=http://127.0.0.1:8000/api/data/joined
+SURENDETTEMENT_API_TIMEOUT=8
+```
+
+Si l'API ne répond pas, l'application utilise les fichiers locaux de `data/processed/`. Si ces fichiers sont absents, elle affiche un jeu de démonstration.
+
+### Ajouter de nouvelles données macro-économiques
+
+Ajouter ou remplacer un fichier au format CSV compatible avec :
+
+- `reference_year`
+- `departement_code`
+- `departement_name`
+- `indicator_code`
+- `indicator_name`
+- `value`
+
+Le chemin utilisé par défaut est `data/processed/statinfo_departements_bi_curated.csv`. Les codes départements sont normalisés automatiquement pour fiabiliser la jointure avec les données de surendettement.

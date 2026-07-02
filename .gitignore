@@ -2,6 +2,6 @@
 __pycache__/
 .pytest_cache/
 *.pyc
-data/
+/data/
 AGENTS.md
 .codex

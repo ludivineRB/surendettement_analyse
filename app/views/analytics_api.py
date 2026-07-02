@@ -97,6 +97,54 @@ def list_bdf_facts(
         )
 
 
+@analytics_api.get("/surendettement")
+def list_surendettement_data(
+    departement_code: str | None = None,
+    indicator_code: str | None = None,
+    reference_year: int | None = None,
+    limit: int = Query(5000, ge=1, le=100000),
+    offset: int = Query(0, ge=0),
+) -> list[dict]:
+    """Expose actual over-indebtedness facts from the surendettement source."""
+    filters = []
+    params = {"limit": limit, "offset": offset}
+    if departement_code:
+        filters.append("s.departement_code = :departement_code")
+        params["departement_code"] = _standardize_department_code(departement_code)
+    if indicator_code:
+        filters.append("i.indicator_code = :indicator_code")
+        params["indicator_code"] = indicator_code
+    if reference_year:
+        filters.append("s.reference_year = :reference_year")
+        params["reference_year"] = reference_year
+    where = "WHERE " + " AND ".join(filters) if filters else ""
+    with analytics_connection() as connection:
+        return fetch_all(
+            connection,
+            f"""
+            SELECT s.reference_year,
+                   s.departement_code,
+                   d.departement_name,
+                   d.region_name,
+                   i.indicator_code,
+                   i.indicator_name,
+                   i.indicator_group,
+                   i.unit,
+                   s.value,
+                   s.value AS surendettement_value,
+                   s.value AS dossiers_deposes,
+                   s.source_file
+            FROM fact_surendettement s
+            JOIN dim_indicator i ON i.indicator_key = s.indicator_key
+            LEFT JOIN dim_department d ON d.departement_code = s.departement_code
+            {where}
+            ORDER BY s.reference_year, s.departement_code, i.indicator_code
+            LIMIT :limit OFFSET :offset
+            """,
+            params,
+        )
+
+
 @analytics_api.get("/insee")
 def list_insee_facts(
     departement_code: str | None = None,
@@ -124,6 +172,57 @@ def list_insee_facts(
             SELECT m.reference_year, m.departement_code, d.departement_name, d.region_name,
                    i.indicator_code, i.indicator_name, i.indicator_group, i.aggregation_rule,
                    m.value, m.source_dataset
+            FROM fact_insee_macro m
+            JOIN dim_indicator i ON i.indicator_key = m.indicator_key
+            LEFT JOIN dim_department d ON d.departement_code = m.departement_code
+            {where}
+            ORDER BY m.reference_year, m.departement_code, i.indicator_code
+            LIMIT :limit OFFSET :offset
+            """,
+            params,
+        )
+
+
+@analytics_api.get("/macro-economic")
+def list_macro_economic_data(
+    departement_code: str | None = None,
+    indicator_code: str | None = None,
+    indicator_group: str | None = None,
+    reference_year: int | None = None,
+    limit: int = Query(5000, ge=1, le=100000),
+    offset: int = Query(0, ge=0),
+) -> list[dict]:
+    """Expose INSEE macro-economic department-level facts."""
+    filters = []
+    params = {"limit": limit, "offset": offset}
+    if departement_code:
+        filters.append("m.departement_code = :departement_code")
+        params["departement_code"] = _standardize_department_code(departement_code)
+    if indicator_code:
+        filters.append("i.indicator_code = :indicator_code")
+        params["indicator_code"] = indicator_code
+    if indicator_group:
+        filters.append("i.indicator_group = :indicator_group")
+        params["indicator_group"] = indicator_group
+    if reference_year:
+        filters.append("m.reference_year = :reference_year")
+        params["reference_year"] = reference_year
+    where = "WHERE " + " AND ".join(filters) if filters else ""
+    with analytics_connection() as connection:
+        return fetch_all(
+            connection,
+            f"""
+            SELECT m.reference_year,
+                   m.departement_code,
+                   d.departement_name,
+                   d.region_name,
+                   i.indicator_code,
+                   i.indicator_name,
+                   i.indicator_group,
+                   i.aggregation_rule,
+                   m.value,
+                   m.value AS macro_value,
+                   m.source_dataset
             FROM fact_insee_macro m
             JOIN dim_indicator i ON i.indicator_key = m.indicator_key
             LEFT JOIN dim_department d ON d.departement_code = m.departement_code
@@ -163,6 +262,51 @@ def list_joined_data(
             FROM v_bdf_total_deposits_with_insee_macro
             {where}
             ORDER BY bdf_reference_period, departement_code, macro_indicator_code
+            LIMIT :limit OFFSET :offset
+            """,
+            params,
+        )
+
+
+@analytics_api.get("/streamlit")
+def streamlit_dataset(
+    departement_code: str | None = None,
+    macro_indicator_code: str | None = None,
+    reference_year: int | None = None,
+    limit: int = Query(50000, ge=1, le=250000),
+    offset: int = Query(0, ge=0),
+) -> list[dict]:
+    """Return joined rows using the column names expected by the Streamlit dashboard."""
+    filters = []
+    params = {"limit": limit, "offset": offset}
+    if departement_code:
+        filters.append("departement_code = :departement_code")
+        params["departement_code"] = _standardize_department_code(departement_code)
+    if macro_indicator_code:
+        filters.append("macro_indicator_code = :macro_indicator_code")
+        params["macro_indicator_code"] = macro_indicator_code
+    if reference_year:
+        filters.append("reference_year = :reference_year")
+        params["reference_year"] = reference_year
+    where = "WHERE " + " AND ".join(filters) if filters else ""
+    with analytics_connection() as connection:
+        return fetch_all(
+            connection,
+            f"""
+            SELECT reference_year,
+                   departement_code,
+                   departement_name,
+                   region_name,
+                   macro_reference_year,
+                   macro_indicator_code AS indicator_code,
+                   macro_indicator_name AS indicator_name,
+                   macro_indicator_group AS indicator_group,
+                   macro_value,
+                   surendettement_value,
+                   surendettement_value AS dossiers_deposes
+            FROM v_surendettement_with_insee_macro
+            {where}
+            ORDER BY reference_year, departement_code, indicator_code
             LIMIT :limit OFFSET :offset
             """,
             params,

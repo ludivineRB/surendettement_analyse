@@ -3,7 +3,15 @@ from pathlib import Path
 
 from app.core.config import settings
 from app.schemas.analytics import MacroOverrideCreate, MacroOverrideUpdate
-from app.views.analytics_api import create_macro_override, health, list_joined_data, update_macro_override
+from app.views.analytics_api import (
+    create_macro_override,
+    health,
+    list_macro_economic_data,
+    list_surendettement_data,
+    list_joined_data,
+    streamlit_dataset,
+    update_macro_override,
+)
 
 
 def _create_test_analytics_db(path: Path) -> None:
@@ -35,6 +43,13 @@ def _create_test_analytics_db(path: Path) -> None:
                 source_file TEXT,
                 pipeline_version TEXT
             );
+            CREATE TABLE fact_surendettement (
+                reference_year INTEGER NOT NULL,
+                departement_code TEXT NOT NULL,
+                indicator_key TEXT NOT NULL,
+                value REAL NOT NULL,
+                source_file TEXT
+            );
             CREATE TABLE fact_insee_macro (
                 reference_year INTEGER NOT NULL,
                 departement_code TEXT NOT NULL,
@@ -61,6 +76,24 @@ def _create_test_analytics_db(path: Path) -> None:
             JOIN fact_insee_macro m ON m.departement_code = b.departement_code
             JOIN dim_indicator i ON i.indicator_key = m.indicator_key
             JOIN dim_department d ON d.departement_code = b.departement_code;
+            CREATE VIEW v_surendettement_with_insee_macro AS
+            SELECT
+                s.reference_year,
+                s.departement_code,
+                d.departement_name,
+                d.region_name,
+                SUM(s.value) AS surendettement_value,
+                m.reference_year AS macro_reference_year,
+                i.indicator_code AS macro_indicator_code,
+                i.indicator_name AS macro_indicator_name,
+                i.indicator_group AS macro_indicator_group,
+                m.value AS macro_value
+            FROM fact_surendettement s
+            JOIN fact_insee_macro m ON m.departement_code = s.departement_code
+            JOIN dim_indicator i ON i.indicator_key = m.indicator_key
+            JOIN dim_department d ON d.departement_code = s.departement_code
+            GROUP BY s.reference_year, s.departement_code, d.departement_name, d.region_name,
+                     m.reference_year, i.indicator_code, i.indicator_name, i.indicator_group, m.value;
             """
         )
         connection.execute("INSERT INTO dim_department VALUES ('75', 'Paris', 'Ile de France', 1)")
@@ -73,12 +106,21 @@ def _create_test_analytics_db(path: Path) -> None:
             "('insee_macro:P22_POP', 'insee_macro', 'P22_POP', 'Population', 'démographie', NULL, 'sum')"
         )
         connection.execute(
+            "INSERT INTO dim_indicator VALUES "
+            "('surendettement:surendettement_dossiers', 'surendettement', "
+            "'surendettement_dossiers', 'Dossiers de surendettement', 'surendettement', NULL, 'sum')"
+        )
+        connection.execute(
             "INSERT INTO fact_bdf_statinfo VALUES "
             "('2025-08', 2025, 8, '75', 'bdf_statinfo:total', 568.6, 'bdf.pdf', 'test')"
         )
         connection.execute(
             "INSERT INTO fact_insee_macro VALUES "
             "(2026, '75', 'insee_macro:P22_POP', 2100000, 'insee', 'test')"
+        )
+        connection.execute(
+            "INSERT INTO fact_surendettement VALUES "
+            "(2025, '75', 'surendettement:surendettement_dossiers', 123, 'sur.pdf')"
         )
 
 
@@ -89,8 +131,23 @@ def test_analytics_api_reads_joined_data_and_creates_override(tmp_path: Path):
     settings.ANALYTICS_DB_PATH = str(db_path)
     try:
         assert health()["status"] == "ok"
+        surendettement = list_surendettement_data(departement_code="75", limit=500, offset=0)
+        assert surendettement[0]["indicator_code"] == "surendettement_dossiers"
+        assert surendettement[0]["surendettement_value"] == 123
+        assert surendettement[0]["dossiers_deposes"] == 123
+
+        macro = list_macro_economic_data(departement_code="75", limit=500, offset=0)
+        assert macro[0]["indicator_code"] == "P22_POP"
+        assert macro[0]["macro_value"] == 2_100_000
+
         joined = list_joined_data(departement_code="75", limit=500, offset=0)
         assert joined[0]["macro_indicator_code"] == "P22_POP"
+
+        streamlit_rows = streamlit_dataset(departement_code="75", limit=500, offset=0)
+        assert streamlit_rows[0]["indicator_code"] == "P22_POP"
+        assert streamlit_rows[0]["macro_value"] == 2_100_000
+        assert streamlit_rows[0]["surendettement_value"] == 123
+        assert streamlit_rows[0]["dossiers_deposes"] == 123
 
         created = create_macro_override(
             MacroOverrideCreate(
