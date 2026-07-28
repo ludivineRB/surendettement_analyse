@@ -61,10 +61,29 @@ def test_run_pipeline_rejects_partial_structured_file(tmp_path: Path):
     output = tmp_path / "gold.csv"
     summary = run_surendettement_pipeline(skip_crawl=True, source_dir=source_dir, output_csv=output)
 
-    assert summary.files_processed == 0
-    assert summary.files_rejected == 1
+    assert summary.files_processed == 1
+    assert summary.files_rejected == 0
     assert summary.output_rows == 0
     assert pd.read_csv(output).empty
+
+
+def test_parse_structured_source_accepts_regional_department_file(tmp_path: Path):
+    source = tmp_path / "surendettement_region_2025.csv"
+    pd.DataFrame(
+        [
+            {
+                "annee": 2025,
+                "code_departement": code,
+                "nombre_dossiers_deposes": 100 + index,
+            }
+            for index, code in enumerate(["75", "77", "78", "91", "92", "93", "94", "95"])
+        ]
+    ).to_csv(source, index=False)
+
+    result = parse_structured_source(source)
+
+    assert result["departement_code"].nunique() == 8
+    assert result["indicator_code"].unique().tolist() == ["dossiers_deposes"]
 
 
 def test_relevant_structured_link_accepts_typologie_without_filings_word():
@@ -112,3 +131,38 @@ def test_download_all_discovered_selects_generic_structured_links(monkeypatch, t
     assert paths == [downloaded]
     assert summary.files_selected_for_download == 1
     assert summary.files_downloaded == 1
+
+
+def test_targeted_start_url_selects_generic_structured_links(monkeypatch, tmp_path: Path):
+    link = ParsedLink(
+        url="https://www.banque-france.fr/system/files/document.xlsx",
+        text="Télécharger le document",
+        is_file=True,
+        extension=".xlsx",
+        relevance_score=0,
+        year=None,
+        region=None,
+        dataset_type="unknown",
+    )
+    downloaded = tmp_path / "document.xlsx"
+
+    monkeypatch.setenv(
+        "BDF_START_URLS",
+        "https://www.banque-france.fr/fr/publications-et-statistiques/publications/typologie-du-surendettement-des-menages-2025",
+    )
+    monkeypatch.setattr("src.surendettement_pipeline._crawl_structured_links", lambda summary: [link])
+
+    class FakeDownloader:
+        def __init__(self, config):
+            self.config = config
+
+        def download_file(self, link, skip_existing=True):
+            return downloaded
+
+    monkeypatch.setattr("src.surendettement_pipeline.FileDownloader", FakeDownloader)
+    summary = SurendettementPipelineSummary()
+
+    paths = _crawl_and_download(tmp_path, summary)
+
+    assert paths == [downloaded]
+    assert summary.files_selected_for_download == 1

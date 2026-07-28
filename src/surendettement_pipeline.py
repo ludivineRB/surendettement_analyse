@@ -112,7 +112,11 @@ def run_surendettement_pipeline(
         frames.append(frame)
         summary.files_processed += 1
 
-    gold = build_gold_dataset(frames)
+    try:
+        gold = build_gold_dataset(frames)
+    except ValueError as exc:
+        LOGGER.warning("No gold dataset exported: %s", exc)
+        gold = pd.DataFrame(columns=TARGET_COLUMNS)
     output_csv.parent.mkdir(parents=True, exist_ok=True)
     gold.to_csv(output_csv, index=False)
     summary.output_rows = len(gold)
@@ -137,7 +141,7 @@ def parse_structured_source(path: Path) -> pd.DataFrame:
         raise ValueError("No valid department-level filings table found.")
 
     result = pd.concat(candidates, ignore_index=True)
-    _validate_gold_quality(result, source_name=path.name)
+    _validate_gold_quality(result, source_name=path.name, require_national_coverage=False)
     return result[TARGET_COLUMNS]
 
 
@@ -151,7 +155,7 @@ def build_gold_dataset(frames: list[pd.DataFrame]) -> pd.DataFrame:
         ["reference_year", "reference_month", "departement_code", "indicator_code", "source_file"]
     )
     gold = gold.sort_values(["reference_year", "reference_month", "departement_code", "indicator_code"])
-    _validate_gold_quality(gold, source_name="combined sources")
+    _validate_gold_quality(gold, source_name="combined sources", require_national_coverage=True)
     return gold[TARGET_COLUMNS]
 
 
@@ -161,7 +165,10 @@ def _crawl_and_download(
     download_all_discovered: bool = False,
 ) -> list[Path]:
     links = _crawl_structured_links(summary)
-    candidates = links if download_all_discovered else [link for link in links if _is_relevant_structured_link(link)]
+    if download_all_discovered or _has_targeted_start_url():
+        candidates = links
+    else:
+        candidates = [link for link in links if _is_relevant_structured_link(link)]
     summary.files_selected_for_download = len(candidates)
     config = _surendettement_config(output_raw_dir=source_dir)
     downloader = FileDownloader(config=config)
@@ -188,6 +195,12 @@ def _surendettement_config(output_raw_dir: Path | None = None) -> PipelineConfig
     if config.start_urls:
         config.base_url = config.start_urls[0]
     return config
+
+
+def _has_targeted_start_url() -> bool:
+    config = PipelineConfig.from_env()
+    haystack = " ".join(config.start_urls).lower()
+    return "surendettement" in haystack or "typologie" in haystack
 
 
 def _discover_local_sources(source_dir: Path) -> list[Path]:
@@ -290,7 +303,7 @@ def _normalize_source_frame(frame: pd.DataFrame, source_file: str) -> pd.DataFra
     return output[TARGET_COLUMNS]
 
 
-def _validate_gold_quality(df: pd.DataFrame, source_name: str) -> None:
+def _validate_gold_quality(df: pd.DataFrame, source_name: str, require_national_coverage: bool) -> None:
     if df.empty:
         return
     invalid_codes = sorted(set(df["departement_code"].dropna()) - set(EXPECTED_DEPARTMENT_CODES))
@@ -298,9 +311,11 @@ def _validate_gold_quality(df: pd.DataFrame, source_name: str) -> None:
         raise ValueError(f"{source_name}: invalid metropolitan department codes: {invalid_codes[:10]}")
     if (df["value"] < 0).any():
         raise ValueError(f"{source_name}: negative filings values found.")
-    if df["departement_code"].nunique() < 50:
+    min_departments = 50 if require_national_coverage else 1
+    if df["departement_code"].nunique() < min_departments:
         raise ValueError(
-            f"{source_name}: only {df['departement_code'].nunique()} departments found; expected a national file."
+            f"{source_name}: only {df['departement_code'].nunique()} departments found; "
+            f"expected at least {min_departments}."
         )
 
 

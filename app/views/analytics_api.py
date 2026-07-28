@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Query
+from sqlalchemy import select
 
 from app.core.analytics import analytics_connection, fetch_all, fetch_one, utc_now
 from app.schemas.analytics import MacroOverrideCreate, MacroOverrideRead, MacroOverrideUpdate
+from src.storage.database import get_session_factory
+from src.storage.models import InclusionIndicator, InclusionObservation, InclusionSourceDocument
 
 analytics_api = APIRouter(prefix="/api/data", tags=["Analytical data"])
 
@@ -143,6 +146,53 @@ def list_surendettement_data(
             """,
             params,
         )
+
+
+@analytics_api.get("/inclusion-financiere")
+def list_inclusion_financiere(
+    region_code: str | None = None,
+    indicator_code: str | None = None,
+    from_period: str | None = None,
+    to_period: str | None = None,
+    limit: int = Query(5000, ge=1, le=100000),
+    offset: int = Query(0, ge=0),
+) -> list[dict]:
+    """Expose monthly regional financial-inclusion observations."""
+    statement = (
+        select(
+            InclusionObservation.reference_period,
+            InclusionObservation.region_code,
+            InclusionObservation.geographic_name.label("region_name"),
+            InclusionObservation.indicator_code,
+            InclusionIndicator.label.label("indicator_label"),
+            InclusionObservation.value_numeric.label("value"),
+            InclusionObservation.unit,
+            InclusionObservation.observation_type,
+            InclusionObservation.confidence_score,
+            InclusionObservation.page_number,
+            InclusionSourceDocument.page_url,
+            InclusionSourceDocument.pdf_url,
+        )
+        .join(InclusionIndicator, InclusionIndicator.id == InclusionObservation.indicator_id)
+        .join(InclusionSourceDocument, InclusionSourceDocument.id == InclusionObservation.source_document_id)
+    )
+    if region_code:
+        statement = statement.where(InclusionObservation.region_code == region_code.strip())
+    if indicator_code:
+        statement = statement.where(InclusionObservation.indicator_code == indicator_code)
+    if from_period:
+        statement = statement.where(InclusionObservation.reference_period >= from_period)
+    if to_period:
+        statement = statement.where(InclusionObservation.reference_period <= to_period)
+    statement = statement.order_by(
+        InclusionObservation.reference_period,
+        InclusionObservation.region_code,
+        InclusionObservation.indicator_code,
+    ).limit(limit).offset(offset)
+
+    factory = get_session_factory()
+    with factory() as session:
+        return [dict(row) for row in session.execute(statement).mappings().all()]
 
 
 @analytics_api.get("/insee")

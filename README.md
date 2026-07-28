@@ -137,6 +137,116 @@ print(f"Files downloaded: {len(downloaded)}")
 .venv/bin/python -m pytest -q
 ```
 
+## Pipeline Baromètres Mensuels Inclusion Financière
+
+Une pipeline dédiée collecte les publications régionales Banque de France de type
+`Baromètre mensuel de l’inclusion financière : {région} - {mois} {année}`.
+Elle réutilise la configuration, `requests`, `pdfplumber`, SQLAlchemy et SQLite
+déjà présents dans le dépôt.
+
+### Architecture
+
+- `src/inclusion_financiere.py` : découverte listing + sitemap, extraction des métadonnées HTML, téléchargement PDF atomique, extraction native, validation, JSONL intermédiaire et chargement.
+- `src/storage/models.py` : tables `source_documents`, `indicators`, `observations`.
+- `tests/test_inclusion_financiere.py` : tests unitaires et intégration avec HTML/PDF simulés.
+
+### Configuration
+
+Variables utiles :
+
+- `BDF_USER_AGENT` : User-Agent explicite.
+- `BDF_TIMEOUT_SECONDS` : timeout HTTP.
+- `BDF_ALLOWED_DOMAINS` : domaines autorisés, Banque de France par défaut.
+- `BDF_RAW_DIR` : racine historique du dépôt, la pipeline stocke par défaut dans `data/raw/banque_france/inclusion_financiere/`.
+- `DATABASE_URL` : base SQLAlchemy, `sqlite:///data/processed/surendettement.db` par défaut.
+
+Les régions sont configurées dans un mapping extensible avec code INSEE régional.
+Ajouter une région consiste à ajouter son slug, code et libellé dans `REGIONS`.
+
+### Commandes
+
+```bash
+.venv/bin/python -m src.inclusion_financiere discover --from 2024-01 --all-regions
+.venv/bin/python -m src.inclusion_financiere download --from 2024-01 --region corse
+.venv/bin/python -m src.inclusion_financiere run --from 2024-01 --to 2026-06 --all-regions
+.venv/bin/python -m src.inclusion_financiere run --incremental --dry-run --max-concurrency 2
+```
+
+Options acceptées : `--from`, `--to`, `--region`, `--all-regions`,
+`--incremental`, `--force`, `--dry-run`, `--max-concurrency`,
+`--output-format jsonl`, `--listing-url`, `--no-load`.
+
+Le flux complet exécute :
+
+```text
+discover -> download -> validate PDF -> extract -> normalize -> validate -> JSONL -> load
+```
+
+Le JSONL intermédiaire est écrit dans
+`data/processed/inclusion_financiere_observations.jsonl`.
+
+Exemple de sortie structurée :
+
+```json
+{
+  "schema_version": "1.0",
+  "source": {
+    "publisher": "Banque de France",
+    "publication_type": "barometre_mensuel_inclusion_financiere",
+    "page_url": "https://www.banque-france.fr/...",
+    "pdf_url": "https://www.banque-france.fr/...",
+    "pdf_sha256": "...",
+    "publication_date": "2026-07-16",
+    "extractor_version": "inclusion-financiere-v1"
+  },
+  "geography": {"region_code": "94", "region_name": "Corse"},
+  "reference_period": "2026-06",
+  "observations": [
+    {
+      "indicator_code": "surendettement_dossiers_deposes",
+      "indicator_label": "Dossiers de surendettement déposés",
+      "value": 123.0,
+      "unit": "dossiers",
+      "page_number": 1,
+      "extraction_method": "native_text",
+      "confidence_score": 0.86
+    }
+  ]
+}
+```
+
+### Schéma de Données
+
+`source_documents` conserve la provenance : page HTML, PDF, SHA-256, chemin de
+stockage, ETag, Last-Modified, période, statut d’extraction et version
+d’extracteur.
+
+`indicators` référence les indicateurs métier connus avec code stable, libellé,
+catégorie et unité par défaut.
+
+`observations` stocke les valeurs normalisées avec région, période, unité,
+page, fragment source, méthode, score de confiance et clé d’idempotence unique.
+
+### Normalisation et Qualité
+
+La pipeline convertit les mois français en `YYYY-MM`, les nombres français en
+types numériques, conserve les unités/libellés/fragments sources et ne convertit
+pas les valeurs `n.d.`, `n.s.` ou `-` en zéro. Un document sans observations ou
+avec avertissement passe en statut `needs_review`.
+
+Les PDF sont validés par statut HTTP, MIME, signature `%PDF-`, taille minimale et
+taille maximale. Les téléchargements utilisent retries avec backoff, hash
+SHA-256, écriture temporaire puis renommage atomique. Les relances évitent les
+doublons via contraintes SQL et clés d’idempotence.
+
+### Limites Connues
+
+L’extraction OCR est seulement signalée comme stratégie de secours à ajouter :
+la version actuelle privilégie l’extraction native `pdfplumber` et marque les
+documents vides en `needs_review`. L’option `--max-concurrency` est acceptée pour
+compatibilité CLI mais l’exécution reste séquentielle afin de limiter la charge
+sur le site.
+
 ## Dashboard Streamlit
 
 Le projet contient une première application Streamlit pour explorer les données de surendettement et les indicateurs macro-économiques par année et par département.

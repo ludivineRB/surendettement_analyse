@@ -5,15 +5,55 @@ from __future__ import annotations
 import math
 
 import pandas as pd
+import requests
 import streamlit as st
 
-from config.settings import MACRO_LOCAL_CSV, SURENDETTEMENT_LOCAL_CSV
+from config.settings import (
+    API_TIMEOUT_SECONDS,
+    INCLUSION_FINANCIERE_API_URL,
+    MACRO_LOCAL_CSV,
+    SURENDETTEMENT_LOCAL_CSV,
+)
 from src.api.surendettement_client import SurendettementApiError, fetch_surendettement_api
 from src.utils.departments import add_department_code, normalize_department_code
 
 MEASURE_OPTIONS = {
     "Nombre de dossiers déposés": "surendettement_value",
 }
+
+
+@st.cache_data(show_spinner=False, ttl=300)
+def load_inclusion_financiere_data() -> tuple[pd.DataFrame, list[str]]:
+    """Load and normalize monthly regional financial-inclusion observations."""
+    try:
+        response = requests.get(INCLUSION_FINANCIERE_API_URL, timeout=API_TIMEOUT_SECONDS)
+        response.raise_for_status()
+        payload = response.json()
+    except (requests.RequestException, ValueError) as exc:
+        return pd.DataFrame(), [f"API inclusion financière indisponible : {exc}"]
+
+    if not isinstance(payload, list):
+        return pd.DataFrame(), ["La réponse inclusion financière n'est pas une liste."]
+
+    data = pd.DataFrame(payload)
+    required = {
+        "reference_period",
+        "region_code",
+        "region_name",
+        "indicator_code",
+        "indicator_label",
+        "value",
+    }
+    missing = sorted(required.difference(data.columns))
+    if missing:
+        return pd.DataFrame(), [f"Colonnes API manquantes : {', '.join(missing)}"]
+
+    data["value"] = pd.to_numeric(data["value"], errors="coerce")
+    data["reference_period"] = data["reference_period"].astype(str)
+    data = data.dropna(subset=["value"]).sort_values(
+        ["reference_period", "region_code", "indicator_code"]
+    )
+    return data, [f"{len(data)} observations mensuelles chargées depuis l'API."]
 
 
 @st.cache_data(show_spinner=False)

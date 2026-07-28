@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pandas as pd
+import plotly.express as px
 import streamlit as st
 
 from src.charts.dashboard_charts import (
@@ -10,7 +11,11 @@ from src.charts.dashboard_charts import (
     make_scatter,
     make_time_series,
 )
-from src.data.dashboard_data import MEASURE_OPTIONS, load_dashboard_data
+from src.data.dashboard_data import (
+    MEASURE_OPTIONS,
+    load_dashboard_data,
+    load_inclusion_financiere_data,
+)
 
 st.set_page_config(
     page_title="Surendettement et indicateurs macro-économiques",
@@ -20,12 +25,21 @@ st.set_page_config(
 
 
 def main() -> None:
-    st.title("Dashboard surendettement et indicateurs macro-économiques")
+    st.title("Dashboard surendettement et inclusion financière")
     st.caption(
-        "Exploration par département et par année des données de surendettement "
-        "et des indicateurs macro-économiques disponibles."
+        "Exploration des données départementales annuelles et des baromètres mensuels régionaux."
     )
 
+    departmental_tab, inclusion_tab = st.tabs(
+        ["Analyse départementale", "Inclusion financière régionale"]
+    )
+    with departmental_tab:
+        render_departmental_dashboard()
+    with inclusion_tab:
+        render_inclusion_financiere_dashboard()
+
+
+def render_departmental_dashboard() -> None:
     data, messages = load_dashboard_data(use_api=True)
     for message in messages:
         st.info(message)
@@ -43,6 +57,87 @@ def main() -> None:
 
     render_kpis(filtered, measure_column, selected_measure_label)
     render_charts(filtered, measure_column, selected_measure_label, selected_indicator_label)
+
+
+def render_inclusion_financiere_dashboard() -> None:
+    data, messages = load_inclusion_financiere_data()
+    for message in messages:
+        st.info(message)
+    if data.empty:
+        st.error("Aucune observation mensuelle régionale n'est disponible.")
+        return
+
+    regions = ["Toutes les régions"] + sorted(data["region_name"].dropna().unique().tolist())
+    indicators = (
+        data[["indicator_code", "indicator_label"]]
+        .drop_duplicates()
+        .sort_values("indicator_label")
+    )
+    indicator_choices = list(indicators.itertuples(index=False, name=None))
+    periods = sorted(data["reference_period"].unique().tolist())
+
+    filter_columns = st.columns(2)
+    selected_region = filter_columns[0].selectbox("Région", regions)
+    selected_indicator = filter_columns[1].selectbox(
+        "Indicateur",
+        indicator_choices,
+        format_func=lambda choice: choice[1],
+    )
+    period_start, period_end = st.select_slider(
+        "Période",
+        options=periods,
+        value=(periods[0], periods[-1]),
+    )
+
+    filtered = data[
+        (data["indicator_code"] == selected_indicator[0])
+        & (data["reference_period"] >= period_start)
+        & (data["reference_period"] <= period_end)
+    ].copy()
+    if selected_region != "Toutes les régions":
+        filtered = filtered[filtered["region_name"] == selected_region]
+    if filtered.empty:
+        st.warning("Aucune observation ne correspond aux filtres sélectionnés.")
+        return
+
+    latest_period = filtered["reference_period"].max()
+    latest = filtered[filtered["reference_period"] == latest_period]
+    latest_total = float(latest["value"].sum())
+    average = float(filtered["value"].mean())
+    kpis = st.columns(4)
+    kpis[0].metric("Dernière période", latest_period)
+    kpis[1].metric("Valeur dernière période", f"{latest_total:,.0f}".replace(",", " "))
+    kpis[2].metric("Moyenne mensuelle", f"{average:,.1f}".replace(",", " "))
+    kpis[3].metric("Régions représentées", int(filtered["region_code"].nunique()))
+
+    line = px.line(
+        filtered,
+        x="reference_period",
+        y="value",
+        color="region_name",
+        markers=True,
+        labels={
+            "reference_period": "Mois",
+            "value": selected_indicator[1],
+            "region_name": "Région",
+        },
+        title=f"Évolution mensuelle — {selected_indicator[1]}",
+    )
+    line.update_layout(height=470)
+    st.plotly_chart(line, use_container_width=True)
+
+    ranking = latest.sort_values("value", ascending=False)
+    bar = px.bar(
+        ranking,
+        x="region_name",
+        y="value",
+        color="value",
+        color_continuous_scale="Teal",
+        labels={"region_name": "Région", "value": selected_indicator[1]},
+        title=f"Comparaison régionale — {latest_period}",
+    )
+    bar.update_layout(height=430, xaxis_tickangle=-35)
+    st.plotly_chart(bar, use_container_width=True)
 
 
 def render_filters(data: pd.DataFrame) -> tuple[pd.DataFrame, str, str]:

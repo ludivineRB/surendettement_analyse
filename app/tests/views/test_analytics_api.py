@@ -1,11 +1,16 @@
 import sqlite3
 from pathlib import Path
 
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
 from app.core.config import settings
 from app.schemas.analytics import MacroOverrideCreate, MacroOverrideUpdate
+from src.storage.models import Base, InclusionIndicator, InclusionObservation, InclusionSourceDocument
 from app.views.analytics_api import (
     create_macro_override,
     health,
+    list_inclusion_financiere,
     list_macro_economic_data,
     list_surendettement_data,
     list_joined_data,
@@ -165,3 +170,77 @@ def test_analytics_api_reads_joined_data_and_creates_override(tmp_path: Path):
         assert updated["value"] == 43.0
     finally:
         settings.ANALYTICS_DB_PATH = original_path
+
+
+def test_inclusion_financiere_api_filters_monthly_regional_data(tmp_path: Path, monkeypatch):
+    engine = create_engine(f"sqlite:///{tmp_path / 'inclusion.db'}")
+    Base.metadata.create_all(engine)
+    factory = sessionmaker(bind=engine)
+    with factory() as session:
+        indicator = InclusionIndicator(
+            code="surendettement_dossiers_deposes",
+            label="Dossiers de surendettement déposés",
+        )
+        document = InclusionSourceDocument(
+            source_name="Banque de France",
+            publication_type="barometre_mensuel_inclusion_financiere",
+            region_code="94",
+            region_name="Corse",
+            reference_period="2025-06",
+            page_url="https://example.test/page",
+            pdf_url="https://example.test/source.pdf",
+            pdf_filename="source.pdf",
+            pdf_sha256="a" * 64,
+            storage_path="source.pdf",
+            extraction_status="success",
+            extractor_version="test",
+        )
+        session.add_all([indicator, document])
+        session.flush()
+        session.add(
+            InclusionObservation(
+                source_document_id=document.id,
+                indicator_id=indicator.id,
+                idempotence_key="b" * 64,
+                indicator_code=indicator.code,
+                region_code="94",
+                reference_period="2025-06",
+                geographic_level="region",
+                geographic_code="94",
+                geographic_name="Corse",
+                value_numeric=123.0,
+                unit="dossiers",
+                observation_type="monthly",
+                page_number=1,
+                extraction_method="native_text",
+                confidence_score=0.86,
+            )
+        )
+        session.commit()
+
+    monkeypatch.setattr("app.views.analytics_api.get_session_factory", lambda: factory)
+    rows = list_inclusion_financiere(
+        region_code="94",
+        indicator_code="surendettement_dossiers_deposes",
+        from_period="2025-01",
+        to_period="2025-12",
+        limit=100,
+        offset=0,
+    )
+
+    assert rows == [
+        {
+            "reference_period": "2025-06",
+            "region_code": "94",
+            "region_name": "Corse",
+            "indicator_code": "surendettement_dossiers_deposes",
+            "indicator_label": "Dossiers de surendettement déposés",
+            "value": 123.0,
+            "unit": "dossiers",
+            "observation_type": "monthly",
+            "confidence_score": 0.86,
+            "page_number": 1,
+            "page_url": "https://example.test/page",
+            "pdf_url": "https://example.test/source.pdf",
+        }
+    ]
