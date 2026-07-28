@@ -1,0 +1,10 @@
+{
+  "indicator_mapping": {
+    "dossiers_surendettement_1000_habitants": null,
+    "taux_chomage": null,
+    "taux_pauvrete": null,
+    "revenu_median": null,
+    "endettement_moyen": null,
+    "inflation": null
+  }
+}

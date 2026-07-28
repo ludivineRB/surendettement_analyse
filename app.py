@@ -17,6 +17,7 @@ from src.data.dashboard_data import (
     load_inclusion_financiere_data,
     load_regional_macro_data,
 )
+from app.views.risk_scores_streamlit import render_risk_scores_page
 
 st.set_page_config(
     page_title="Surendettement et indicateurs macro-économiques",
@@ -496,5 +497,19 @@ def render_charts(
     st.caption("La heatmap aide à repérer les relations entre les mesures disponibles.")
 
 
+def run_application() -> None:
+    navigation = st.navigation(
+        [
+            st.Page(main, title="Analyses territoriales", icon="📊", default=True),
+            st.Page(
+                render_risk_scores_page,
+                title="Scores territoriaux",
+                icon="🎯",
+            ),
+        ]
+    )
+    navigation.run()
+
+
 if __name__ == "__main__":
-    main()
+    run_application()
