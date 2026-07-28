@@ -1,0 +1,60 @@
+pour reconstruire la base : 
+.venv/bin/python -m src.storage.analytics_db \
+  --bdf-curated data/processed/statinfo_departements_bi_curated.csv \
+  --insee-macro data/processed/insee_macro/gold/2026/insee_macro_departements_long.csv \
+  --output-db data/processed/analytics/surendettement_macro_analytics.db
+
+Schéma : 
+dim_department
+dim_indicator
+fact_bdf_statinfo
+fact_insee_macro
+pipeline_metadata
+v_bdf_total_deposits
+v_bdf_total_deposits_with_insee_macro
+
+Volumes chargés : 
+dim_department      96
+dim_indicator       1943
+fact_bdf_statinfo   12672
+fact_insee_macro    185472
+
+** API : 
+la lancer : .venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8020
+app/core/config.py : ajout de ANALYTICS_DB_PATH
+app/core/analytics.py : connexion SQLite analytique + table d’overrides
+app/schemas/analytics.py : schémas Pydantic
+app/views/analytics_api.py : endpoints API
+app/main.py : branchement du router /api/data
+requirements.txt : ajout fastapi, sqlmodel, pydantic-settings, uvicorn
+app/tests/views/test_analytics_api.py : test logique API
+Endpoints disponibles :
+GET    /api/data/health
+GET    /api/data/departments
+GET    /api/data/indicators
+GET    /api/data/bdf
+GET    /api/data/insee
+GET    /api/data/joined
+GET    /api/data/macro-overrides
+POST   /api/data/macro-overrides
+PATCH  /api/data/macro-overrides/{override_id}
+/!\ : les ajouts et modifs se font dans une table différente : facto_macro_override
+les exemples : 
+curl "http://127.0.0.1:8020/api/data/departments?limit=5"
+curl "http://127.0.0.1:8020/api/data/joined?departement_code=75&macro_indicator_code=P22_POP&limit=10"
+curl -X POST "http://127.0.0.1:8020/api/data/macro-overrides" \
+  -H "Content-Type: application/json" \
+  -d '{"reference_year":2026,"departement_code":"75","indicator_code":"custom_indicator","indicator_name":"Indicateur custom","value":42.0,"source_note":"saisie manuelle"}'
+
+
+Savoir quels ports écoutes ou donnent : 
+sudo ss -tulpn
+
+  A faire : 
+    -vérifier la sécurité des données (vérifier qu'on ne peut que lire certaines données etc)
+    -brancher l'IA à github project comme ca ca fait des tickets et tout pour la partie agilité
+    -
+
+
+1 : lancer l'api : .venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8020
+2 : lancer le streamlit : .venv/bin/streamlit run app.py

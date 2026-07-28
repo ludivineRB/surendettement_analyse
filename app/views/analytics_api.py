@@ -284,6 +284,42 @@ def list_macro_economic_data(
         )
 
 
+@analytics_api.get("/macro-economic-regions")
+def list_regional_macro_economic_data(
+    region_name: str | None = None,
+    indicator_code: str | None = None,
+    reference_year: int | None = None,
+    limit: int = Query(5000, ge=1, le=100000),
+    offset: int = Query(0, ge=0),
+) -> list[dict]:
+    """Expose the curated INSEE macro indicators aggregated by region."""
+    filters = []
+    params = {"limit": limit, "offset": offset}
+    if region_name:
+        filters.append("region_name = :region_name")
+        params["region_name"] = region_name
+    if indicator_code:
+        filters.append("indicator_code = :indicator_code")
+        params["indicator_code"] = indicator_code
+    if reference_year:
+        filters.append("reference_year = :reference_year")
+        params["reference_year"] = reference_year
+    where = "WHERE " + " AND ".join(filters) if filters else ""
+    with analytics_connection() as connection:
+        return fetch_all(
+            connection,
+            f"""
+            SELECT reference_year, region_name, indicator_code, indicator_name,
+                   indicator_group, aggregation_rule, value
+            FROM v_insee_macro_region_selected
+            {where}
+            ORDER BY reference_year, region_name, indicator_code
+            LIMIT :limit OFFSET :offset
+            """,
+            params,
+        )
+
+
 @analytics_api.get("/joined")
 def list_joined_data(
     departement_code: str | None = None,

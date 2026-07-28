@@ -12,6 +12,7 @@ from app.views.analytics_api import (
     health,
     list_inclusion_financiere,
     list_macro_economic_data,
+    list_regional_macro_economic_data,
     list_surendettement_data,
     list_joined_data,
     streamlit_dataset,
@@ -99,6 +100,14 @@ def _create_test_analytics_db(path: Path) -> None:
             JOIN dim_department d ON d.departement_code = s.departement_code
             GROUP BY s.reference_year, s.departement_code, d.departement_name, d.region_name,
                      m.reference_year, i.indicator_code, i.indicator_name, i.indicator_group, m.value;
+            CREATE VIEW v_insee_macro_region_selected AS
+            SELECT 2022 AS reference_year,
+                   'Île-de-France' AS region_name,
+                   'P22_POP' AS indicator_code,
+                   'Population' AS indicator_name,
+                   'démographie' AS indicator_group,
+                   'sum' AS aggregation_rule,
+                   12260000.0 AS value;
             """
         )
         connection.execute("INSERT INTO dim_department VALUES ('75', 'Paris', 'Ile de France', 1)")
@@ -144,6 +153,15 @@ def test_analytics_api_reads_joined_data_and_creates_override(tmp_path: Path):
         macro = list_macro_economic_data(departement_code="75", limit=500, offset=0)
         assert macro[0]["indicator_code"] == "P22_POP"
         assert macro[0]["macro_value"] == 2_100_000
+
+        regional_macro = list_regional_macro_economic_data(
+            region_name="Île-de-France",
+            indicator_code="P22_POP",
+            reference_year=2022,
+            limit=500,
+            offset=0,
+        )
+        assert regional_macro[0]["value"] == 12_260_000
 
         joined = list_joined_data(departement_code="75", limit=500, offset=0)
         assert joined[0]["macro_indicator_code"] == "P22_POP"

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import re
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
@@ -16,7 +17,58 @@ DEFAULT_INSEE_MACRO = Path("data/processed/insee_macro/gold/2026/insee_macro_dep
 DEFAULT_SURENDETTEMENT = Path("data/processed/surendettement/gold/surendettement_departements.csv")
 DEFAULT_INSEE_METADATA = Path("data/raw/insee_macro/dossier_complet/2026/extracted/meta_dossier_complet.csv")
 DEFAULT_OUTPUT_DB = Path("data/processed/analytics/surendettement_macro_analytics.db")
-DATABASE_VERSION = "surendettement_macro_analytics_v1"
+DATABASE_VERSION = "surendettement_macro_analytics_v3"
+
+SELECTED_INSEE_INDICATORS = {
+    "P22_POP": ("Population", "démographie"),
+    "P22_POP0014": ("Population de 0 à 14 ans", "démographie"),
+    "P22_POP1529": ("Population de 15 à 29 ans", "démographie"),
+    "P22_POP3044": ("Population de 30 à 44 ans", "démographie"),
+    "P22_POP4559": ("Population de 45 à 59 ans", "démographie"),
+    "P22_POP6074": ("Population de 60 à 74 ans", "démographie"),
+    "P22_POP7589": ("Population de 75 à 89 ans", "démographie"),
+    "P22_POP90P": ("Population de 90 ans ou plus", "démographie"),
+    "P22_POP1564": ("Population de 15 à 64 ans", "démographie"),
+    "P22_ACT1564": ("Personnes actives de 15 à 64 ans", "emploi_chômage"),
+    "P22_ACTOCC1564": ("Personnes actives occupées de 15 à 64 ans", "emploi_chômage"),
+    "P22_CHOM1564": ("Chômeurs de 15 à 64 ans", "emploi_chômage"),
+    "P22_EMPLT": ("Emplois au lieu de travail", "emploi_chômage"),
+    "P22_LOG": ("Logements", "logement"),
+    "P22_RP": ("Résidences principales", "logement"),
+    "P22_RSECOCC": ("Résidences secondaires et logements occasionnels", "logement"),
+    "P22_LOGVAC": ("Logements vacants", "logement"),
+    "P22_RP_PROP": ("Résidences principales occupées par des propriétaires", "logement"),
+    "P22_RP_LOC": ("Résidences principales occupées par des locataires", "logement"),
+    "C22_MEN": ("Ménages", "familles"),
+    "C22_MENPSEUL": ("Ménages d’une personne", "familles"),
+    "C22_FAM": ("Familles", "familles"),
+    "C22_FAMMONO": ("Familles monoparentales", "familles"),
+    "P22_NSCOL15P": ("Personnes non scolarisées de 15 ans ou plus", "formation"),
+    "P22_NSCOL15P_DIPLMIN": ("Personnes sans diplôme ou titulaires au plus du CEP", "formation"),
+    "P22_NSCOL15P_SUP5": ("Diplômés de l’enseignement supérieur Bac +5 ou plus", "formation"),
+}
+VALID_SURENDETTEMENT_INDICATORS = {"surendettement_dossiers_deposes"}
+
+REGION_DEPARTMENTS = {
+    "Auvergne-Rhône-Alpes": {"01", "03", "07", "15", "26", "38", "42", "43", "63", "69", "73", "74"},
+    "Bourgogne-Franche-Comté": {"21", "25", "39", "58", "70", "71", "89", "90"},
+    "Bretagne": {"22", "29", "35", "56"},
+    "Centre-Val de Loire": {"18", "28", "36", "37", "41", "45"},
+    "Corse": {"2A", "2B"},
+    "Grand Est": {"08", "10", "51", "52", "54", "55", "57", "67", "68", "88"},
+    "Hauts-de-France": {"02", "59", "60", "62", "80"},
+    "Île-de-France": {"75", "77", "78", "91", "92", "93", "94", "95"},
+    "Normandie": {"14", "27", "50", "61", "76"},
+    "Nouvelle-Aquitaine": {"16", "17", "19", "23", "24", "33", "40", "47", "64", "79", "86", "87"},
+    "Occitanie": {"09", "11", "12", "30", "31", "32", "34", "46", "48", "65", "66", "81", "82"},
+    "Pays de la Loire": {"44", "49", "53", "72", "85"},
+    "Provence-Alpes-Côte d’Azur": {"04", "05", "06", "13", "83", "84"},
+}
+DEPARTMENT_TO_REGION = {
+    department: region
+    for region, departments in REGION_DEPARTMENTS.items()
+    for department in departments
+}
 
 
 def build_analytics_database(
@@ -101,6 +153,15 @@ def _load_insee_macro(path: Path, metadata_path: Path = DEFAULT_INSEE_METADATA) 
         df["indicator_name"] = df["metadata_indicator_name"].combine_first(df["indicator_name"])
         df["indicator_group"] = df["metadata_indicator_group"].combine_first(df["indicator_group"])
         df = df.drop(columns=["metadata_indicator_name", "metadata_indicator_group"])
+    df = df[df["indicator_code"].isin(SELECTED_INSEE_INDICATORS)].copy()
+    df["reference_year"] = df.apply(_insee_indicator_year, axis=1)
+    df["indicator_name"] = df["indicator_code"].map(
+        {code: metadata[0] for code, metadata in SELECTED_INSEE_INDICATORS.items()}
+    )
+    df["indicator_group"] = df["indicator_code"].map(
+        {code: metadata[1] for code, metadata in SELECTED_INSEE_INDICATORS.items()}
+    )
+    df["aggregation_rule"] = "sum"
     return df
 
 
@@ -124,7 +185,21 @@ def _load_surendettement(path: Path) -> pd.DataFrame:
         df["indicator_code"] = "surendettement_" + df["indicator_name"].map(_slugify)
     df["value"] = pd.to_numeric(df["value"], errors="coerce")
     df = df.dropna(subset=["reference_year", "departement_code", "value"]).copy()
-    return df[df["departement_code"].isin(EXPECTED_DEPARTMENT_CODES)].copy()
+    return df[
+        df["departement_code"].isin(EXPECTED_DEPARTMENT_CODES)
+        & df["indicator_code"].isin(VALID_SURENDETTEMENT_INDICATORS)
+    ].copy()
+
+
+def _insee_indicator_year(row: pd.Series) -> int:
+    label = str(row.get("indicator_name") or "")
+    label_match = re.search(r"\b(20\d{2})\b", label)
+    if label_match:
+        return int(label_match.group(1))
+    code_match = re.search(r"(?:^|_)(?:P|C)?(\d{2})(?:_|[A-Z])", str(row["indicator_code"]), re.I)
+    if code_match:
+        return 2000 + int(code_match.group(1))
+    raise ValueError(f"Cannot infer INSEE reference year for {row['indicator_code']}")
 
 
 def _load_insee_metadata(path: Path) -> pd.DataFrame:
@@ -157,6 +232,7 @@ def _build_departments_dimension(bdf: pd.DataFrame, insee: pd.DataFrame, surende
     departments["departement_name"] = departments["departement_name_bdf"].combine_first(
         departments["departement_name_insee"]
     )
+    departments["region_name"] = departments["departement_code"].map(DEPARTMENT_TO_REGION)
     departments["is_metropolitan_scope"] = True
     return departments[
         ["departement_code", "departement_name", "region_name", "is_metropolitan_scope"]
@@ -281,6 +357,8 @@ def _drop_existing_objects(connection: sqlite3.Connection) -> None:
         "v_bdf_total_deposits_with_insee_macro",
         "v_surendettement_annual",
         "v_surendettement_with_insee_macro",
+        "v_insee_macro_region",
+        "v_insee_macro_region_selected",
     ]
     tables = [
         "pipeline_metadata",
@@ -453,6 +531,77 @@ def _create_views(connection: sqlite3.Connection) -> None:
          )
         JOIN dim_indicator i ON i.indicator_key = m.indicator_key
         WHERE i.source_system = 'insee_macro';
+
+        CREATE VIEW v_insee_macro_region AS
+        SELECT
+            m.reference_year,
+            d.region_name,
+            i.indicator_code,
+            i.indicator_name,
+            i.indicator_group,
+            i.aggregation_rule,
+            SUM(m.value) AS value
+        FROM fact_insee_macro m
+        JOIN dim_department d ON d.departement_code = m.departement_code
+        JOIN dim_indicator i ON i.indicator_key = m.indicator_key
+        WHERE i.source_system = 'insee_macro'
+          AND d.region_name IS NOT NULL
+        GROUP BY
+            m.reference_year, d.region_name, i.indicator_code,
+            i.indicator_name, i.indicator_group, i.aggregation_rule;
+
+        CREATE VIEW v_insee_macro_region_selected AS
+        WITH ratio_definitions(
+            indicator_code, indicator_name, indicator_group,
+            numerator_code, denominator_code
+        ) AS (
+            VALUES
+                ('part_population_0014', 'Part de la population de 0 à 14 ans', 'démographie', 'P22_POP0014', 'P22_POP'),
+                ('part_population_1529', 'Part de la population de 15 à 29 ans', 'démographie', 'P22_POP1529', 'P22_POP'),
+                ('part_population_3044', 'Part de la population de 30 à 44 ans', 'démographie', 'P22_POP3044', 'P22_POP'),
+                ('part_population_4559', 'Part de la population de 45 à 59 ans', 'démographie', 'P22_POP4559', 'P22_POP'),
+                ('part_population_6074', 'Part de la population de 60 à 74 ans', 'démographie', 'P22_POP6074', 'P22_POP'),
+                ('part_population_7589', 'Part de la population de 75 à 89 ans', 'démographie', 'P22_POP7589', 'P22_POP'),
+                ('part_population_90p', 'Part de la population de 90 ans ou plus', 'démographie', 'P22_POP90P', 'P22_POP'),
+                ('taux_activite_1564', 'Taux d’activité des 15 à 64 ans', 'emploi_chômage', 'P22_ACT1564', 'P22_POP1564'),
+                ('taux_emploi_1564', 'Taux d’emploi des 15 à 64 ans', 'emploi_chômage', 'P22_ACTOCC1564', 'P22_POP1564'),
+                ('taux_chomage_1564', 'Taux de chômage des 15 à 64 ans', 'emploi_chômage', 'P22_CHOM1564', 'P22_ACT1564'),
+                ('part_residences_principales', 'Part des résidences principales', 'logement', 'P22_RP', 'P22_LOG'),
+                ('part_residences_secondaires', 'Part des résidences secondaires', 'logement', 'P22_RSECOCC', 'P22_LOG'),
+                ('part_logements_vacants', 'Part des logements vacants', 'logement', 'P22_LOGVAC', 'P22_LOG'),
+                ('part_proprietaires', 'Part des résidences principales occupées par des propriétaires', 'logement', 'P22_RP_PROP', 'P22_RP'),
+                ('part_locataires', 'Part des résidences principales occupées par des locataires', 'logement', 'P22_RP_LOC', 'P22_RP'),
+                ('part_menages_seuls', 'Part des ménages d’une personne', 'familles', 'C22_MENPSEUL', 'C22_MEN'),
+                ('part_familles_monoparentales', 'Part des familles monoparentales', 'familles', 'C22_FAMMONO', 'C22_FAM'),
+                ('part_sans_diplome', 'Part des personnes sans diplôme ou titulaires au plus du CEP', 'formation', 'P22_NSCOL15P_DIPLMIN', 'P22_NSCOL15P'),
+                ('part_diplomees_bac5', 'Part des diplômés Bac +5 ou plus', 'formation', 'P22_NSCOL15P_SUP5', 'P22_NSCOL15P')
+        ),
+        derived AS (
+            SELECT
+                numerator.reference_year,
+                numerator.region_name,
+                definitions.indicator_code,
+                definitions.indicator_name,
+                definitions.indicator_group,
+                'derived_ratio' AS aggregation_rule,
+                100.0 * numerator.value / NULLIF(denominator.value, 0) AS value
+            FROM ratio_definitions definitions
+            JOIN v_insee_macro_region numerator
+              ON numerator.indicator_code = definitions.numerator_code
+            JOIN v_insee_macro_region denominator
+              ON denominator.reference_year = numerator.reference_year
+             AND denominator.region_name = numerator.region_name
+             AND denominator.indicator_code = definitions.denominator_code
+        )
+        SELECT
+            reference_year, region_name, indicator_code, indicator_name,
+            indicator_group, aggregation_rule, value
+        FROM v_insee_macro_region
+        UNION ALL
+        SELECT
+            reference_year, region_name, indicator_code, indicator_name,
+            indicator_group, aggregation_rule, value
+        FROM derived;
         """
     )
 

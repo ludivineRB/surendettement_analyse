@@ -12,6 +12,7 @@ from config.settings import (
     API_TIMEOUT_SECONDS,
     INCLUSION_FINANCIERE_API_URL,
     MACRO_LOCAL_CSV,
+    REGIONAL_MACRO_API_URL,
     SURENDETTEMENT_LOCAL_CSV,
 )
 from src.api.surendettement_client import SurendettementApiError, fetch_surendettement_api
@@ -54,6 +55,39 @@ def load_inclusion_financiere_data() -> tuple[pd.DataFrame, list[str]]:
         ["reference_period", "region_code", "indicator_code"]
     )
     return data, [f"{len(data)} observations mensuelles chargées depuis l'API."]
+
+
+@st.cache_data(show_spinner=False, ttl=300)
+def load_regional_macro_data() -> tuple[pd.DataFrame, list[str]]:
+    """Load the curated INSEE indicators aggregated to the regional level."""
+    try:
+        response = requests.get(REGIONAL_MACRO_API_URL, timeout=API_TIMEOUT_SECONDS)
+        response.raise_for_status()
+        payload = response.json()
+    except (requests.RequestException, ValueError) as exc:
+        return pd.DataFrame(), [f"API macro régionale indisponible : {exc}"]
+
+    if not isinstance(payload, list):
+        return pd.DataFrame(), ["La réponse macro régionale n'est pas une liste."]
+
+    data = pd.DataFrame(payload)
+    required = {
+        "reference_year",
+        "region_name",
+        "indicator_code",
+        "indicator_name",
+        "value",
+    }
+    missing = sorted(required.difference(data.columns))
+    if missing:
+        return pd.DataFrame(), [f"Colonnes macro manquantes : {', '.join(missing)}"]
+
+    data["value"] = pd.to_numeric(data["value"], errors="coerce")
+    data["reference_year"] = pd.to_numeric(data["reference_year"], errors="coerce").astype("Int64")
+    data = data.dropna(subset=["value", "reference_year"]).sort_values(
+        ["reference_year", "region_name", "indicator_code"]
+    )
+    return data, [f"{len(data)} valeurs macro régionales chargées depuis l'API."]
 
 
 @st.cache_data(show_spinner=False)
