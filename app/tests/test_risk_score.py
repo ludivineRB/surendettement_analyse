@@ -7,6 +7,8 @@ from sqlalchemy.orm import sessionmaker
 
 from app.views.risk_scores_api import (
     get_risk_score,
+    get_risk_score_factors,
+    get_risk_score_series,
     list_risk_score_models,
     list_risk_scores,
 )
@@ -203,6 +205,10 @@ def test_calculation_missing_weights_levels_units_and_geographies(risk_factory):
     assert len(targeted.results) == 1
     assert targeted.results[0].score == pytest.approx(results["59"].score)
 
+    with risk_factory() as session:
+        loaded = RiskScoreCalculator._load_model(session, "test", "1.0.0")
+        assert loaded.version == "1.0.0"
+
 
 def test_persistence_upsert_detail_replacement_and_all_periods(risk_factory):
     calculator = RiskScoreCalculator(risk_factory)
@@ -244,6 +250,18 @@ def test_api_serialization(risk_factory, monkeypatch):
     assert "details" in scores[0]
     nord = get_risk_score("department", "59", "2025", model_code="test")
     assert nord["model"]["version"] == "1.0.0"
+    series = get_risk_score_series(
+        "department", "59", model_code="test", model_version="1.0.0"
+    )
+    assert series["count"] == 1
+    factors = get_risk_score_factors(
+        "department",
+        "59",
+        "2025",
+        model_code="test",
+        model_version="1.0.0",
+    )
+    assert factors["factors"]
 
 
 def test_legacy_import_is_idempotent_and_supports_corsica(tmp_path):

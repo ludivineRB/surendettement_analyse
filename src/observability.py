@@ -6,6 +6,8 @@ import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 
+from sqlalchemy import create_engine, text
+
 from src.storage.conformed_dimensions import ANALYTICS_DB
 from src.storage.database import get_database_url
 
@@ -14,7 +16,7 @@ def build_observability_report(
     operational_db: Path | None = None,
     analytics_db: Path = ANALYTICS_DB,
 ) -> dict:
-    operational_db = operational_db or _sqlite_path(get_database_url())
+    database_url = get_database_url()
     report = {
         "generated_at": datetime.now(timezone.utc).replace(
             microsecond=0
@@ -24,9 +26,14 @@ def build_observability_report(
         "analytics": {},
         "alerts": [],
     }
-    with sqlite3.connect(operational_db) as connection:
-        connection.row_factory = sqlite3.Row
-        _operational_report(connection, report)
+    if operational_db is not None or database_url.startswith("sqlite:///"):
+        sqlite_path = operational_db or _sqlite_path(database_url)
+        with sqlite3.connect(sqlite_path) as connection:
+            connection.row_factory = sqlite3.Row
+            _operational_report(connection, report)
+    else:
+        with create_engine(database_url).connect() as connection:
+            _operational_report(connection, report)
     with sqlite3.connect(analytics_db) as connection:
         connection.row_factory = sqlite3.Row
         _analytics_report(connection, report)
@@ -45,6 +52,7 @@ def _operational_report(connection: sqlite3.Connection, report: dict) -> None:
             "observations",
             "risk_scores",
             "risk_score_details",
+            "pipeline_runs",
         )
     }
     operational["active_model"] = _one(
@@ -101,6 +109,15 @@ def _operational_report(connection: sqlite3.Connection, report: dict) -> None:
         ORDER BY extractor_version, extraction_status
         """,
     )
+    operational["pipeline_runs"] = _all(
+        connection,
+        """
+        SELECT id, pipeline_name, status, started_at, finished_at,
+               error_message
+        FROM pipeline_runs
+        ORDER BY id DESC LIMIT 20
+        """,
+    )
     operational["missing_regional_dossiers"] = _all(
         connection,
         """
@@ -130,7 +147,8 @@ def _operational_report(connection: sqlite3.Connection, report: dict) -> None:
         ORDER BY reference_period DESC, region_code
         """,
     )
-    indicator_mismatches = connection.execute(
+    indicator_mismatches = _execute(
+        connection,
         """
         SELECT COUNT(*)
         FROM observations o JOIN indicators i ON i.id = o.indicator_id
@@ -138,9 +156,7 @@ def _operational_report(connection: sqlite3.Connection, report: dict) -> None:
         """
     ).fetchone()[0]
     operational["integrity"] = {
-        "foreign_key_violations": len(
-            connection.execute("PRAGMA foreign_key_check").fetchall()
-        ),
+        "foreign_key_violations": _foreign_key_violations(connection),
         "indicator_code_mismatches": indicator_mismatches,
     }
     if operational["needs_review"]:
@@ -222,13 +238,30 @@ def _sqlite_path(url: str) -> Path:
 
 
 def _count(connection: sqlite3.Connection, table: str) -> int:
-    return connection.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+    return _execute(connection, f"SELECT COUNT(*) FROM {table}").fetchone()[0]
 
 
 def _all(connection: sqlite3.Connection, query: str) -> list[dict]:
-    return [dict(row) for row in connection.execute(query).fetchall()]
+    return [_row_dict(row) for row in _execute(connection, query).fetchall()]
 
 
 def _one(connection: sqlite3.Connection, query: str) -> dict | None:
-    row = connection.execute(query).fetchone()
-    return dict(row) if row else None
+    row = _execute(connection, query).fetchone()
+    return _row_dict(row) if row else None
+
+
+def _execute(connection, query: str):
+    if isinstance(connection, sqlite3.Connection):
+        return connection.execute(query)
+    return connection.execute(text(query))
+
+
+def _row_dict(row) -> dict:
+    return dict(row) if isinstance(row, sqlite3.Row) else dict(row._mapping)
+
+
+def _foreign_key_violations(connection) -> int:
+    if isinstance(connection, sqlite3.Connection):
+        return len(connection.execute("PRAGMA foreign_key_check").fetchall())
+    # PostgreSQL enforces declared foreign keys on every write.
+    return 0

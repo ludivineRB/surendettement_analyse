@@ -1,4 +1,10 @@
-from src.risk_score.inflation_import import parse_insee_series, year_on_year_rates
+import pytest
+
+from src.risk_score.inflation_import import (
+    annual_average_rates,
+    parse_insee_series,
+    year_on_year_rates,
+)
 
 
 def test_parse_insee_series_and_compute_year_on_year_rate():
@@ -11,3 +17,6 @@ def test_parse_insee_series_and_compute_year_on_year_rate():
     indexes = parse_insee_series(payload)
     assert indexes == {"2024-01": 100.0, "2025-01": 102.5, "2025-02": 103.0}
     assert year_on_year_rates(indexes) == {"2025-01": 2.499999999999991}
+    assert annual_average_rates(
+        {"2024-01": 2.0, "2024-02": 4.0, "2025-01": 1.0}
+    ) == pytest.approx({"2024": 3.0, "2025": 1.0})

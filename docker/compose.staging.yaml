@@ -1,0 +1,13 @@
+services:
+  postgres:
+    environment:
+      APP_ENV: staging
+
+  api:
+    environment:
+      APP_ENV: staging
+
+  streamlit:
+    environment:
+      APP_ENV: staging
+

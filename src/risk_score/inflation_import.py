@@ -58,6 +58,17 @@ def year_on_year_rates(indexes: dict[str, float]) -> dict[str, float]:
     return rates
 
 
+def annual_average_rates(monthly_rates: dict[str, float]) -> dict[str, float]:
+    grouped: dict[str, list[float]] = {}
+    for period, value in monthly_rates.items():
+        grouped.setdefault(period[:4], []).append(value)
+    return {
+        year: sum(values) / len(values)
+        for year, values in grouped.items()
+        if values
+    }
+
+
 def import_inflation(
     *,
     xml_content: bytes | None = None,
@@ -67,7 +78,8 @@ def import_inflation(
         response = requests.get(SERIES_API, timeout=60)
         response.raise_for_status()
         xml_content = response.content
-    rates = year_on_year_rates(parse_insee_series(xml_content))
+    monthly_rates = year_on_year_rates(parse_insee_series(xml_content))
+    rates = {**monthly_rates, **annual_average_rates(monthly_rates)}
     report = InflationImportReport(periods_available=len(rates))
     factory = get_session_factory()
     with factory() as session:
@@ -143,16 +155,13 @@ def import_inflation(
             )
             report.observations_inserted += 1
 
-        active_model = session.execute(
-            select(RiskScoreModel).where(
-                RiskScoreModel.code == "default",
-                RiskScoreModel.is_active.is_(True),
-            )
-        ).scalar_one_or_none()
-        if active_model:
+        models = session.execute(
+            select(RiskScoreModel).where(RiskScoreModel.code == "default")
+        ).scalars()
+        for model in models:
             config = session.execute(
                 select(RiskScoreIndicatorConfig).where(
-                    RiskScoreIndicatorConfig.risk_score_model_id == active_model.id,
+                    RiskScoreIndicatorConfig.risk_score_model_id == model.id,
                     RiskScoreIndicatorConfig.logical_code == "inflation",
                 )
             ).scalar_one_or_none()

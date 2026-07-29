@@ -117,6 +117,26 @@ class InclusionIndicator(Base):
     updated_at: Mapped[str] = mapped_column(String(32), default=utc_now, onupdate=utc_now)
 
 
+class PipelineRun(Base):
+    __tablename__ = "pipeline_runs"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('running', 'success', 'failed', 'quality_failed')",
+            name="ck_pipeline_runs_status",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    pipeline_name: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    started_at: Mapped[str] = mapped_column(String(32), nullable=False, default=utc_now)
+    finished_at: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    configuration_json: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
+    step_results_json: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
+    quality_report_json: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+
 class InclusionObservation(Base):
     __tablename__ = "observations"
     __table_args__ = (

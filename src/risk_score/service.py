@@ -160,6 +160,7 @@ class RiskScoreCalculator:
         geographic_level: str,
         reference_period: str | None = None,
         model_code: str = "default",
+        model_version: str | None = None,
         geographic_code: str | None = None,
         all_periods: bool = False,
         dry_run: bool = False,
@@ -167,7 +168,7 @@ class RiskScoreCalculator:
         started = time.monotonic()
         level = normalize_geographic_level(geographic_level)
         with self.factory() as session:
-            model = self._load_model(session, model_code)
+            model = self._load_model(session, model_code, model_version)
             configs = self._load_configs(session, model.id)
             periods = self._resolve_periods(
                 session,
@@ -240,14 +241,22 @@ class RiskScoreCalculator:
             return "\n".join(lines)
 
     @staticmethod
-    def _load_model(session: Session, code: str) -> RiskScoreModel:
+    def _load_model(
+        session: Session,
+        code: str,
+        version: str | None = None,
+    ) -> RiskScoreModel:
+        statement = select(RiskScoreModel).where(RiskScoreModel.code == code)
+        if version:
+            statement = statement.where(RiskScoreModel.version == version)
+        else:
+            statement = statement.where(RiskScoreModel.is_active.is_(True))
         model = session.execute(
-            select(RiskScoreModel)
-            .where(RiskScoreModel.code == code, RiskScoreModel.is_active.is_(True))
-            .order_by(RiskScoreModel.id.desc())
+            statement.order_by(RiskScoreModel.id.desc())
         ).scalars().first()
         if model is None:
-            raise LookupError(f"No active risk score model found for code={code}")
+            suffix = f" version={version}" if version else " active"
+            raise LookupError(f"No{suffix} risk score model found for code={code}")
         return model
 
     @staticmethod

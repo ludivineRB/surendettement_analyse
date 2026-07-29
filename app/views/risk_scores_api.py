@@ -9,6 +9,7 @@ from sqlalchemy import select
 
 from app.schemas.risk_scores import RiskScoreCalculateRequest
 from src.risk_score.service import RiskScoreCalculator, normalize_geographic_level
+from src.risk_score.model_comparison import compare_model_versions
 from src.storage.database import get_session_factory
 from src.storage.models import (
     InclusionObservation,
@@ -20,6 +21,27 @@ from src.storage.models import (
 )
 
 risk_scores_api = APIRouter(prefix="/api", tags=["Risk scores"])
+
+
+@risk_scores_api.get("/risk-score-model-comparison")
+def compare_risk_score_models(
+    version_a: str = "1.1.0",
+    version_b: str = "1.2.0",
+    geographic_level: str = "department",
+    reference_period: str | None = None,
+) -> dict:
+    try:
+        return compare_model_versions(
+            version_a=version_a,
+            version_b=version_b,
+            geographic_level=_validated_level(geographic_level),
+            reference_period=reference_period,
+        )
+    except (LookupError, ValueError) as exc:
+        raise HTTPException(
+            status_code=422,
+            detail={"code": "model_comparison_invalid", "message": str(exc)},
+        ) from exc
 
 
 @risk_scores_api.get("/risk-score-models")
@@ -71,6 +93,7 @@ def list_risk_scores(
     geographic_code: str | None = None,
     reference_period: str | None = None,
     model_code: str | None = None,
+    model_version: str | None = None,
     active_model_only: bool = False,
     risk_level: str | None = None,
     sort: str = Query("score_desc", pattern="^(score_asc|score_desc)$"),
@@ -91,6 +114,8 @@ def list_risk_scores(
         statement = statement.where(RiskScore.reference_period == reference_period)
     if model_code:
         statement = statement.where(RiskScoreModel.code == model_code)
+    if model_version:
+        statement = statement.where(RiskScoreModel.version == model_version)
     if active_model_only:
         statement = statement.where(RiskScoreModel.is_active.is_(True))
     if risk_level:
@@ -103,6 +128,82 @@ def list_risk_scores(
             _serialize_score(session, score, model, include_details=True)
             for score, model in session.execute(statement)
         ]
+
+
+@risk_scores_api.get(
+    "/risk-score-series/{geographic_level}/{geographic_code}",
+    summary="Série temporelle d’un score territorial",
+    description=(
+        "Retourne les scores ordonnés par période pour un territoire et une "
+        "version de modèle. Par défaut, seule la version active est utilisée."
+    ),
+)
+def get_risk_score_series(
+    geographic_level: str,
+    geographic_code: str,
+    model_code: str = "default",
+    model_version: str | None = None,
+) -> dict:
+    rows = list_risk_scores(
+        geographic_level=geographic_level,
+        geographic_code=geographic_code,
+        model_code=model_code,
+        model_version=model_version,
+        active_model_only=model_version is None,
+        sort="score_asc",
+        limit=5000,
+        offset=0,
+    )
+    rows.sort(key=lambda item: item["reference_period"])
+    return {
+        "geographic_level": _validated_level(geographic_level),
+        "geographic_code": geographic_code,
+        "model_code": model_code,
+        "model_version": model_version or "active",
+        "count": len(rows),
+        "series": rows,
+    }
+
+
+@risk_scores_api.get(
+    "/risk-score-factors/{geographic_level}/{geographic_code}/{reference_period}",
+    summary="Facteurs contribuant à un score territorial",
+)
+def get_risk_score_factors(
+    geographic_level: str,
+    geographic_code: str,
+    reference_period: str,
+    model_code: str = "default",
+    model_version: str | None = None,
+) -> dict:
+    rows = list_risk_scores(
+        geographic_level=geographic_level,
+        geographic_code=geographic_code,
+        reference_period=reference_period,
+        model_code=model_code,
+        model_version=model_version,
+        active_model_only=model_version is None,
+        sort="score_desc",
+        limit=1,
+        offset=0,
+    )
+    if not rows:
+        raise HTTPException(
+            status_code=404,
+            detail={"code": "risk_score_factors_not_found"},
+        )
+    score = rows[0]
+    return {
+        "geographic_level": score["geographic_level"],
+        "geographic_code": score["geographic_code"],
+        "geographic_name": score["geographic_name"],
+        "reference_period": score["reference_period"],
+        "model": score["model"],
+        "score": score["score"],
+        "coverage_ratio": score["coverage_ratio"],
+        "factors": score["details"],
+        "missing_indicators": score["missing_indicators"],
+    }
 
 
 @risk_scores_api.get("/risk-scores/{geographic_level}/{geographic_code}")

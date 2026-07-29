@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from io import BytesIO
 
 import pandas as pd
 import plotly.express as px
@@ -15,6 +16,9 @@ RISK_SCORES_API_URL = os.getenv(
     "http://127.0.0.1:8020/api/risk-scores",
 )
 API_TIMEOUT_SECONDS = int(os.getenv("SURENDETTEMENT_API_TIMEOUT", "8"))
+MODEL_COMPARISON_API_URL = (
+    RISK_SCORES_API_URL.rsplit("/", 1)[0] + "/risk-score-model-comparison"
+)
 
 LEVEL_LABELS = {"region": "Régions", "department": "Départements"}
 STATUS_LABELS = {
@@ -120,6 +124,27 @@ def load_risk_scores() -> tuple[pd.DataFrame, list[str]]:
     ), messages
 
 
+@st.cache_data(show_spinner=False, ttl=300)
+def load_model_comparison(level: str) -> dict:
+    params = {
+        "version_a": "1.1.0",
+        "version_b": "1.2.0",
+        "geographic_level": level,
+    }
+    try:
+        response = requests.get(
+            MODEL_COMPARISON_API_URL,
+            params=params,
+            timeout=API_TIMEOUT_SECONDS,
+        )
+        response.raise_for_status()
+        return response.json()
+    except (requests.RequestException, ValueError):
+        from src.risk_score.model_comparison import compare_model_versions
+
+        return compare_model_versions(geographic_level=level)
+
+
 def render_risk_scores_page() -> None:
     st.title("Scores territoriaux de risque de surendettement")
     st.caption(
@@ -128,6 +153,7 @@ def render_risk_scores_page() -> None:
     )
     if st.button("Actualiser les scores", icon="🔄"):
         load_risk_scores.clear()
+        load_model_comparison.clear()
     data, messages = load_risk_scores()
     for message in messages:
         st.info(message)
@@ -183,6 +209,29 @@ def render_risk_scores_page() -> None:
         value=selected_level == "region",
         help="Masque les diagnostics dont la couverture est insuffisante.",
     )
+    available_indicators = sorted(
+        {
+            detail.get("indicator_code")
+            for details in level_data["details"]
+            if isinstance(details, list)
+            for detail in details
+            if detail.get("indicator_code")
+        }
+    )
+    advanced = st.columns(2)
+    minimum_coverage = advanced[0].slider(
+        "Couverture minimale",
+        min_value=0,
+        max_value=100,
+        value=0,
+        step=5,
+        format="%d %%",
+    )
+    required_indicators = advanced[1].multiselect(
+        "Indicateurs devant être présents",
+        available_indicators,
+        format_func=lambda code: INDICATOR_LABELS.get(code, code),
+    )
     period_start, period_end = st.select_slider(
         "Période analysée",
         periods,
@@ -196,6 +245,22 @@ def render_risk_scores_page() -> None:
     ].copy()
     if only_calculated:
         filtered = filtered[filtered["score"].notna()]
+    filtered = filtered[
+        filtered["coverage_ratio"] >= minimum_coverage / 100
+    ]
+    if required_indicators:
+        required = set(required_indicators)
+        filtered = filtered[
+            filtered["details"].map(
+                lambda details: required.issubset(
+                    {
+                        item.get("indicator_code")
+                        for item in details
+                        if isinstance(item, dict)
+                    }
+                )
+            )
+        ]
     if filtered.empty:
         st.warning("Aucun diagnostic ne correspond à cette sélection.")
         return
@@ -221,6 +286,7 @@ def render_risk_scores_page() -> None:
     evolution.update_yaxes(range=[0, 100])
     evolution.update_layout(legend_title_text="")
     st.plotly_chart(evolution, use_container_width=True)
+    _render_significant_breaks(filtered)
 
     left, right = st.columns([3, 2])
     with left:
@@ -295,6 +361,7 @@ def render_risk_scores_page() -> None:
 
     _render_score_detail(filtered)
     _render_business_validation(selected_level)
+    _render_model_comparison(selected_level)
     _render_data_table(filtered)
 
 
@@ -354,6 +421,44 @@ def _render_period_comparison(data: pd.DataFrame, periods: list[str]) -> None:
     )
     chart.update_layout(height=max(380, len(comparison) * 28))
     st.plotly_chart(chart, use_container_width=True)
+
+
+def _render_significant_breaks(data: pd.DataFrame) -> None:
+    monthly = data[
+        data["reference_period"].astype(str).str.match(r"^\d{4}-\d{2}$")
+        & data["score"].notna()
+    ].copy()
+    if monthly.empty:
+        return
+    monthly = monthly.sort_values(["geographic_code", "reference_period"])
+    monthly["variation"] = monthly.groupby("geographic_code")["score"].diff()
+    threshold = st.slider(
+        "Seuil de rupture significative",
+        min_value=1,
+        max_value=25,
+        value=10,
+        help="Variation absolue minimale du score entre deux mois consécutifs.",
+    )
+    breaks = monthly[monthly["variation"].abs() >= threshold]
+    with st.expander(
+        f"Ruptures significatives — {len(breaks)} événement(s)"
+    ):
+        if breaks.empty:
+            st.success("Aucune rupture ne dépasse le seuil sélectionné.")
+        else:
+            st.dataframe(
+                breaks[
+                    [
+                        "reference_period",
+                        "geographic_name",
+                        "score",
+                        "variation",
+                        "coverage_ratio",
+                    ]
+                ],
+                use_container_width=True,
+                hide_index=True,
+            )
 
 
 def _render_score_detail(data: pd.DataFrame) -> None:
@@ -448,6 +553,25 @@ def _render_score_detail(data: pd.DataFrame) -> None:
     )
     if source_links:
         st.caption("Sources : " + " · ".join(source_links))
+    top = details.sort_values("contribution", ascending=False).iloc[0]
+    history = calculated[
+        calculated["territory_label"] == territory
+    ].sort_values("reference_period")
+    previous = history[history["reference_period"] < period].tail(1)
+    evolution_text = ""
+    if not previous.empty:
+        delta = float(selected["score"] - previous.iloc[0]["score"])
+        evolution_text = (
+            f" Il évolue de {delta:+.1f} point(s) par rapport à "
+            f"{previous.iloc[0]['reference_period']}."
+        )
+    st.info(
+        f"{selected['geographic_name']} obtient {selected['score']:.1f}/100 "
+        f"avec une couverture de {selected['coverage_ratio']:.0%}."
+        f"{evolution_text} Le principal facteur est "
+        f"« {top['indicator_label']} », avec "
+        f"{top['contribution']:.1f} points."
+    )
 
 
 def _render_data_table(data: pd.DataFrame) -> None:
@@ -479,6 +603,18 @@ def _render_data_table(data: pd.DataFrame) -> None:
             export.to_csv(index=False).encode("utf-8"),
             file_name="scores_territoriaux.csv",
             mime="text/csv",
+        )
+        excel_buffer = BytesIO()
+        with pd.ExcelWriter(excel_buffer, engine="openpyxl") as writer:
+            export.to_excel(writer, sheet_name="Scores", index=False)
+        st.download_button(
+            "Télécharger la sélection en Excel",
+            excel_buffer.getvalue(),
+            file_name="scores_territoriaux.xlsx",
+            mime=(
+                "application/vnd.openxmlformats-officedocument."
+                "spreadsheetml.sheet"
+            ),
         )
 
 
@@ -513,3 +649,60 @@ def _render_business_validation(level: str) -> None:
             st.dataframe(volatile, use_container_width=True, hide_index=True)
         for limitation in report["limitations"]:
             st.markdown(f"- {limitation}")
+
+
+def _render_model_comparison(level: str) -> None:
+    st.subheader("Comparaison officielle des modèles 1.1.0 et 1.2.0")
+    report = load_model_comparison(level)
+    if report.get("status") != "ok":
+        st.info("Aucun score commun n’est disponible pour comparer les modèles.")
+        return
+    rows = pd.DataFrame(report["rows"])
+    periods = sorted(rows["reference_period"].unique())
+    period = st.selectbox(
+        "Période comparée entre modèles",
+        periods,
+        index=len(periods) - 1,
+    )
+    selected = rows[rows["reference_period"] == period].copy()
+    metrics = st.columns(4)
+    metrics[0].metric("Territoires", len(selected))
+    metrics[1].metric(
+        "Écart absolu moyen",
+        f"{selected['absolute_delta'].mean():.2f} points",
+    )
+    metrics[2].metric(
+        "Écart maximal",
+        f"{selected['absolute_delta'].max():.2f} points",
+    )
+    metrics[3].metric(
+        "Changements de niveau",
+        int(selected["risk_level_changed"].sum()),
+    )
+    chart = px.scatter(
+        selected,
+        x="score_a",
+        y="score_b",
+        color="score_delta",
+        hover_name="geographic_name",
+        hover_data=["rank_a", "rank_b", "risk_level_changed"],
+        color_continuous_scale="RdBu_r",
+        color_continuous_midpoint=0,
+        labels={
+            "score_a": "Score 1.1.0",
+            "score_b": "Score 1.2.0",
+            "score_delta": "Écart 1.2 − 1.1",
+        },
+    )
+    chart.add_shape(
+        type="line",
+        x0=0,
+        y0=0,
+        x1=100,
+        y1=100,
+        line={"dash": "dash", "color": "gray"},
+    )
+    chart.update_xaxes(range=[0, 100])
+    chart.update_yaxes(range=[0, 100])
+    st.plotly_chart(chart, use_container_width=True)
+    st.caption(report["interpretation"])

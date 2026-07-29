@@ -10,6 +10,7 @@ from dataclasses import asdict, dataclass
 from urllib.parse import urljoin
 
 import pandas as pd
+import pdfplumber
 import requests
 from bs4 import BeautifulSoup
 from sqlalchemy import select
@@ -26,6 +27,34 @@ PUBLICATION_URL = (
     "https://www.banque-france.fr/fr/publications-et-statistiques/publications/"
     "typologie-du-surendettement-des-menages-2025"
 )
+PUBLICATIONS = {
+    2023: {
+        "page_url": (
+            "https://www.banque-france.fr/fr/publications-et-statistiques/"
+            "statistiques/enquete-typologique-sur-le-surendettement-des-menages-en-2023"
+        ),
+        "document_url": (
+            "https://www.banque-france.fr/system/files/2024-02/"
+            "SUREN-2023_Cahier-regional-departemental.pdf"
+        ),
+        "format": "pdf",
+    },
+    2024: {
+        "page_url": (
+            "https://www.banque-france.fr/fr/publications-et-statistiques/"
+            "statistiques/enquete-typologique-sur-le-surendettement-des-menages-en-2024"
+        ),
+        "document_url": (
+            "https://www.banque-france.fr/system/files/2025-02/"
+            "SUREN-2024_Cahier-regional-departemental.pdf"
+        ),
+        "format": "pdf",
+    },
+    2025: {
+        "page_url": PUBLICATION_URL,
+        "format": "xlsx_collection",
+    },
+}
 RATE_PATTERN = re.compile(
     r"([\d \u00a0]+)\s+d[ée]p[oô]ts?\s+de\s+dossiers\s+pour\s+100[ \u00a0]000",
     re.I,
@@ -44,11 +73,12 @@ class DepartmentRateImportReport:
 def normalize_name(value: str) -> str:
     value = unicodedata.normalize("NFKD", value)
     return " ".join(
-        "".join(char for char in value if not unicodedata.combining(char))
+        "".join(
+            " " if unicodedata.category(char).startswith("P") else char
+            for char in value
+            if not unicodedata.combining(char)
+        )
         .lower()
-        .replace("-", " ")
-        .replace("’", " ")
-        .replace("'", " ")
         .split()
     )
 
@@ -79,23 +109,108 @@ def extract_department_rates(
     return found
 
 
+def extract_department_rates_pdf(
+    document: bytes,
+    known_departments: dict[str, tuple[str, str]],
+) -> dict[str, tuple[str, float]]:
+    """Read department blocks column by column from the official annual booklet."""
+    found: dict[str, tuple[str, float]] = {}
+    for code, official_name, block in _iter_department_blocks(
+        document, known_departments
+    ):
+        rate_match = re.search(
+            r"([\d ]+)\s+depots?\s+de\s+dossiers\s+pour\s+100\s+000",
+            block,
+        )
+        if rate_match:
+            raw = rate_match.group(1).replace(" ", "")
+            found[code] = (official_name, float(raw) / 100.0)
+    return found
+
+
+def extract_department_context_pdf(
+    document: bytes,
+    known_departments: dict[str, tuple[str, str]],
+) -> dict[str, dict[str, float | str]]:
+    """Extract annual contextual indicators published beside each department."""
+    found: dict[str, dict[str, float | str]] = {}
+    for code, official_name, block in _iter_department_blocks(
+        document, known_departments
+    ):
+        unemployment = re.search(r"(\d+)\s+(\d+)\s+de\s+chomage\s+e", block)
+        poverty = re.search(
+            r"(\d+)(?:\s+(\d+))?\s+des\s+menages\s+sous\s+le\s+seuil\s+"
+            r"de\s+pauvrete\s+h",
+            block,
+        )
+        if unemployment and poverty:
+            found[code] = {
+                "geographic_name": official_name,
+                "taux_chomage": _decimal_groups(unemployment),
+                "taux_pauvrete": _decimal_groups(poverty),
+            }
+    return found
+
+
+def _iter_department_blocks(document, known_departments):
+    with pdfplumber.open(io.BytesIO(document)) as pdf:
+        for page in pdf.pages:
+            width, height = page.width, page.height
+            for left, right in (
+                (0, width / 2),
+                (width / 2, width),
+            ):
+                text = page.crop((left, 0, right, height)).extract_text() or ""
+                normalized_text = normalize_name(text)
+                candidates = []
+                for normalized_name, (code, official_name) in known_departments.items():
+                    for match in re.finditer(
+                        rf"(?<!\w){re.escape(normalized_name)}(?!\w)",
+                        normalized_text,
+                    ):
+                        candidates.append(
+                            (match.start(), match.end(), code, official_name)
+                        )
+                # Prefer compound names over a department name nested inside
+                # them (e.g. Haute-Loire/Loire, Val-d'Oise/Oise).
+                headers = [
+                    candidate
+                    for candidate in candidates
+                    if not any(
+                        other[0] <= candidate[0]
+                        and other[1] >= candidate[1]
+                        and (other[1] - other[0])
+                        > (candidate[1] - candidate[0])
+                        for other in candidates
+                    )
+                ]
+                headers.sort()
+                for index, (start, _end, code, official_name) in enumerate(headers):
+                    end = (
+                        headers[index + 1][0]
+                        if index + 1 < len(headers)
+                        else len(normalized_text)
+                    )
+                    block = normalized_text[start:end]
+                    rate_match = re.search(
+                        r"([\d ]+)\s+depots?\s+de\s+dossiers\s+pour\s+100\s+000",
+                        block,
+                    )
+                    if rate_match:
+                        yield code, official_name, block
+
+
+def _decimal_groups(match: re.Match) -> float:
+    decimal = match.group(2)
+    return float(f"{match.group(1)}.{decimal}") if decimal else float(match.group(1))
+
+
 def import_department_rates(*, year: int = 2025, dry_run: bool = False):
-    if year != 2025:
-        raise ValueError("Only the verified 2025 publication is currently supported")
+    if year not in PUBLICATIONS:
+        raise ValueError(f"Unsupported publication year: {year}")
+    publication = PUBLICATIONS[year]
     session_factory = get_session_factory()
     report = DepartmentRateImportReport(year=year)
-    page = requests.get(PUBLICATION_URL, timeout=60)
-    page.raise_for_status()
-    soup = BeautifulSoup(page.text, "html.parser")
-    links = sorted(
-        {
-            urljoin(PUBLICATION_URL, anchor["href"])
-            for anchor in soup.select("a[href]")
-            if anchor["href"].lower().endswith(".xlsx")
-            and "comparaison" not in anchor["href"].lower()
-            and "national" not in anchor["href"].lower()
-        }
-    )
     with session_factory() as session:
         known = _known_departments(session)
         indicator = session.execute(
@@ -104,7 +219,7 @@ def import_department_rates(*, year: int = 2025, dry_run: bool = False):
                 == "dossiers_surendettement_1000_habitants"
             )
         ).scalar_one()
-        periods = {
+        monthly_periods = {
             row[0]
             for row in session.execute(
                 select(InclusionObservation.reference_period)
@@ -115,14 +230,33 @@ def import_department_rates(*, year: int = 2025, dry_run: bool = False):
                 .distinct()
             )
         }
+        periods = monthly_periods or {str(year)}
         all_rates: dict[str, tuple[str, float, str, str]] = {}
+        if publication["format"] == "pdf":
+            links = [publication["document_url"]]
+        else:
+            page = requests.get(publication["page_url"], timeout=60)
+            page.raise_for_status()
+            soup = BeautifulSoup(page.text, "html.parser")
+            links = sorted(
+                {
+                    urljoin(publication["page_url"], anchor["href"])
+                    for anchor in soup.select("a[href]")
+                    if anchor["href"].lower().endswith(".xlsx")
+                    and "comparaison" not in anchor["href"].lower()
+                    and "national" not in anchor["href"].lower()
+                }
+            )
         for link in links:
             response = requests.get(link, timeout=60)
             response.raise_for_status()
             report.workbooks += 1
-            for code, (name, rate) in extract_department_rates(
-                response.content, known
-            ).items():
+            extracted = (
+                extract_department_rates_pdf(response.content, known)
+                if publication["format"] == "pdf"
+                else extract_department_rates(response.content, known)
+            )
+            for code, (name, rate) in extracted.items():
                 all_rates[code] = (
                     name,
                     rate,
@@ -159,7 +293,11 @@ def import_department_rates(*, year: int = 2025, dry_run: bool = False):
                         geographic_name=name,
                         value_numeric=rate,
                         unit="dossiers_pour_1000_habitants",
-                        observation_type="annual_replicated_monthly",
+                        observation_type=(
+                            "annual_replicated_monthly"
+                            if len(period) == 7
+                            else "annual"
+                        ),
                         source_label="Dépôts pour 100 000 habitants de 15 ans et plus",
                         source_fragment=(
                             f"annual_source_year={year}; conversion=rate_per_100000/100"
@@ -218,7 +356,7 @@ def _source_document(session, period, link, source_hash, code, name):
         region_code="FR",
         region_name=name,
         reference_period=period,
-        page_url=PUBLICATION_URL,
+        page_url=PUBLICATIONS[int(period[:4])]["page_url"],
         pdf_url=link,
         pdf_filename=link.rsplit("/", 1)[-1],
         pdf_sha256=digest,

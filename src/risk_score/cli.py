@@ -25,6 +25,14 @@ from src.risk_score.department_debt_import import (
     import_department_rates,
     report_as_dict as department_report_as_dict,
 )
+from src.risk_score.historical_harmonization import (
+    harmonize_historical_departments,
+    report_as_dict as historical_report_as_dict,
+)
+from src.risk_score.endettement_import import (
+    import_mean_debt,
+    report_as_dict as mean_debt_report_as_dict,
+)
 from src.risk_score.migrate import migrate_and_seed
 from src.risk_score.service import RiskScoreCalculator
 
@@ -43,6 +51,7 @@ def build_parser() -> argparse.ArgumentParser:
     calculate.add_argument("--level", required=True)
     calculate.add_argument("--period")
     calculate.add_argument("--model", default="default")
+    calculate.add_argument("--model-version")
     calculate.add_argument("--geographic-code")
     calculate.add_argument("--all-periods", action="store_true")
     calculate.add_argument("--dry-run", action="store_true")
@@ -65,6 +74,14 @@ def build_parser() -> argparse.ArgumentParser:
     department = commands.add_parser("import-department-rates")
     department.add_argument("--year", type=int, default=2025)
     department.add_argument("--dry-run", action="store_true")
+    history = commands.add_parser("harmonize-history")
+    history.add_argument("--years", type=int, nargs="+", default=[2023, 2024])
+    history.add_argument("--dry-run", action="store_true")
+    mean_debt = commands.add_parser("import-mean-debt")
+    mean_debt.add_argument(
+        "--years", type=int, nargs="+", default=[2023, 2024, 2025]
+    )
+    mean_debt.add_argument("--dry-run", action="store_true")
     return parser
 
 
@@ -78,6 +95,7 @@ def main(argv: list[str] | None = None) -> int:
                 geographic_level=args.level,
                 reference_period=args.period,
                 model_code=args.model,
+                model_version=args.model_version,
                 geographic_code=args.geographic_code,
                 all_periods=args.all_periods,
                 dry_run=args.dry_run,
@@ -117,7 +135,7 @@ def main(argv: list[str] | None = None) -> int:
                     indent=2,
                 )
             )
-        else:
+        elif args.command == "import-department-rates":
             report = import_department_rates(
                 year=args.year,
                 dry_run=args.dry_run,
@@ -125,6 +143,30 @@ def main(argv: list[str] | None = None) -> int:
             print(
                 json.dumps(
                     department_report_as_dict(report),
+                    ensure_ascii=False,
+                    indent=2,
+                )
+            )
+        elif args.command == "harmonize-history":
+            report = harmonize_historical_departments(
+                tuple(args.years),
+                dry_run=args.dry_run,
+            )
+            print(
+                json.dumps(
+                    historical_report_as_dict(report),
+                    ensure_ascii=False,
+                    indent=2,
+                )
+            )
+        else:
+            report = import_mean_debt(
+                tuple(args.years),
+                dry_run=args.dry_run,
+            )
+            print(
+                json.dumps(
+                    mean_debt_report_as_dict(report),
                     ensure_ascii=False,
                     indent=2,
                 )

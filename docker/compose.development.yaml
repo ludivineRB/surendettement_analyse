@@ -1,0 +1,21 @@
+services:
+  api:
+    environment:
+      APP_ENV: development
+    volumes:
+      - ..:/workspace
+    command:
+      - uvicorn
+      - app.main:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8020"
+      - --reload
+
+  streamlit:
+    environment:
+      APP_ENV: development
+    volumes:
+      - ..:/workspace
+

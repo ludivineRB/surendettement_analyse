@@ -142,6 +142,28 @@ def render_observability_page() -> None:
             hide_index=True,
         )
 
+    st.subheader("Dernières exécutions automatisées")
+    pipeline_runs = pd.DataFrame(operational.get("pipeline_runs", []))
+    if pipeline_runs.empty:
+        st.info(
+            "Aucune exécution complète n’est encore journalisée. "
+            "Le prochain rafraîchissement apparaîtra ici."
+        )
+    else:
+        st.dataframe(
+            pipeline_runs.rename(
+                columns={
+                    "pipeline_name": "Pipeline",
+                    "status": "Statut",
+                    "started_at": "Début",
+                    "finished_at": "Fin",
+                    "error_message": "Erreur",
+                }
+            ),
+            use_container_width=True,
+            hide_index=True,
+        )
+
     missing = pd.DataFrame(operational["missing_regional_dossiers"])
     review = pd.DataFrame(operational["needs_review"])
     detail_left, detail_right = st.columns(2)
