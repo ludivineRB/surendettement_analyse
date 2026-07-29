@@ -17,7 +17,7 @@ DEFAULT_INSEE_MACRO = Path("data/processed/insee_macro/gold/2026/insee_macro_dep
 DEFAULT_SURENDETTEMENT = Path("data/processed/surendettement/gold/surendettement_departements.csv")
 DEFAULT_INSEE_METADATA = Path("data/raw/insee_macro/dossier_complet/2026/extracted/meta_dossier_complet.csv")
 DEFAULT_OUTPUT_DB = Path("data/processed/analytics/surendettement_macro_analytics.db")
-DATABASE_VERSION = "surendettement_macro_analytics_v3"
+DATABASE_VERSION = "surendettement_macro_analytics_v4"
 
 SELECTED_INSEE_INDICATORS = {
     "P22_POP": ("Population", "démographie"),
@@ -101,6 +101,9 @@ def build_analytics_database(
         )
         _create_indexes(connection)
         _create_views(connection)
+        from src.storage.conformed_dimensions import _migrate_analytics
+
+        _migrate_analytics(connection)
         connection.commit()
 
         return {
@@ -155,11 +158,15 @@ def _load_insee_macro(path: Path, metadata_path: Path = DEFAULT_INSEE_METADATA) 
         df = df.drop(columns=["metadata_indicator_name", "metadata_indicator_group"])
     df = df[df["indicator_code"].isin(SELECTED_INSEE_INDICATORS)].copy()
     df["reference_year"] = df.apply(_insee_indicator_year, axis=1)
-    df["indicator_name"] = df["indicator_code"].map(
-        {code: metadata[0] for code, metadata in SELECTED_INSEE_INDICATORS.items()}
+    df["indicator_name"] = df["indicator_name"].fillna(
+        df["indicator_code"].map(
+            {code: metadata[0] for code, metadata in SELECTED_INSEE_INDICATORS.items()}
+        )
     )
-    df["indicator_group"] = df["indicator_code"].map(
-        {code: metadata[1] for code, metadata in SELECTED_INSEE_INDICATORS.items()}
+    df["indicator_group"] = df["indicator_group"].fillna(
+        df["indicator_code"].map(
+            {code: metadata[1] for code, metadata in SELECTED_INSEE_INDICATORS.items()}
+        )
     )
     df["aggregation_rule"] = "sum"
     return df
@@ -183,6 +190,12 @@ def _load_surendettement(path: Path) -> pd.DataFrame:
         df["departement_code"] = df["departement"].map(_standardize_department_code)
         df["indicator_name"] = df["indicator_name"].astype(str)
         df["indicator_code"] = "surendettement_" + df["indicator_name"].map(_slugify)
+        df["indicator_code"] = df["indicator_code"].replace(
+            {
+                "surendettement_dossiers":
+                    "surendettement_dossiers_deposes",
+            }
+        )
     df["value"] = pd.to_numeric(df["value"], errors="coerce")
     df = df.dropna(subset=["reference_year", "departement_code", "value"]).copy()
     return df[

@@ -73,6 +73,7 @@ def load_regional_macro_data() -> tuple[pd.DataFrame, list[str]]:
     data = pd.DataFrame(payload)
     required = {
         "reference_year",
+        "region_code",
         "region_name",
         "indicator_code",
         "indicator_name",
@@ -85,7 +86,7 @@ def load_regional_macro_data() -> tuple[pd.DataFrame, list[str]]:
     data["value"] = pd.to_numeric(data["value"], errors="coerce")
     data["reference_year"] = pd.to_numeric(data["reference_year"], errors="coerce").astype("Int64")
     data = data.dropna(subset=["value", "reference_year"]).sort_values(
-        ["reference_year", "region_name", "indicator_code"]
+        ["reference_year", "region_code", "indicator_code"]
     )
     return data, [f"{len(data)} valeurs macro régionales chargées depuis l'API."]
 

@@ -279,7 +279,11 @@ class RiskScoreCalculator:
         geographic_code: str | None,
         summary: ExecutionSummary,
     ) -> list[TerritoryScoreResult]:
-        configs_by_code = {config.indicator_code: config for config in configs}
+        configs_by_id = {
+            config.indicator_id: config
+            for config in configs
+            if config.indicator_id is not None
+        }
         statement = (
             select(InclusionObservation, InclusionSourceDocument)
             .join(
@@ -289,7 +293,7 @@ class RiskScoreCalculator:
             .where(
                 InclusionObservation.geographic_level == level,
                 InclusionObservation.reference_period == period,
-                InclusionObservation.indicator_code.in_(configs_by_code),
+                InclusionObservation.indicator_id.in_(configs_by_id),
                 InclusionObservation.value_numeric.is_not(None),
                 InclusionObservation.geographic_code.is_not(None),
             )
@@ -308,26 +312,26 @@ class RiskScoreCalculator:
         warnings_by_territory: dict[str, list[str]] = {}
         for observation, _document in session.execute(statement):
             code = str(observation.geographic_code)
-            config = configs_by_code[observation.indicator_code]
+            config = configs_by_id[observation.indicator_id]
             if not math.isfinite(float(observation.value_numeric)):
                 warnings_by_territory.setdefault(code, []).append(
-                    f"non_finite_value:{observation.indicator_code}"
+                    f"non_finite_value:{config.indicator_code}"
                 )
                 continue
             if config.expected_unit and observation.unit != config.expected_unit:
                 warning = (
-                    f"incompatible_unit:{observation.indicator_code}:"
+                    f"incompatible_unit:{config.indicator_code}:"
                     f"expected={config.expected_unit}:actual={observation.unit}"
                 )
                 warnings_by_territory.setdefault(code, []).append(warning)
                 summary.incompatible_units.append(f"{code}:{warning}")
                 continue
             selected.setdefault(
-                (code, observation.indicator_code),
+                (code, config.indicator_code),
                 ObservationValue(
                     id=observation.id,
                     indicator_id=observation.indicator_id,
-                    indicator_code=observation.indicator_code,
+                    indicator_code=config.indicator_code,
                     geographic_code=code,
                     geographic_name=observation.geographic_name,
                     value=float(observation.value_numeric),

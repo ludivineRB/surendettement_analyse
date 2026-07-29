@@ -189,9 +189,16 @@ def render_inclusion_financiere_dashboard() -> None:
 
     if not macro_data.empty and selected_macro:
         inclusion_by_region = (
-            filtered.groupby(["region_name", "indicator_label"], as_index=False)["value"]
+            filtered.groupby(
+                ["region_code", "region_name", "indicator_label"],
+                as_index=False,
+            )["value"]
             .mean()
-            .pivot(index="region_name", columns="indicator_label", values="value")
+            .pivot(
+                index=["region_code", "region_name"],
+                columns="indicator_label",
+                values="value",
+            )
             .add_prefix("Inclusion — ")
             .reset_index()
         )
@@ -201,13 +208,13 @@ def render_inclusion_financiere_dashboard() -> None:
                 macro_data["indicator_code"].isin(selected_macro_codes)
                 & macro_data["region_name"].isin(selected_regions)
             ]
-            .pivot(index="region_name", columns="indicator_name", values="value")
+            .pivot(index="region_code", columns="indicator_name", values="value")
             .add_prefix("Macro — ")
             .reset_index()
         )
         comparison = inclusion_by_region.merge(
             selected_macro_data,
-            on="region_name",
+            on="region_code",
             how="inner",
         )
         inclusion_columns = [column for column in comparison if column.startswith("Inclusion — ")]

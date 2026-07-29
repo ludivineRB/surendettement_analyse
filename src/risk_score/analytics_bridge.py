@@ -172,10 +172,19 @@ def import_analytics_indicators(
 
 
 def _load_macro(connection: sqlite3.Connection) -> list[sqlite3.Row]:
+    department_columns = {
+        row[1]
+        for row in connection.execute("PRAGMA table_info(dim_department)")
+    }
+    region_code = (
+        "d.region_code"
+        if "region_code" in department_columns
+        else "NULL AS region_code"
+    )
     return connection.execute(
-        """
+        f"""
         SELECT f.reference_year, f.departement_code, d.departement_name,
-               d.region_name, i.indicator_code, f.value
+               d.region_name, {region_code}, i.indicator_code, f.value
         FROM fact_insee_macro f
         JOIN dim_department d USING (departement_code)
         JOIN dim_indicator i USING (indicator_key)
@@ -200,7 +209,7 @@ def _latest_macro_for_period(
         if int(row["reference_year"]) != selected_year:
             continue
         region_name = row["region_name"]
-        region_code = REGION_CODES.get(region_name)
+        region_code = row["region_code"] or REGION_CODES.get(region_name)
         if not region_code:
             continue
         item = departments.setdefault(
@@ -271,12 +280,15 @@ def _regional_dossiers(
 ) -> float | None:
     value = session.execute(
         select(InclusionObservation.value_numeric)
+        .join(
+            InclusionIndicator,
+            InclusionIndicator.id == InclusionObservation.indicator_id,
+        )
         .where(
             InclusionObservation.geographic_level == "region",
             InclusionObservation.geographic_code == region_code,
             InclusionObservation.reference_period == period,
-            InclusionObservation.indicator_code
-            == "surendettement_dossiers_deposes",
+            InclusionIndicator.code == "surendettement_dossiers_deposes",
         )
         .order_by(
             InclusionObservation.confidence_score.desc().nullslast(),

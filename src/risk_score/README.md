@@ -35,6 +35,32 @@ Pour un territoire, une période et un indicateur, la sélection privilégie :
 Les unités incompatibles, valeurs non finies et codes géographiques absents
 sont ignorés avec avertissement.
 
+Les traitements internes sélectionnent désormais les indicateurs par
+`indicator_id`. Le champ `indicator_code` reste dénormalisé dans
+`observations` pour préserver les contrats API ; des déclencheurs SQL refusent
+toute divergence entre les deux champs.
+
+## Dimensions conformes
+
+Les bases analytique et opérationnelle partagent le même contrat :
+
+- `dim_region(region_code, region_name)` ;
+- `dim_period(period_key, reference_year, reference_month_number, granularity)`.
+
+`dim_department.region_code` porte le rapprochement technique avec la région.
+Les vues macro régionales exposent toujours `region_name` pour compatibilité,
+mais leurs jointures et ratios utilisent `region_code`.
+
+La migration idempotente s'exécute avec :
+
+```bash
+.venv/bin/python -m src.storage.conformed_dimensions
+```
+
+`fact_surendettement` et ses deux vues historiques sont conservés, mais inscrits
+dans `schema_deprecations`. `fact_macro_override` possède des clés étrangères
+physiques vers les dimensions période, département et indicateur.
+
 ## Migration et mapping
 
 Le dépôt n'utilise pas Alembic. La migration idempotente repose sur les

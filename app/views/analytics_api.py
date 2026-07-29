@@ -163,7 +163,7 @@ def list_inclusion_financiere(
             InclusionObservation.reference_period,
             InclusionObservation.region_code,
             InclusionObservation.geographic_name.label("region_name"),
-            InclusionObservation.indicator_code,
+            InclusionIndicator.code.label("indicator_code"),
             InclusionIndicator.label.label("indicator_label"),
             InclusionObservation.value_numeric.label("value"),
             InclusionObservation.unit,
@@ -179,7 +179,7 @@ def list_inclusion_financiere(
     if region_code:
         statement = statement.where(InclusionObservation.region_code == region_code.strip())
     if indicator_code:
-        statement = statement.where(InclusionObservation.indicator_code == indicator_code)
+        statement = statement.where(InclusionIndicator.code == indicator_code)
     if from_period:
         statement = statement.where(InclusionObservation.reference_period >= from_period)
     if to_period:
@@ -286,6 +286,7 @@ def list_macro_economic_data(
 
 @analytics_api.get("/macro-economic-regions")
 def list_regional_macro_economic_data(
+    region_code: str | None = None,
     region_name: str | None = None,
     indicator_code: str | None = None,
     reference_year: int | None = None,
@@ -295,6 +296,9 @@ def list_regional_macro_economic_data(
     """Expose the curated INSEE macro indicators aggregated by region."""
     filters = []
     params = {"limit": limit, "offset": offset}
+    if region_code:
+        filters.append("region_code = :region_code")
+        params["region_code"] = region_code.strip()
     if region_name:
         filters.append("region_name = :region_name")
         params["region_name"] = region_name
@@ -306,10 +310,27 @@ def list_regional_macro_economic_data(
         params["reference_year"] = reference_year
     where = "WHERE " + " AND ".join(filters) if filters else ""
     with analytics_connection() as connection:
+        columns = {
+            row["name"]
+            for row in connection.execute(
+                "PRAGMA table_info(v_insee_macro_region_selected)"
+            )
+        }
+        if region_code and "region_code" not in columns:
+            raise HTTPException(
+                status_code=409,
+                detail="Analytics schema migration required for region_code",
+            )
+        region_projection = (
+            "region_code, region_name"
+            if "region_code" in columns
+            else "region_name"
+        )
         return fetch_all(
             connection,
             f"""
-            SELECT reference_year, region_name, indicator_code, indicator_name,
+            SELECT reference_year, {region_projection},
+                   indicator_code, indicator_name,
                    indicator_group, aggregation_rule, value
             FROM v_insee_macro_region_selected
             {where}
@@ -402,23 +423,85 @@ def streamlit_dataset(
 @analytics_api.post("/macro-overrides", response_model=MacroOverrideRead, status_code=201)
 def create_macro_override(payload: MacroOverrideCreate) -> dict:
     now = utc_now()
+    indicator_key = f"override:{payload.indicator_code}"
     with analytics_connection() as connection:
-        cursor = connection.execute(
-            """
-            INSERT INTO fact_macro_override (
-                reference_year, departement_code, indicator_code, indicator_name,
-                indicator_group, value, source_note, created_at, updated_at
+        columns = {
+            row["name"]
+            for row in connection.execute(
+                "PRAGMA table_info(fact_macro_override)"
             )
-            VALUES (
-                :reference_year, :departement_code, :indicator_code, :indicator_name,
-                :indicator_group, :value, :source_note, :created_at, :updated_at
+        }
+        base_params = {
+            **payload.model_dump(),
+            "departement_code": _standardize_department_code(
+                payload.departement_code
+            ),
+            "created_at": now,
+            "updated_at": now,
+        }
+        if "period_key" not in columns:
+            cursor = connection.execute(
+                """
+                INSERT INTO fact_macro_override (
+                    reference_year, departement_code, indicator_code,
+                    indicator_name, indicator_group, value, source_note,
+                    created_at, updated_at
+                ) VALUES (
+                    :reference_year, :departement_code, :indicator_code,
+                    :indicator_name, :indicator_group, :value, :source_note,
+                    :created_at, :updated_at
+                )
+                """,
+                base_params,
+            )
+            return fetch_one(
+                connection,
+                "SELECT * FROM fact_macro_override WHERE id = :id",
+                {"id": cursor.lastrowid},
+            )
+        connection.execute(
+            """
+            INSERT OR IGNORE INTO dim_period(
+                period_key, reference_year, reference_month_number, granularity
+            ) VALUES (:period_key, :reference_year, NULL, 'year')
+            """,
+            {
+                "period_key": str(payload.reference_year),
+                "reference_year": payload.reference_year,
+            },
+        )
+        connection.execute(
+            """
+            INSERT OR IGNORE INTO dim_indicator(
+                indicator_key, source_system, indicator_code, indicator_name,
+                indicator_group, aggregation_rule
+            ) VALUES (
+                :indicator_key, 'override', :indicator_code, :indicator_name,
+                :indicator_group, 'manual'
             )
             """,
             {
-                **payload.model_dump(),
-                "departement_code": _standardize_department_code(payload.departement_code),
-                "created_at": now,
-                "updated_at": now,
+                **base_params,
+                "indicator_key": indicator_key,
+            },
+        )
+        cursor = connection.execute(
+            """
+            INSERT INTO fact_macro_override (
+                period_key, reference_year, departement_code, indicator_key,
+                indicator_code, indicator_name, indicator_group, value,
+                source_note, created_at, updated_at
+            )
+            VALUES (
+                :period_key, :reference_year, :departement_code, :indicator_key,
+                :indicator_code, :indicator_name, :indicator_group, :value,
+                :source_note, :created_at, :updated_at
+            )
+            """,
+            {
+                **base_params,
+                "period_key": str(payload.reference_year),
+                "indicator_key": indicator_key,
             },
         )
         row = fetch_one(

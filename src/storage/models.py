@@ -23,6 +23,35 @@ class Base(DeclarativeBase):
     pass
 
 
+class GeographicRegion(Base):
+    __tablename__ = "dim_region"
+
+    region_code: Mapped[str] = mapped_column(String(16), primary_key=True)
+    region_name: Mapped[str] = mapped_column(
+        String(255), nullable=False, unique=True
+    )
+    is_metropolitan_scope: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True
+    )
+
+
+class ReferencePeriod(Base):
+    __tablename__ = "dim_period"
+    __table_args__ = (
+        CheckConstraint(
+            "granularity IN ('month', 'year')",
+            name="ck_dim_period_granularity",
+        ),
+    )
+
+    period_key: Mapped[str] = mapped_column(String(16), primary_key=True)
+    reference_year: Mapped[int] = mapped_column(Integer, nullable=False)
+    reference_month_number: Mapped[int | None] = mapped_column(
+        Integer, nullable=True
+    )
+    granularity: Mapped[str] = mapped_column(String(16), nullable=False)
+
+
 class SurendettementData(Base):
     __tablename__ = "surendettement_data"
 
