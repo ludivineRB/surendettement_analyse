@@ -8,6 +8,7 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 import requests
+from config.settings import DEPARTMENTS_GEOJSON_URL, REGIONS_GEOJSON_URL
 
 RISK_SCORES_API_URL = os.getenv(
     "RISK_SCORES_API_URL",
@@ -54,7 +55,11 @@ def load_risk_scores() -> tuple[pd.DataFrame, list[str]]:
     try:
         response = requests.get(
             RISK_SCORES_API_URL,
-            params={"model_code": "default", "limit": 5000},
+            params={
+                "model_code": "default",
+                "active_model_only": True,
+                "limit": 5000,
+            },
             timeout=API_TIMEOUT_SECONDS,
         )
         response.raise_for_status()
@@ -68,6 +73,7 @@ def load_risk_scores() -> tuple[pd.DataFrame, list[str]]:
 
             payload = list_risk_scores(
                 model_code="default",
+                active_model_only=True,
                 sort="score_desc",
                 limit=5000,
                 offset=0,
@@ -120,6 +126,8 @@ def render_risk_scores_page() -> None:
         "Indice comparatif territorial de 0 à 100. Il ne constitue ni une "
         "probabilité individuelle ni une décision de crédit."
     )
+    if st.button("Actualiser les scores", icon="🔄"):
+        load_risk_scores.clear()
     data, messages = load_risk_scores()
     for message in messages:
         st.info(message)
@@ -129,6 +137,14 @@ def render_risk_scores_page() -> None:
             "et que les scores ont été calculés."
         )
         return
+    versions = sorted(
+        {
+            item.get("version")
+            for item in data["model"]
+            if isinstance(item, dict) and item.get("version")
+        }
+    )
+    st.caption("Modèle affiché : " + ", ".join(versions))
 
     selected_level = st.segmented_control(
         "Niveau territorial",
@@ -185,6 +201,7 @@ def render_risk_scores_page() -> None:
         return
 
     _render_kpis(filtered)
+    _render_period_comparison(filtered, periods)
     latest_period = filtered["reference_period"].max()
     latest = filtered[filtered["reference_period"] == latest_period].copy()
 
@@ -251,7 +268,33 @@ def render_risk_scores_page() -> None:
         )
         st.plotly_chart(coverage_chart, use_container_width=True)
 
+    territory_label = "régionale" if selected_level == "region" else "départementale"
+    st.subheader(f"Carte {territory_label} — {latest_period}")
+    mapped = latest.dropna(subset=["score"])
+    map_chart = px.choropleth_mapbox(
+        mapped,
+        geojson=(
+            REGIONS_GEOJSON_URL
+            if selected_level == "region"
+            else DEPARTMENTS_GEOJSON_URL
+        ),
+        locations="geographic_code",
+        featureidkey="properties.code",
+        color="score",
+        hover_name="geographic_name",
+        hover_data={"coverage_ratio": ":.0%", "geographic_code": True},
+        color_continuous_scale="RdYlGn_r",
+        range_color=(0, 100),
+        mapbox_style="carto-positron",
+        center={"lat": 46.6, "lon": 2.4},
+        zoom=4.6,
+        opacity=0.75,
+    )
+    map_chart.update_layout(height=540, margin={"r": 0, "t": 0, "l": 0, "b": 0})
+    st.plotly_chart(map_chart, use_container_width=True)
+
     _render_score_detail(filtered)
+    _render_business_validation(selected_level)
     _render_data_table(filtered)
 
 
@@ -274,6 +317,43 @@ def _render_kpis(data: pd.DataFrame) -> None:
         "Territoires",
         int(data["geographic_code"].nunique()),
     )
+
+
+def _render_period_comparison(data: pd.DataFrame, periods: list[str]) -> None:
+    st.subheader("Comparer deux périodes")
+    columns = st.columns(2)
+    period_a = columns[0].selectbox(
+        "Période de départ", periods, index=max(0, len(periods) - 2)
+    )
+    period_b = columns[1].selectbox(
+        "Période d’arrivée", periods, index=len(periods) - 1
+    )
+    comparison = (
+        data[data["reference_period"].isin((period_a, period_b))]
+        .pivot_table(
+            index=["geographic_code", "geographic_name", "territory_label"],
+            columns="reference_period",
+            values="score",
+            aggfunc="first",
+        )
+        .reset_index()
+    )
+    if period_a not in comparison or period_b not in comparison:
+        st.info("Les deux périodes ne disposent pas de scores comparables.")
+        return
+    comparison["variation"] = comparison[period_b] - comparison[period_a]
+    chart = px.bar(
+        comparison.dropna(subset=["variation"]).sort_values("variation"),
+        x="variation",
+        y="territory_label",
+        orientation="h",
+        color="variation",
+        color_continuous_scale="RdYlGn_r",
+        color_continuous_midpoint=0,
+        labels={"variation": "Variation du score", "territory_label": "Territoire"},
+    )
+    chart.update_layout(height=max(380, len(comparison) * 28))
+    st.plotly_chart(chart, use_container_width=True)
 
 
 def _render_score_detail(data: pd.DataFrame) -> None:
@@ -359,6 +439,15 @@ def _render_score_detail(data: pd.DataFrame) -> None:
         use_container_width=True,
         hide_index=True,
     )
+    source_links = sorted(
+        {
+            item
+            for item in details.get("source_url", pd.Series(dtype=str)).dropna()
+            if str(item).startswith(("http://", "https://"))
+        }
+    )
+    if source_links:
+        st.caption("Sources : " + " · ".join(source_links))
 
 
 def _render_data_table(data: pd.DataFrame) -> None:
@@ -391,3 +480,36 @@ def _render_data_table(data: pd.DataFrame) -> None:
             file_name="scores_territoriaux.csv",
             mime="text/csv",
         )
+
+
+def _render_business_validation(level: str) -> None:
+    with st.expander("Validation métier et limites du modèle"):
+        from src.risk_score.validation import build_score_validation_report
+
+        report = build_score_validation_report(level)
+        if report["status"] != "ok":
+            st.info("Données insuffisantes pour valider ce niveau territorial.")
+            return
+        metrics = st.columns(3)
+        correlation = report["dossier_rate_spearman"]
+        sensitivity = report["equal_weight_rank_spearman"]
+        metrics[0].metric(
+            "Corrélation score–dossiers",
+            f"{correlation:.2f}" if correlation is not None else "—",
+            help="Corrélation de rang de Spearman.",
+        )
+        metrics[1].metric(
+            "Variation mensuelle moyenne",
+            f"{report['mean_absolute_monthly_change']:.1f} points",
+        )
+        metrics[2].metric(
+            "Stabilité avec poids égaux",
+            f"{sensitivity:.2f}" if sensitivity is not None else "—",
+            help="Corrélation de rang entre le modèle et une pondération égale.",
+        )
+        volatile = pd.DataFrame(report["most_volatile"])
+        if not volatile.empty:
+            st.caption("Territoires dont le score varie le plus d’un mois à l’autre")
+            st.dataframe(volatile, use_container_width=True, hide_index=True)
+        for limitation in report["limitations"]:
+            st.markdown(f"- {limitation}")

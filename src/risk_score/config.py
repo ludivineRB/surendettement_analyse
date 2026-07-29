@@ -105,6 +105,21 @@ MODEL_1_1_SPEC: dict[str, Any] = {
     ],
 }
 
+MODEL_1_2_SPEC: dict[str, Any] = {
+    **MODEL_1_1_SPEC,
+    "version": "1.2.0",
+    "normalization_method": "winsorized_min_max",
+    "description": (
+        f"{DEFAULT_MODEL_SPEC['description']} Version robuste 1.2 : normalisation "
+        "Min-Max bornée aux percentiles 5 et 95 de chaque cohorte territoriale."
+    ),
+    "normalization_parameters": {
+        "lower_percentile": 0.05,
+        "upper_percentile": 0.95,
+        "reference_scope": "geographic_level_and_period",
+    },
+}
+
 
 def seed_default_model(
     session: Session,
@@ -177,6 +192,11 @@ def seed_model_1_1(session: Session) -> dict[str, Any]:
     return _seed_model(session, MODEL_1_1_SPEC)
 
 
+def seed_model_1_2(session: Session) -> dict[str, Any]:
+    """Seed the robust model without mutating the preceding model versions."""
+    return _seed_model(session, MODEL_1_2_SPEC)
+
+
 def _seed_model(session: Session, spec: dict[str, Any]) -> dict[str, Any]:
     existing = session.execute(
         select(RiskScoreModel).where(
@@ -223,7 +243,13 @@ def _seed_model(session: Session, spec: dict[str, Any]) -> dict[str, Any]:
         minimum_coverage_ratio=spec["minimum_coverage_ratio"],
         is_active=True,
         configuration_json=json.dumps(
-            {"risk_levels": spec["risk_levels"]}, ensure_ascii=False
+            {
+                "risk_levels": spec["risk_levels"],
+                "normalization_parameters": spec.get(
+                    "normalization_parameters", {}
+                ),
+            },
+            ensure_ascii=False,
         ),
     )
     session.add(model)

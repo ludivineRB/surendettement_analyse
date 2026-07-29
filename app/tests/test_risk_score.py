@@ -16,6 +16,7 @@ from src.risk_score.service import (
     classify_risk,
     min_max_normalize,
     normalize_geographic_level,
+    percentile,
 )
 from src.storage.models import (
     Base,
@@ -154,6 +155,8 @@ def test_normalization_and_classification():
     assert classify_risk(100, RISK_LEVELS)[0] == "very_high"
     with pytest.raises(ValueError):
         min_max_normalize(math.inf, 0, 1, "positive")
+    assert percentile([0, 10, 20, 30, 1000], 0.05) == pytest.approx(2)
+    assert percentile([0, 10, 20, 30, 1000], 0.95) == pytest.approx(806)
 
 
 def test_calculation_missing_weights_levels_units_and_geographies(risk_factory):
@@ -189,6 +192,16 @@ def test_calculation_missing_weights_levels_units_and_geographies(risk_factory):
     assert {result.geographic_code for result in region_summary.results} == {"32", "94"}
     assert normalize_geographic_level("DEP") == "department"
     assert normalize_geographic_level("région") == "region"
+
+    targeted = RiskScoreCalculator(risk_factory).calculate(
+        "department",
+        "2025",
+        model_code="test",
+        geographic_code="59",
+        dry_run=True,
+    )
+    assert len(targeted.results) == 1
+    assert targeted.results[0].score == pytest.approx(results["59"].score)
 
 
 def test_persistence_upsert_detail_replacement_and_all_periods(risk_factory):

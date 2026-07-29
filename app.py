@@ -18,6 +18,7 @@ from src.data.dashboard_data import (
     load_regional_macro_data,
 )
 from app.views.risk_scores_streamlit import render_risk_scores_page
+from app.views.observability_streamlit import render_observability_page
 
 st.set_page_config(
     page_title="Surendettement et indicateurs macro-économiques",
@@ -512,6 +513,11 @@ def run_application() -> None:
                 render_risk_scores_page,
                 title="Scores territoriaux",
                 icon="🎯",
+            ),
+            st.Page(
+                render_observability_page,
+                title="Supervision",
+                icon="🩺",
             ),
         ]
     )

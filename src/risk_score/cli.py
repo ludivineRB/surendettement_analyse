@@ -17,6 +17,14 @@ from src.risk_score.filosofi_import import (
     report_as_dict as filosofi_report_as_dict,
 )
 from src.risk_score.legacy_import import import_legacy_surendettement
+from src.risk_score.inflation_import import (
+    import_inflation,
+    report_as_dict as inflation_report_as_dict,
+)
+from src.risk_score.department_debt_import import (
+    import_department_rates,
+    report_as_dict as department_report_as_dict,
+)
 from src.risk_score.migrate import migrate_and_seed
 from src.risk_score.service import RiskScoreCalculator
 
@@ -52,6 +60,11 @@ def build_parser() -> argparse.ArgumentParser:
     filosofi = commands.add_parser("import-filosofi")
     filosofi.add_argument("--source-zip", type=Path, required=True)
     filosofi.add_argument("--dry-run", action="store_true")
+    inflation = commands.add_parser("import-inflation")
+    inflation.add_argument("--dry-run", action="store_true")
+    department = commands.add_parser("import-department-rates")
+    department.add_argument("--year", type=int, default=2025)
+    department.add_argument("--dry-run", action="store_true")
     return parser
 
 
@@ -83,7 +96,7 @@ def main(argv: list[str] | None = None) -> int:
                 dry_run=args.dry_run,
             )
             print(json.dumps(report_as_dict(report), ensure_ascii=False, indent=2))
-        else:
+        elif args.command == "import-filosofi":
             report = import_filosofi(
                 args.source_zip,
                 dry_run=args.dry_run,
@@ -91,6 +104,27 @@ def main(argv: list[str] | None = None) -> int:
             print(
                 json.dumps(
                     filosofi_report_as_dict(report),
+                    ensure_ascii=False,
+                    indent=2,
+                )
+            )
+        elif args.command == "import-inflation":
+            report = import_inflation(dry_run=args.dry_run)
+            print(
+                json.dumps(
+                    inflation_report_as_dict(report),
+                    ensure_ascii=False,
+                    indent=2,
+                )
+            )
+        else:
+            report = import_department_rates(
+                year=args.year,
+                dry_run=args.dry_run,
+            )
+            print(
+                json.dumps(
+                    department_report_as_dict(report),
                     ensure_ascii=False,
                     indent=2,
                 )

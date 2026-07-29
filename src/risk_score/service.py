@@ -126,6 +126,21 @@ def min_max_normalize(
     return 1.0 - normalized if direction == "negative" else normalized
 
 
+def percentile(values: list[float], quantile: float) -> float:
+    """Return a linearly interpolated percentile without an optional dependency."""
+    if not values:
+        raise ValueError("At least one value is required")
+    if not 0.0 <= quantile <= 1.0:
+        raise ValueError("Quantile must be between 0 and 1")
+    ordered = sorted(values)
+    position = (len(ordered) - 1) * quantile
+    lower = math.floor(position)
+    upper = math.ceil(position)
+    if lower == upper:
+        return ordered[lower]
+    return ordered[lower] + (ordered[upper] - ordered[lower]) * (position - lower)
+
+
 def classify_risk(score: float, levels: Iterable[dict]) -> tuple[str, str]:
     bounded = min(100.0, max(0.0, score))
     for level in levels:
@@ -304,10 +319,6 @@ class RiskScoreCalculator:
                 InclusionObservation.id.desc(),
             )
         )
-        if geographic_code:
-            statement = statement.where(
-                InclusionObservation.geographic_code == str(geographic_code)
-            )
         selected: dict[tuple[str, str], ObservationValue] = {}
         warnings_by_territory: dict[str, list[str]] = {}
         for observation, _document in session.execute(statement):
@@ -351,6 +362,11 @@ class RiskScoreCalculator:
             geographic_code,
         )
         for territory_code, observations in by_territory.items():
+            if (
+                geographic_code is not None
+                and territory_code != str(geographic_code)
+            ):
+                continue
             territory_names.setdefault(
                 territory_code,
                 next(
@@ -359,10 +375,14 @@ class RiskScoreCalculator:
                 ),
             )
 
-        bounds = {
-            code: (min(values), max(values))
-            for code, values in by_indicator.items()
-        }
+        configs_by_code = {config.indicator_code: config for config in configs}
+        bounds = {}
+        for code, values in by_indicator.items():
+            config = configs_by_code[code]
+            if config.normalization_method == "winsorized_min_max":
+                bounds[code] = (percentile(values, 0.05), percentile(values, 0.95))
+            else:
+                bounds[code] = (min(values), max(values))
         results = []
         for territory_code, territory_name in sorted(territory_names.items()):
             observations = by_territory.get(territory_code, {})

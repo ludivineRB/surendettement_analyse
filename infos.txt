@@ -58,3 +58,319 @@ sudo ss -tulpn
 
 1 : lancer l'api : .venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8020
 2 : lancer le streamlit : .venv/bin/streamlit run app.py
+
+```mermaid
+erDiagram
+    SOURCE_DOCUMENTS ||--o{ OBSERVATIONS : produit
+    INDICATORS ||--o{ OBSERVATIONS : qualifie
+
+    SOURCE_DOCUMENTS {
+        INTEGER id PK
+        VARCHAR source_name
+        VARCHAR publication_type
+        VARCHAR region_code
+        VARCHAR region_name
+        VARCHAR reference_period
+        VARCHAR publication_date
+        VARCHAR updated_date
+        TEXT page_url
+        TEXT pdf_url
+        VARCHAR pdf_filename
+        VARCHAR pdf_sha256 UK
+        INTEGER pdf_size_bytes
+        TEXT storage_path
+        VARCHAR http_etag
+        VARCHAR http_last_modified
+        VARCHAR downloaded_at
+        VARCHAR extraction_status
+        VARCHAR extractor_version
+        VARCHAR created_at
+        VARCHAR updated_at
+    }
+
+    INDICATORS {
+        INTEGER id PK
+        VARCHAR code UK
+        VARCHAR label
+        VARCHAR category
+        TEXT description
+        VARCHAR default_unit
+        VARCHAR created_at
+        VARCHAR updated_at
+    }
+
+    OBSERVATIONS {
+        INTEGER id PK
+        INTEGER source_document_id FK
+        INTEGER indicator_id FK
+        VARCHAR idempotence_key UK
+        VARCHAR indicator_code
+        VARCHAR region_code
+        VARCHAR reference_period
+        VARCHAR geographic_level
+        VARCHAR geographic_code
+        VARCHAR geographic_name
+        FLOAT value_numeric
+        TEXT value_text
+        VARCHAR unit
+        VARCHAR observation_type
+        VARCHAR comparison_period
+        FLOAT variation_numeric
+        VARCHAR variation_unit
+        INTEGER page_number
+        VARCHAR source_label
+        TEXT source_fragment
+        VARCHAR extraction_method
+        FLOAT confidence_score
+        VARCHAR created_at
+        VARCHAR updated_at
+    }
+
+    SURENDETTEMENT_DATA {
+        INTEGER id PK
+        INTEGER year
+        VARCHAR region
+        VARCHAR indicator
+        FLOAT value
+        VARCHAR source_file
+    }
+```
+
+oici le MCD complet correspondant aux deux bases SQLite actuellement utilisées. Il distingue les tables persistées, les vues analytiques et les liens inter-bases.
+1. Base de collecte
+data/processed/surendettement.db
+```mermaid
+erDiagram
+    SOURCE_DOCUMENTS ||--o{ OBSERVATIONS : produit
+    INDICATORS ||--o{ OBSERVATIONS : qualifie
+
+    SOURCE_DOCUMENTS {
+        INTEGER id PK
+        VARCHAR source_name
+        VARCHAR publication_type
+        VARCHAR region_code
+        VARCHAR region_name
+        VARCHAR reference_period
+        VARCHAR publication_date
+        VARCHAR updated_date
+        TEXT page_url
+        TEXT pdf_url
+        VARCHAR pdf_filename
+        VARCHAR pdf_sha256 UK
+        INTEGER pdf_size_bytes
+        TEXT storage_path
+        VARCHAR http_etag
+        VARCHAR http_last_modified
+        VARCHAR downloaded_at
+        VARCHAR extraction_status
+        VARCHAR extractor_version
+        VARCHAR created_at
+        VARCHAR updated_at
+    }
+
+    INDICATORS {
+        INTEGER id PK
+        VARCHAR code UK
+        VARCHAR label
+        VARCHAR category
+        TEXT description
+        VARCHAR default_unit
+        VARCHAR created_at
+        VARCHAR updated_at
+    }
+
+    OBSERVATIONS {
+        INTEGER id PK
+        INTEGER source_document_id FK
+        INTEGER indicator_id FK
+        VARCHAR idempotence_key UK
+        VARCHAR indicator_code
+        VARCHAR region_code
+        VARCHAR reference_period
+        VARCHAR geographic_level
+        VARCHAR geographic_code
+        VARCHAR geographic_name
+        FLOAT value_numeric
+        TEXT value_text
+        VARCHAR unit
+        VARCHAR observation_type
+        VARCHAR comparison_period
+        FLOAT variation_numeric
+        VARCHAR variation_unit
+        INTEGER page_number
+        VARCHAR source_label
+        TEXT source_fragment
+        VARCHAR extraction_method
+        FLOAT confidence_score
+        VARCHAR created_at
+        VARCHAR updated_at
+    }
+
+    SURENDETTEMENT_DATA {
+        INTEGER id PK
+        INTEGER year
+        VARCHAR region
+        VARCHAR indicator
+        FLOAT value
+        VARCHAR source_file
+    }
+```
+
+
+
+Cardinalités actuelles :
+Entité	Lignes
+source_documents	219
+indicators	3
+observations	641
+surendettement_data	38
+
+surendettement_data est une table historique isolée, sans relation physique avec le nouveau modèle d’inclusion financière.
+2. Base analytique
+data/processed/analytics/surendettement_macro_analytics.db
+```mermaid
+erDiagram
+    DIM_DEPARTMENT ||--o{ FACT_BDF_STATINFO : localise
+    DIM_INDICATOR ||--o{ FACT_BDF_STATINFO : qualifie
+
+    DIM_DEPARTMENT ||--o{ FACT_INSEE_MACRO : localise
+    DIM_INDICATOR ||--o{ FACT_INSEE_MACRO : qualifie
+
+    DIM_DEPARTMENT ||--o{ FACT_SURENDETTEMENT : localise
+    DIM_INDICATOR ||--o{ FACT_SURENDETTEMENT : qualifie
+
+    DIM_DEPARTMENT ||--o{ FACT_MACRO_OVERRIDE : "référence logique"
+    DIM_INDICATOR ||--o{ FACT_MACRO_OVERRIDE : "référence logique"
+
+    DIM_DEPARTMENT {
+        TEXT departement_code PK
+        TEXT departement_name
+        TEXT region_name
+        INTEGER is_metropolitan_scope
+    }
+
+    DIM_INDICATOR {
+        TEXT indicator_key PK
+        TEXT source_system
+        TEXT indicator_code
+        TEXT indicator_name
+        TEXT indicator_group
+        TEXT unit
+        TEXT aggregation_rule
+    }
+
+    FACT_BDF_STATINFO {
+        TEXT reference_period
+        INTEGER reference_year
+        INTEGER reference_month_number
+        TEXT departement_code FK
+        TEXT indicator_key FK
+        REAL value
+        TEXT source_file
+        TEXT pipeline_version
+    }
+
+    FACT_INSEE_MACRO {
+        INTEGER reference_year
+        TEXT departement_code FK
+        TEXT indicator_key FK
+        REAL value
+        TEXT source_dataset
+        TEXT pipeline_version
+    }
+
+    FACT_SURENDETTEMENT {
+        INTEGER reference_year
+        TEXT departement_code FK
+        TEXT indicator_key FK
+        REAL value
+        TEXT source_file
+    }
+
+    FACT_MACRO_OVERRIDE {
+        INTEGER id PK
+        INTEGER reference_year
+        TEXT departement_code
+        TEXT indicator_code
+        TEXT indicator_name
+        TEXT indicator_group
+        REAL value
+        TEXT source_note
+        TEXT created_at
+        TEXT updated_at
+    }
+
+    PIPELINE_METADATA {
+        TEXT database_version
+        TEXT source_system
+        TEXT source_path
+        TEXT built_at
+    }
+```
+
+
+
+Volumétrie actuelle :
+Entité	Lignes
+dim_department	96
+dim_indicator	37
+fact_bdf_statinfo	12 672
+fact_insee_macro	2 496
+fact_surendettement	0
+fact_macro_override	0
+pipeline_metadata	4
+
+3. Vues analytiques
+```mermaid
+flowchart LR
+    BDF[FACT_BDF_STATINFO] --> VT[v_bdf_total_deposits]
+    VT --> VBM[v_bdf_total_deposits_with_insee_macro]
+    INSEE[FACT_INSEE_MACRO] --> VBM
+
+    INSEE --> VR[v_insee_macro_region]
+    DEPT[DIM_DEPARTMENT] --> VR
+    IND[DIM_INDICATOR] --> VR
+    VR --> VRS[v_insee_macro_region_selected]
+    VRS --> RATIO[19 ratios dérivés]
+
+    SUR[FACT_SURENDETTEMENT] --> VSA[v_surendettement_annual]
+    VSA --> VSM[v_surendettement_with_insee_macro]
+    INSEE --> VSM
+```
+
+
+
+Vue	Rôle	Lignes
+v_bdf_total_deposits	Dépôts BDF départementaux	1 152
+v_bdf_total_deposits_with_insee_macro	Jointure BDF–INSEE	29 952
+v_insee_macro_region	Agrégation régionale des 26 volumes INSEE	338
+v_insee_macro_region_selected	26 volumes + 19 ratios régionaux	585
+v_surendettement_annual	Ancien surendettement départemental	0
+v_surendettement_with_insee_macro	Ancienne jointure surendettement–macro	0
+
+4. Liaison entre les deux bases
+Il n’existe aucune clé étrangère inter-base. La jointure est réalisée dans l’application sur region_name :
+```mermaid
+flowchart LR
+    OBS[Observations inclusion<br/>641 lignes mensuelles]
+    REGION[region_name]
+    MACRO[Vue macro régionale<br/>585 valeurs]
+    STREAMLIT[Streamlit]
+
+    OBS --> REGION
+    MACRO --> REGION
+    REGION --> STREAMLIT
+```
+
+
+
+Points d’attention du modèle
+region_name sert actuellement de clé de rapprochement, mais ce n’est pas une clé technique robuste.
+Une dimension dim_region avec region_code devrait idéalement être partagée par les deux bases.
+indicator_code est dupliqué dans observations alors que indicator_id existe déjà.
+fact_macro_override ne possède pas de clés étrangères physiques.
+fact_surendettement et ses deux vues sont désormais vides et relèvent du modèle historique.
+Il n’existe pas encore de dimensions temporelles explicites (dim_date, dim_period).
+Le système comporte deux bases séparées : le rapprochement inclusion–macro dépend donc actuellement de la couche API/Streamlit.
+
+A refaire un  tour pour essayer de comprendre pourquoi il manque des valeurs à certains endroits, et autres. 

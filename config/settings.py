@@ -32,5 +32,9 @@ DEPARTMENTS_GEOJSON_URL = os.getenv(
     "DEPARTMENTS_GEOJSON_URL",
     "https://raw.githubusercontent.com/gregoiredavid/france-geojson/master/departements.geojson",
 )
+REGIONS_GEOJSON_URL = os.getenv(
+    "REGIONS_GEOJSON_URL",
+    "https://raw.githubusercontent.com/gregoiredavid/france-geojson/master/regions.geojson",
+)
 
 API_TIMEOUT_SECONDS = int(os.getenv("SURENDETTEMENT_API_TIMEOUT", "8"))

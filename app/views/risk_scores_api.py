@@ -11,6 +11,8 @@ from app.schemas.risk_scores import RiskScoreCalculateRequest
 from src.risk_score.service import RiskScoreCalculator, normalize_geographic_level
 from src.storage.database import get_session_factory
 from src.storage.models import (
+    InclusionObservation,
+    InclusionSourceDocument,
     RiskScore,
     RiskScoreDetail,
     RiskScoreIndicatorConfig,
@@ -69,6 +71,7 @@ def list_risk_scores(
     geographic_code: str | None = None,
     reference_period: str | None = None,
     model_code: str | None = None,
+    active_model_only: bool = False,
     risk_level: str | None = None,
     sort: str = Query("score_desc", pattern="^(score_asc|score_desc)$"),
     limit: int = Query(100, ge=1, le=5000),
@@ -88,6 +91,8 @@ def list_risk_scores(
         statement = statement.where(RiskScore.reference_period == reference_period)
     if model_code:
         statement = statement.where(RiskScoreModel.code == model_code)
+    if active_model_only:
+        statement = statement.where(RiskScoreModel.is_active.is_(True))
     if risk_level:
         statement = statement.where(RiskScore.risk_level == risk_level)
     order = RiskScore.score.asc().nullslast() if sort == "score_asc" else RiskScore.score.desc().nullslast()
@@ -187,10 +192,19 @@ def _serialize_score(
     details = []
     if include_details:
         stored_details = session.execute(
-            select(RiskScoreDetail)
+            select(RiskScoreDetail, InclusionSourceDocument.page_url)
+            .join(
+                InclusionObservation,
+                InclusionObservation.id == RiskScoreDetail.source_observation_id,
+            )
+            .join(
+                InclusionSourceDocument,
+                InclusionSourceDocument.id
+                == InclusionObservation.source_document_id,
+            )
             .where(RiskScoreDetail.risk_score_id == score.id)
             .order_by(RiskScoreDetail.contribution.desc())
-        ).scalars()
+        )
         details = [
             {
                 "indicator_code": detail.indicator_code,
@@ -204,8 +218,9 @@ def _serialize_score(
                 "contribution": float(detail.contribution),
                 "direction": detail.direction,
                 "source_observation_id": detail.source_observation_id,
+                "source_url": source_url,
             }
-            for detail in stored_details
+            for detail, source_url in stored_details
         ]
     return {
         "id": score.id,

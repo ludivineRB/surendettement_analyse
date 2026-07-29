@@ -116,6 +116,67 @@ INDICATOR_PATTERNS = {
     ),
 }
 
+PARTIAL_TEXT_PATTERNS = {
+    "surendettement_dossiers_deposes": re.compile(
+        r"Dossiers\s+de\s+surendettement\s+d[ée]pos[ée]s\s+"
+        r"(-?\d+(?:[ \u00a0]\d{3})*)\b",
+        re.I,
+    ),
+    "droit_compte_designations": re.compile(
+        r"Droit\s+au\s+compte\s+(-?\d+(?:[ \u00a0]\d{3})*)\b",
+        re.I,
+    ),
+}
+
+# Corrections vérifiées de publications dont le slug ou la pièce jointe HTML
+# est erroné sur le site source. Elles restent bornées à un territoire/période.
+KNOWN_PUBLICATION_OVERRIDES = (
+    {
+        "page_url": (
+            "https://www.banque-france.fr/fr/publications-et-statistiques/"
+            "statistiques/barometre-mensuel-de-linclusion-financiere-"
+            "grand-est-avril-2025-0"
+        ),
+        "title": (
+            "Baromètre mensuel de l’inclusion financière : "
+            "Grand Est - mai 2025"
+        ),
+        "region_code": "44",
+        "region_name": "Grand Est",
+        "region_slug": "grand-est",
+        "reference_month": "05",
+        "reference_year": 2025,
+        "pdf_url": (
+            "https://www.banque-france.fr/system/files/2025-06/"
+            "BARO_REG_052025_Grand-Est.pdf"
+        ),
+        "pdf_filename": "BARO_REG_052025_Grand-Est.pdf",
+        "publication_date": "2025-06-13",
+    },
+    {
+        "page_url": (
+            "https://www.banque-france.fr/fr/publications-et-statistiques/"
+            "statistiques/barometre-mensuel-de-linclusion-financiere-"
+            "centre-val-de-loire-mai-2026"
+        ),
+        "title": (
+            "Baromètre mensuel de l’inclusion financière : "
+            "Centre-Val-de-Loire - mai 2026"
+        ),
+        "region_code": "24",
+        "region_name": "Centre-Val de Loire",
+        "region_slug": "centre-val-de-loire",
+        "reference_month": "05",
+        "reference_year": 2026,
+        "pdf_url": (
+            "https://www.banque-france.fr/system/files/2026-06/"
+            "BARO_REG_052026_Centre-Val%20de%20Loire.pdf"
+        ),
+        "pdf_filename": "BARO_REG_052026_Centre-Val de Loire.pdf",
+        "publication_date": "2026-06-11",
+    },
+)
+
 
 @dataclass(slots=True)
 class PublicationMetadata:
@@ -248,6 +309,34 @@ class InclusionFinancialPipeline:
             region_slugs=wanted_slugs,
         )
         metadata: list[PublicationMetadata] = []
+        for override in KNOWN_PUBLICATION_OVERRIDES:
+            period = (
+                f"{override['reference_year']:04d}-"
+                f"{override['reference_month']}"
+            )
+            if override["region_slug"] not in wanted_slugs:
+                continue
+            if period < from_period or (to_period and period > to_period):
+                continue
+            metadata.append(
+                PublicationMetadata(
+                    page_url=override["page_url"],
+                    title=override["title"],
+                    region_code=override["region_code"],
+                    region_name=override["region_name"],
+                    region_slug=override["region_slug"],
+                    reference_month=override["reference_month"],
+                    reference_year=override["reference_year"],
+                    reference_period=period,
+                    publication_date=override["publication_date"],
+                    updated_date=override["publication_date"],
+                    pdf_url=override["pdf_url"],
+                    pdf_filename=override["pdf_filename"],
+                    announced_size=None,
+                    discovered_at=now_iso(),
+                    last_checked_at=now_iso(),
+                )
+            )
         for url in urls:
             url_period = period_from_publication_url(url)
             if url_period and (url_period < from_period or (to_period and url_period > to_period)):
@@ -696,6 +785,13 @@ def extract_observations_from_text(text: str, document: DownloadedDocument, page
     rows: list[dict] = []
     for code, (label, unit, pattern) in INDICATOR_PATTERNS.items():
         match = pattern.search(text)
+        extraction_method = "native_text"
+        confidence_score = 0.86
+        if not match:
+            partial_pattern = PARTIAL_TEXT_PATTERNS.get(code)
+            match = partial_pattern.search(text) if partial_pattern else None
+            extraction_method = "partial_text"
+            confidence_score = 0.65
         if not match:
             continue
         raw_value = match.group(1)
@@ -722,8 +818,8 @@ def extract_observations_from_text(text: str, document: DownloadedDocument, page
                 "page_number": page_number,
                 "source_label": label,
                 "source_fragment": match.group(0)[:500],
-                "extraction_method": "native_text",
-                "confidence_score": 0.86,
+                "extraction_method": extraction_method,
+                "confidence_score": confidence_score,
             }
         )
     return rows

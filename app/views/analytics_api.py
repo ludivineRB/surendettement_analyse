@@ -9,8 +9,15 @@ from app.core.analytics import analytics_connection, fetch_all, fetch_one, utc_n
 from app.schemas.analytics import MacroOverrideCreate, MacroOverrideRead, MacroOverrideUpdate
 from src.storage.database import get_session_factory
 from src.storage.models import InclusionIndicator, InclusionObservation, InclusionSourceDocument
+from src.observability import build_observability_report
 
 analytics_api = APIRouter(prefix="/api/data", tags=["Analytical data"])
+
+
+@analytics_api.get("/observability")
+def observability() -> dict:
+    """Expose freshness, completeness, integrity and active-model diagnostics."""
+    return build_observability_report()
 
 
 @analytics_api.get("/health")
