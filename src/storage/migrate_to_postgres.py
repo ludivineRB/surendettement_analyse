@@ -14,6 +14,9 @@ from src.storage.models import Base
 from src.storage.schema_migrations import apply_migrations
 
 
+DEFAULT_BATCH_SIZE = 500
+
+
 @dataclass(slots=True)
 class DatabaseCopyReport:
     source: str
@@ -57,18 +60,27 @@ def migrate_sqlite_to_postgres(
                 report.inserted_by_table[table_name] = 0
                 report.skipped_by_table[table_name] = len(rows)
                 continue
-            statement = postgresql_insert(target_table).values(rows)
             primary_keys = [column.name for column in target_table.primary_key]
-            if primary_keys:
-                statement = statement.on_conflict_do_nothing(
-                    index_elements=primary_keys
-                )
-            result = target.execute(statement)
-            inserted = max(result.rowcount or 0, 0)
+            inserted = 0
+            for batch in _iter_batches(rows, DEFAULT_BATCH_SIZE):
+                statement = postgresql_insert(target_table).values(batch)
+                if primary_keys:
+                    statement = statement.on_conflict_do_nothing(
+                        index_elements=primary_keys
+                    )
+                result = target.execute(statement)
+                inserted += max(result.rowcount or 0, 0)
             report.inserted_by_table[table_name] = inserted
             report.skipped_by_table[table_name] = len(rows) - inserted
             _reset_postgres_sequence(target, target_table)
     return report
+
+
+def _iter_batches(rows: list[dict], batch_size: int):
+    if batch_size <= 0:
+        raise ValueError("batch_size must be greater than zero")
+    for start in range(0, len(rows), batch_size):
+        yield rows[start : start + batch_size]
 
 
 def _copy_order(tables: dict) -> list[str]:

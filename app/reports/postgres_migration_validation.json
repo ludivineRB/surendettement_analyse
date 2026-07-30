@@ -1,0 +1,907 @@
+{
+  "source": "data/processed/surendettement.db",
+  "target": "postgresql",
+  "status": "PASS",
+  "tables": {
+    "dim_period": {
+      "sqlite": {
+        "rows": 17,
+        "distinct_primary_keys": 17,
+        "minimum_primary_key": "2025-02",
+        "maximum_primary_key": "2026-06",
+        "first_period": "2025-02",
+        "last_period": "2026-06",
+        "unexpected_nulls": {
+          "reference_year": 0,
+          "granularity": 0
+        }
+      },
+      "postgresql": {
+        "rows": 17,
+        "distinct_primary_keys": 17,
+        "minimum_primary_key": "2025-02",
+        "maximum_primary_key": "2026-06",
+        "first_period": "2025-02",
+        "last_period": "2026-06",
+        "unexpected_nulls": {
+          "period_key": 0,
+          "reference_year": 0,
+          "granularity": 0
+        }
+      },
+      "row_count_matches": true
+    },
+    "dim_region": {
+      "sqlite": {
+        "rows": 13,
+        "distinct_primary_keys": 13,
+        "minimum_primary_key": "11",
+        "maximum_primary_key": "94",
+        "unexpected_nulls": {
+          "region_name": 0,
+          "is_metropolitan_scope": 0
+        }
+      },
+      "postgresql": {
+        "rows": 13,
+        "distinct_primary_keys": 13,
+        "minimum_primary_key": "11",
+        "maximum_primary_key": "94",
+        "unexpected_nulls": {
+          "region_code": 0,
+          "region_name": 0,
+          "is_metropolitan_scope": 0
+        }
+      },
+      "row_count_matches": true
+    },
+    "indicators": {
+      "sqlite": {
+        "rows": 9,
+        "distinct_primary_keys": 9,
+        "minimum_primary_key": 1,
+        "maximum_primary_key": 9,
+        "unexpected_nulls": {
+          "id": 0,
+          "code": 0,
+          "label": 0,
+          "created_at": 0,
+          "updated_at": 0
+        }
+      },
+      "postgresql": {
+        "rows": 9,
+        "distinct_primary_keys": 9,
+        "minimum_primary_key": 1,
+        "maximum_primary_key": 9,
+        "unexpected_nulls": {
+          "id": 0,
+          "code": 0,
+          "label": 0,
+          "created_at": 0,
+          "updated_at": 0
+        }
+      },
+      "row_count_matches": true
+    },
+    "observations": {
+      "sqlite": {
+        "rows": 11543,
+        "distinct_primary_keys": 11543,
+        "minimum_primary_key": 1,
+        "maximum_primary_key": 11543,
+        "first_period": "2023",
+        "last_period": "2026-06",
+        "unexpected_nulls": {
+          "id": 0,
+          "source_document_id": 0,
+          "indicator_id": 0,
+          "idempotence_key": 0,
+          "indicator_code": 0,
+          "region_code": 0,
+          "reference_period": 0,
+          "geographic_level": 0,
+          "extraction_method": 0,
+          "created_at": 0,
+          "updated_at": 0
+        }
+      },
+      "postgresql": {
+        "rows": 11543,
+        "distinct_primary_keys": 11543,
+        "minimum_primary_key": 1,
+        "maximum_primary_key": 11543,
+        "first_period": "2023",
+        "last_period": "2026-06",
+        "unexpected_nulls": {
+          "id": 0,
+          "source_document_id": 0,
+          "indicator_id": 0,
+          "idempotence_key": 0,
+          "indicator_code": 0,
+          "region_code": 0,
+          "reference_period": 0,
+          "geographic_level": 0,
+          "extraction_method": 0,
+          "created_at": 0,
+          "updated_at": 0
+        }
+      },
+      "row_count_matches": true
+    },
+    "pipeline_runs": {
+      "sqlite": {
+        "rows": 0,
+        "distinct_primary_keys": 0,
+        "minimum_primary_key": null,
+        "maximum_primary_key": null,
+        "unexpected_nulls": {
+          "id": 0,
+          "pipeline_name": 0,
+          "status": 0,
+          "started_at": 0,
+          "configuration_json": 0,
+          "step_results_json": 0,
+          "quality_report_json": 0
+        }
+      },
+      "postgresql": {
+        "rows": 0,
+        "distinct_primary_keys": 0,
+        "minimum_primary_key": null,
+        "maximum_primary_key": null,
+        "unexpected_nulls": {
+          "id": 0,
+          "pipeline_name": 0,
+          "status": 0,
+          "started_at": 0,
+          "configuration_json": 0,
+          "step_results_json": 0,
+          "quality_report_json": 0
+        }
+      },
+      "row_count_matches": true
+    },
+    "risk_score_details": {
+      "sqlite": {
+        "rows": 12928,
+        "distinct_primary_keys": 12928,
+        "minimum_primary_key": 881,
+        "maximum_primary_key": 30992,
+        "unexpected_nulls": {
+          "id": 0,
+          "risk_score_id": 0,
+          "indicator_code": 0,
+          "raw_value": 0,
+          "population_min": 0,
+          "population_max": 0,
+          "normalized_value": 0,
+          "configured_weight": 0,
+          "effective_weight": 0,
+          "contribution": 0,
+          "direction": 0,
+          "created_at": 0,
+          "updated_at": 0
+        }
+      },
+      "postgresql": {
+        "rows": 12928,
+        "distinct_primary_keys": 12928,
+        "minimum_primary_key": 881,
+        "maximum_primary_key": 30992,
+        "unexpected_nulls": {
+          "id": 0,
+          "risk_score_id": 0,
+          "indicator_code": 0,
+          "raw_value": 0,
+          "population_min": 0,
+          "population_max": 0,
+          "normalized_value": 0,
+          "configured_weight": 0,
+          "effective_weight": 0,
+          "contribution": 0,
+          "direction": 0,
+          "created_at": 0,
+          "updated_at": 0
+        }
+      },
+      "row_count_matches": true
+    },
+    "risk_score_indicator_configs": {
+      "sqlite": {
+        "rows": 18,
+        "distinct_primary_keys": 18,
+        "minimum_primary_key": 1,
+        "maximum_primary_key": 18,
+        "unexpected_nulls": {
+          "id": 0,
+          "risk_score_model_id": 0,
+          "indicator_code": 0,
+          "logical_code": 0,
+          "weight": 0,
+          "direction": 0,
+          "normalization_method": 0,
+          "is_required": 0,
+          "is_active": 0,
+          "created_at": 0,
+          "updated_at": 0
+        }
+      },
+      "postgresql": {
+        "rows": 18,
+        "distinct_primary_keys": 18,
+        "minimum_primary_key": 1,
+        "maximum_primary_key": 18,
+        "unexpected_nulls": {
+          "id": 0,
+          "risk_score_model_id": 0,
+          "indicator_code": 0,
+          "logical_code": 0,
+          "weight": 0,
+          "direction": 0,
+          "normalization_method": 0,
+          "is_required": 0,
+          "is_active": 0,
+          "created_at": 0,
+          "updated_at": 0
+        }
+      },
+      "row_count_matches": true
+    },
+    "risk_score_models": {
+      "sqlite": {
+        "rows": 3,
+        "distinct_primary_keys": 3,
+        "minimum_primary_key": 1,
+        "maximum_primary_key": 3,
+        "unexpected_nulls": {
+          "id": 0,
+          "code": 0,
+          "name": 0,
+          "version": 0,
+          "normalization_method": 0,
+          "minimum_coverage_ratio": 0,
+          "is_active": 0,
+          "configuration_json": 0,
+          "created_at": 0,
+          "updated_at": 0
+        }
+      },
+      "postgresql": {
+        "rows": 3,
+        "distinct_primary_keys": 3,
+        "minimum_primary_key": 1,
+        "maximum_primary_key": 3,
+        "unexpected_nulls": {
+          "id": 0,
+          "code": 0,
+          "name": 0,
+          "version": 0,
+          "normalization_method": 0,
+          "minimum_coverage_ratio": 0,
+          "is_active": 0,
+          "configuration_json": 0,
+          "created_at": 0,
+          "updated_at": 0
+        }
+      },
+      "row_count_matches": true
+    },
+    "risk_scores": {
+      "sqlite": {
+        "rows": 4090,
+        "distinct_primary_keys": 4090,
+        "minimum_primary_key": 1,
+        "maximum_primary_key": 4090,
+        "first_period": "2023",
+        "last_period": "2026-06",
+        "unexpected_nulls": {
+          "id": 0,
+          "risk_score_model_id": 0,
+          "geographic_level": 0,
+          "geographic_code": 0,
+          "reference_period": 0,
+          "coverage_ratio": 0,
+          "status": 0,
+          "missing_indicators_json": 0,
+          "warnings_json": 0,
+          "calculated_at": 0,
+          "created_at": 0,
+          "updated_at": 0
+        }
+      },
+      "postgresql": {
+        "rows": 4090,
+        "distinct_primary_keys": 4090,
+        "minimum_primary_key": 1,
+        "maximum_primary_key": 4090,
+        "first_period": "2023",
+        "last_period": "2026-06",
+        "unexpected_nulls": {
+          "id": 0,
+          "risk_score_model_id": 0,
+          "geographic_level": 0,
+          "geographic_code": 0,
+          "reference_period": 0,
+          "coverage_ratio": 0,
+          "status": 0,
+          "missing_indicators_json": 0,
+          "warnings_json": 0,
+          "calculated_at": 0,
+          "created_at": 0,
+          "updated_at": 0
+        }
+      },
+      "row_count_matches": true
+    },
+    "source_documents": {
+      "sqlite": {
+        "rows": 1763,
+        "distinct_primary_keys": 1763,
+        "minimum_primary_key": 1,
+        "maximum_primary_key": 1763,
+        "first_period": "2023",
+        "last_period": "2026-06",
+        "unexpected_nulls": {
+          "id": 0,
+          "source_name": 0,
+          "publication_type": 0,
+          "region_code": 0,
+          "region_name": 0,
+          "reference_period": 0,
+          "page_url": 0,
+          "pdf_url": 0,
+          "pdf_filename": 0,
+          "pdf_sha256": 0,
+          "storage_path": 0,
+          "extraction_status": 0,
+          "extractor_version": 0,
+          "created_at": 0,
+          "updated_at": 0
+        }
+      },
+      "postgresql": {
+        "rows": 1763,
+        "distinct_primary_keys": 1763,
+        "minimum_primary_key": 1,
+        "maximum_primary_key": 1763,
+        "first_period": "2023",
+        "last_period": "2026-06",
+        "unexpected_nulls": {
+          "id": 0,
+          "source_name": 0,
+          "publication_type": 0,
+          "region_code": 0,
+          "region_name": 0,
+          "reference_period": 0,
+          "page_url": 0,
+          "pdf_url": 0,
+          "pdf_filename": 0,
+          "pdf_sha256": 0,
+          "storage_path": 0,
+          "extraction_status": 0,
+          "extractor_version": 0,
+          "created_at": 0,
+          "updated_at": 0
+        }
+      },
+      "row_count_matches": true
+    },
+    "surendettement_data": {
+      "sqlite": {
+        "rows": 38,
+        "distinct_primary_keys": 38,
+        "minimum_primary_key": 1,
+        "maximum_primary_key": 38,
+        "first_period": 2024,
+        "last_period": 2025,
+        "unexpected_nulls": {
+          "id": 0,
+          "indicator": 0,
+          "source_file": 0
+        }
+      },
+      "postgresql": {
+        "rows": 38,
+        "distinct_primary_keys": 38,
+        "minimum_primary_key": 1,
+        "maximum_primary_key": 38,
+        "first_period": 2024,
+        "last_period": 2025,
+        "unexpected_nulls": {
+          "id": 0,
+          "indicator": 0,
+          "source_file": 0
+        }
+      },
+      "row_count_matches": true
+    }
+  },
+  "domain_checks": {
+    "observations": {
+      "counts_by_indicator_code": {
+        "matches": true,
+        "sqlite": [
+          [
+            "dossiers_surendettement_1000_habitants",
+            1468
+          ],
+          [
+            "droit_compte_designations",
+            220
+          ],
+          [
+            "endettement_moyen",
+            1248
+          ],
+          [
+            "fcc_personnes_inscrites",
+            207
+          ],
+          [
+            "inflation",
+            2045
+          ],
+          [
+            "revenu_median",
+            2045
+          ],
+          [
+            "surendettement_dossiers_deposes",
+            220
+          ],
+          [
+            "taux_chomage",
+            2045
+          ],
+          [
+            "taux_pauvrete",
+            2045
+          ]
+        ],
+        "postgresql": [
+          [
+            "dossiers_surendettement_1000_habitants",
+            1468
+          ],
+          [
+            "droit_compte_designations",
+            220
+          ],
+          [
+            "endettement_moyen",
+            1248
+          ],
+          [
+            "fcc_personnes_inscrites",
+            207
+          ],
+          [
+            "inflation",
+            2045
+          ],
+          [
+            "revenu_median",
+            2045
+          ],
+          [
+            "surendettement_dossiers_deposes",
+            220
+          ],
+          [
+            "taux_chomage",
+            2045
+          ],
+          [
+            "taux_pauvrete",
+            2045
+          ]
+        ]
+      },
+      "counts_by_geographic_level": {
+        "matches": true,
+        "sqlite": [
+          [
+            "department",
+            9792
+          ],
+          [
+            "region",
+            1751
+          ]
+        ],
+        "postgresql": [
+          [
+            "department",
+            9792
+          ],
+          [
+            "region",
+            1751
+          ]
+        ]
+      },
+      "counts_by_reference_period": {
+        "matches": true,
+        "sqlite": [
+          [
+            "2023",
+            576
+          ],
+          [
+            "2024",
+            576
+          ],
+          [
+            "2025-02",
+            680
+          ],
+          [
+            "2025-03",
+            680
+          ],
+          [
+            "2025-04",
+            667
+          ],
+          [
+            "2025-05",
+            680
+          ],
+          [
+            "2025-06",
+            680
+          ],
+          [
+            "2025-07",
+            680
+          ],
+          [
+            "2025-08",
+            680
+          ],
+          [
+            "2025-09",
+            680
+          ],
+          [
+            "2025-10",
+            680
+          ],
+          [
+            "2025-11",
+            680
+          ],
+          [
+            "2025-12",
+            680
+          ],
+          [
+            "2026-01",
+            488
+          ],
+          [
+            "2026-02",
+            488
+          ],
+          [
+            "2026-03",
+            488
+          ],
+          [
+            "2026-04",
+            488
+          ],
+          [
+            "2026-05",
+            488
+          ],
+          [
+            "2026-06",
+            484
+          ]
+        ],
+        "postgresql": [
+          [
+            "2023",
+            576
+          ],
+          [
+            "2024",
+            576
+          ],
+          [
+            "2025-02",
+            680
+          ],
+          [
+            "2025-03",
+            680
+          ],
+          [
+            "2025-04",
+            667
+          ],
+          [
+            "2025-05",
+            680
+          ],
+          [
+            "2025-06",
+            680
+          ],
+          [
+            "2025-07",
+            680
+          ],
+          [
+            "2025-08",
+            680
+          ],
+          [
+            "2025-09",
+            680
+          ],
+          [
+            "2025-10",
+            680
+          ],
+          [
+            "2025-11",
+            680
+          ],
+          [
+            "2025-12",
+            680
+          ],
+          [
+            "2026-01",
+            488
+          ],
+          [
+            "2026-02",
+            488
+          ],
+          [
+            "2026-03",
+            488
+          ],
+          [
+            "2026-04",
+            488
+          ],
+          [
+            "2026-05",
+            488
+          ],
+          [
+            "2026-06",
+            484
+          ]
+        ]
+      },
+      "functional_duplicates": {
+        "sqlite": 0,
+        "postgresql": 0
+      },
+      "missing_territories": {
+        "matches": true,
+        "sqlite": [],
+        "postgresql": []
+      },
+      "units_by_indicator": {
+        "matches": true,
+        "sqlite": [
+          [
+            "dossiers_surendettement_1000_habitants",
+            "dossiers_pour_1000_habitants"
+          ],
+          [
+            "droit_compte_designations",
+            "désignations"
+          ],
+          [
+            "endettement_moyen",
+            "euros"
+          ],
+          [
+            "fcc_personnes_inscrites",
+            "inscriptions"
+          ],
+          [
+            "inflation",
+            "%"
+          ],
+          [
+            "revenu_median",
+            "euros"
+          ],
+          [
+            "surendettement_dossiers_deposes",
+            "dossiers"
+          ],
+          [
+            "taux_chomage",
+            "%"
+          ],
+          [
+            "taux_pauvrete",
+            "%"
+          ]
+        ],
+        "postgresql": [
+          [
+            "dossiers_surendettement_1000_habitants",
+            "dossiers_pour_1000_habitants"
+          ],
+          [
+            "droit_compte_designations",
+            "désignations"
+          ],
+          [
+            "endettement_moyen",
+            "euros"
+          ],
+          [
+            "fcc_personnes_inscrites",
+            "inscriptions"
+          ],
+          [
+            "inflation",
+            "%"
+          ],
+          [
+            "revenu_median",
+            "euros"
+          ],
+          [
+            "surendettement_dossiers_deposes",
+            "dossiers"
+          ],
+          [
+            "taux_chomage",
+            "%"
+          ],
+          [
+            "taux_pauvrete",
+            "%"
+          ]
+        ]
+      }
+    },
+    "risk_scores": {
+      "distribution_matches": true,
+      "sqlite_distribution": [
+        [
+          2,
+          "department",
+          "insufficient_data",
+          1632,
+          0.55
+        ],
+        [
+          2,
+          "department",
+          "valid",
+          192,
+          1.0
+        ],
+        [
+          2,
+          "region",
+          "insufficient_data",
+          1,
+          0.55
+        ],
+        [
+          2,
+          "region",
+          "partial",
+          220,
+          0.85
+        ],
+        [
+          3,
+          "department",
+          "partial",
+          576,
+          0.6
+        ],
+        [
+          3,
+          "department",
+          "valid",
+          1248,
+          1.0
+        ],
+        [
+          3,
+          "region",
+          "partial",
+          221,
+          0.8986425339366516
+        ]
+      ],
+      "postgresql_distribution": [
+        [
+          2,
+          "department",
+          "insufficient_data",
+          1632,
+          0.55
+        ],
+        [
+          2,
+          "department",
+          "valid",
+          192,
+          1.0
+        ],
+        [
+          2,
+          "region",
+          "insufficient_data",
+          1,
+          0.55
+        ],
+        [
+          2,
+          "region",
+          "partial",
+          220,
+          0.85
+        ],
+        [
+          3,
+          "department",
+          "partial",
+          576,
+          0.6
+        ],
+        [
+          3,
+          "department",
+          "valid",
+          1248,
+          1.0
+        ],
+        [
+          3,
+          "region",
+          "partial",
+          221,
+          0.8986425339366516
+        ]
+      ],
+      "deterministic_sample_matches": true,
+      "maximum_score_difference": 4.938257802677981e-09,
+      "maximum_coverage_difference": 0.0
+    },
+    "risk_score_details": {
+      "deterministic_sample_matches": true,
+      "maximum_contribution_difference": 4.958870647442382e-09,
+      "maximum_effective_weight_difference": 3.529411762848156e-09
+    },
+    "pipeline_runs": {
+      "matches": true,
+      "sqlite": [],
+      "postgresql": []
+    },
+    "documents_requiring_attention": {
+      "sqlite": [
+        [
+          "needs_review",
+          1
+        ]
+      ],
+      "postgresql": [
+        [
+          "needs_review",
+          1
+        ]
+      ]
+    }
+  },
+  "warnings": [],
+  "errors": []
+}
