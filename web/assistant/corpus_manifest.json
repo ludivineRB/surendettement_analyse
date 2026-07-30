@@ -1,0 +1,45 @@
+{
+  "schema_version": "1.0",
+  "chunking_algorithm_version": "markdown-sections-v1",
+  "documents": [
+    {
+      "path": "app/reports/postgres_migration_validation.md",
+      "slug": "postgres-migration-validation",
+      "title": "Validation de la migration PostgreSQL",
+      "document_type": "quality_report",
+      "version_label": "2026-07-30",
+      "approved": false,
+      "retired_reason": "Document technique hors périmètre métier du RAG",
+      "approved_at": "2026-07-30T00:00:00+02:00",
+      "source": {
+        "name": "Projet surendettement_analyse",
+        "publisher": "Équipe projet",
+        "base_url": ""
+      },
+      "source_url": "",
+      "metadata": {
+        "scope": "postgresql",
+        "status": "PASS"
+      }
+    },
+    {
+      "path": "web/README.md",
+      "slug": "django-service-operations",
+      "title": "Exploitation du service Django",
+      "document_type": "operations",
+      "version_label": "2026-07-30.2",
+      "approved": false,
+      "retired_reason": "Document technique hors périmètre métier du RAG",
+      "approved_at": "2026-07-30T00:00:00+02:00",
+      "source": {
+        "name": "Projet surendettement_analyse",
+        "publisher": "Équipe projet",
+        "base_url": ""
+      },
+      "source_url": "",
+      "metadata": {
+        "scope": "django"
+      }
+    }
+  ]
+}

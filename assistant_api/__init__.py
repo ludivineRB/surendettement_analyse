@@ -1,0 +1,1 @@
+"""Standalone conversational assistant service."""

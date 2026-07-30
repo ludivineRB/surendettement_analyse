@@ -374,3 +374,23 @@ Il n’existe pas encore de dimensions temporelles explicites (dim_date, dim_per
 Le système comporte deux bases séparées : le rapprochement inclusion–macro dépend donc actuellement de la couche API/Streamlit.
 
 A refaire un  tour pour essayer de comprendre pourquoi il manque des valeurs à certains endroits, et autres. 
+La meilleure suite serait de transformer le prototype analytique en produit fiable et reproductible.
+Ajouter une des filtres pour cliquer sur les années et pouvoir choisir la durée que l'on veut observer. 
+Supprimer la première page car elle n'apporte rien et elle est pas ouf.
+Tester les dockers
+autorisation à faire sur API et le reste
+
+Sur le lot 2 : Est -ce que c'est ok d'avoir tout sur la même table ?
+Lui demander de créer un fichier .env pour mettre les secrets
+
+superuser password superuser
+user : toto mdp 123456
+docker compose \
+  --env-file .env \
+  -f docker/compose.yaml \
+  -f docker/compose.staging.yaml \
+  up -d postgres api django pour démarrer
+pour arrêter docker compose \
+  -f docker/compose.yaml \
+  -f docker/compose.staging.yaml \
+  down

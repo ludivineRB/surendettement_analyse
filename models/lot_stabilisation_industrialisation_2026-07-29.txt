@@ -1,0 +1,629 @@
+LOT DE STABILISATION, GOUVERNANCE ET PRÉ-INDUSTRIALISATION
+Date : 29 juillet 2026
+Projet : surendettement_analyse
+
+========================================================================
+1. OBJECTIF DU LOT
+========================================================================
+
+Ce lot transforme le prototype de calcul territorial en une chaîne de données
+plus reproductible, observable et préparée pour l’exploitation.
+
+Il couvre :
+
+- l’automatisation des imports Banque de France et INSEE ;
+- l’historisation départementale 2023, 2024 et 2025 ;
+- l’ajout d’une source rigoureuse pour l’endettement moyen ;
+- la traçabilité persistante des exécutions ;
+- des contrôles qualité bloquants ;
+- l’étude de stabilité du modèle 1.2.0 ;
+- des endpoints API spécialisés ;
+- de nouveaux outils d’analyse Streamlit ;
+- un premier socle Docker et PostgreSQL.
+
+Le lot ne transforme pas le score en outil de décision individuelle. Le score
+reste un indice statistique territorial comparatif.
+
+========================================================================
+2. SOURCES DE DONNÉES
+========================================================================
+
+2.1 Banque de France — baromètres mensuels
+
+Les baromètres mensuels régionaux alimentent notamment :
+
+- les dossiers de surendettement déposés ;
+- le droit au compte ;
+- les inscriptions au FCC.
+
+Le pipeline conserve :
+
+- l’URL de la page ;
+- l’URL du document ;
+- le nom du fichier ;
+- l’empreinte SHA-256 ;
+- les en-têtes HTTP ETag et Last-Modified lorsqu’ils existent ;
+- le statut d’extraction ;
+- la version de l’extracteur ;
+- la période et le territoire.
+
+Les téléchargements conditionnels permettent de repérer un document nouveau ou
+modifié. Une nouvelle empreinte crée une nouvelle version de source sans
+écraser l’ancienne.
+
+2.2 Banque de France — typologie annuelle du surendettement
+
+Les cahiers régionaux et départementaux 2023 et 2024 sont des PDF de 130 pages.
+Les taux départementaux sont extraits géométriquement, colonne par colonne.
+
+Le parseur gère :
+
+- les noms avec tirets typographiques différents ;
+- les apostrophes ;
+- les accents ;
+- les noms composés contenant un autre département, par exemple :
+  Haute-Loire/Loire, Haute-Savoie/Savoie et Val-d’Oise/Oise ;
+- les taux de pauvreté écrits avec ou sans décimale ;
+- les blocs répartis sur deux colonnes.
+
+Les classeurs 2025 fournissent directement les données départementales.
+
+Couverture obtenue :
+
+- 2023 : 96 départements sur 96 ;
+- 2024 : 96 départements sur 96 ;
+- 2025 : 96 départements sur 96.
+
+2.3 INSEE — inflation
+
+Série utilisée :
+
+- identifiant INSEE : 011814630 ;
+- indice des prix à la consommation ;
+- ensemble des ménages ;
+- France ;
+- nomenclature Ensemble.
+
+L’inflation mensuelle correspond au glissement sur douze mois :
+
+    inflation(t) = (IPC(t) / IPC(t-12) - 1) × 100
+
+L’inflation annuelle est la moyenne des glissements mensuels disponibles dans
+l’année.
+
+La valeur est nationale. Elle est donc identique entre territoires pour une
+même période. Elle informe l’évolution temporelle mais ne différencie pas les
+territoires au sein d’un même mois ou d’une même année.
+
+2.4 INSEE Filosofi et données de contexte
+
+Les informations de pauvreté et de revenu médian conservent explicitement leur
+année source. Une valeur annuelle utilisée sur une période ultérieure reste
+identifiable dans source_fragment.
+
+Le chômage et la pauvreté 2023–2024 sont également extraits des contextes
+territoriaux publiés dans les cahiers Banque de France, qui citent leurs sources
+INSEE et leurs millésimes.
+
+========================================================================
+3. INDICATEUR D’ENDETTEMENT MOYEN
+========================================================================
+
+Une source rigoureuse a été trouvée dans les classeurs départementaux Banque de
+France.
+
+Chaque feuille départementale contient :
+
+- l’encours global des dettes en milliers d’euros ;
+- le nombre de dossiers traités ;
+- l’endettement médian.
+
+L’indicateur retenu n’est pas la médiane. Il est calculé par :
+
+    endettement_moyen =
+        encours_global_en_milliers_euros × 1 000
+        / nombre_de_dossiers_traités
+
+Libellé :
+
+    Endettement global moyen par dossier traité
+
+Code :
+
+    endettement_moyen
+
+Unité :
+
+    euros
+
+Version d’import :
+
+    risk-score-bdf-mean-debt-v1
+
+Une faute présente dans le classeur officiel 2024 est documentée :
+
+    Indre-et-Loir → Indre-et-Loire
+
+Résultat :
+
+- 2023 : 96 valeurs annuelles ;
+- 2024 : 96 valeurs annuelles ;
+- 2025 : 96 valeurs annuelles répliquées sur 11 mois disponibles ;
+- total : 1 248 observations.
+
+Chaque observation mensuelle issue d’une valeur annuelle porte le type :
+
+    annual_replicated_monthly
+
+Les observations 2023–2024 portent le type :
+
+    annual
+
+========================================================================
+4. HARMONISATION TEMPORELLE
+========================================================================
+
+Les périodes historiques 2023 et 2024 disposent maintenant, pour les
+96 départements, des six indicateurs du modèle :
+
+1. dossiers_surendettement_1000_habitants ;
+2. taux_chomage ;
+3. taux_pauvrete ;
+4. revenu_median ;
+5. endettement_moyen ;
+6. inflation.
+
+Avant l’import de l’endettement moyen, la couverture historique était de 90 %.
+Après recalcul :
+
+- modèle 1.1.0, année 2023 : 96 scores valides ;
+- modèle 1.1.0, année 2024 : 96 scores valides ;
+- modèle 1.2.0, année 2023 : 96 scores valides ;
+- modèle 1.2.0, année 2024 : 96 scores valides.
+
+Soit 384 scores historiques complets.
+
+Pour la version active sur toutes les périodes départementales :
+
+- 1 248 scores complets ;
+- 576 scores partiels ;
+- aucun score en données insuffisantes ;
+- aucune erreur.
+
+========================================================================
+5. MODÈLE 1.2.0 ET NORMALISATION
+========================================================================
+
+5.1 Pondérations
+
+- dossiers pour 1 000 habitants : 30 % ;
+- chômage : 20 % ;
+- pauvreté : 20 % ;
+- revenu médian : 15 %, direction négative ;
+- endettement moyen : 10 % ;
+- inflation : 5 %.
+
+5.2 Normalisation active
+
+La version 1.2.0 utilise un Min-Max winsorisé 
+(la winsorisation : les valeurs extrêmes d'une série sont d'abord plafonnées à des percentiles limites (ex. 1 % et 99 %))
+aux percentiles 5 et 95 de la
+cohorte territoriale et de la période.
+
+Une valeur inférieure au percentile 5 est ramenée à la borne basse. Une valeur
+supérieure au percentile 95 est ramenée à la borne haute.
+
+5.3 Bornes fixes candidates
+
+Les bornes fixes candidates ont été calculées sur la référence départementale
+2023–2024, soit 192 observations par indicateur disponible :
+
+- dossiers pour 1 000 habitants : 1,531 à 3,4445 ;
+- chômage : 5,155 % à 9,845 % ;
+- pauvreté : 10,61 % à 19,68 % ;
+- revenu médian : 20 775 € à 24 913,50 € ;
+- inflation : 2,003 % à 4,894 %.
+
+L’endettement moyen devra être réintégré au rapport de bornes après le nouvel
+import et avant toute activation.
+
+Ces bornes sont marquées :
+
+    candidate_not_activated
+
+Elles ne modifient pas les scores 1.2.0 déjà publiés. Une activation devra créer
+une nouvelle version du modèle.
+
+5.4 Analyse de sensibilité
+
+Scénario de référence avec bornes fixes :
+
+- corrélation des rangs : 0,99946 ;
+- écart absolu moyen : 0,59 point ;
+- écart maximal : 2,27 points.
+
+Scénario à poids égaux :
+
+- corrélation des rangs : 0,99215 ;
+- écart absolu moyen : 6,51 points ;
+- écart maximal : 16,74 points.
+
+Scénario renforçant le poids des dossiers à 45 % :
+
+- corrélation des rangs : 0,97453 ;
+- écart absolu moyen : 3,67 points ;
+- écart maximal : 11,44 points.
+
+Conclusion :
+
+- des bornes fixes 2023–2024 affectent peu les rangs et les valeurs ;
+- la pondération influence davantage les scores absolus ;
+- toute modification des poids doit faire l’objet d’une nouvelle version et
+  d’une validation métier.
+
+5.5 Comparaison 1.1.0 / 1.2.0
+
+Pour 2024 :
+
+- 96 départements comparés ;
+- corrélation des classements : 0,993 ;
+- écart absolu moyen : 7,99 points ;
+- écart maximal : 22,89 points ;
+- 36 changements de niveau de risque.
+
+La version 1.2.0 conserve largement le classement mais réduit l’influence des
+valeurs extrêmes sur les scores absolus.
+
+========================================================================
+6. FICHE MÉTHODOLOGIQUE ET VALIDATION MÉTIER
+========================================================================
+
+Fichier :
+
+    models/risk_score_methodology_v1.2.md
+
+Il contient :
+
+- l’objet et les usages interdits du score ;
+- les indicateurs, directions et pondérations ;
+- les règles de couverture ;
+- la normalisation ;
+- les sources ;
+- les scénarios de sensibilité ;
+- les limites ;
+- la liste des décisions nécessitant une validation métier.
+
+La validation métier ne peut pas être simulée par le logiciel. Elle doit être :
+
+- datée ;
+- attribuée à une personne responsable ;
+- liée à une version du modèle ;
+- conservée avant activation de nouvelles bornes ou pondérations.
+
+========================================================================
+7. ORCHESTRATEUR AUTOMATISÉ
+========================================================================
+
+Fichier :
+
+    src/pipeline_orchestrator.py
+
+Nom du pipeline :
+
+    territorial-risk-refresh-v1
+
+Commande :
+
+    .venv/bin/python -m src.pipeline_orchestrator --from 2025-02
+
+Options :
+
+- --from : première période mensuelle obligatoire ;
+- --to : dernière période optionnelle ;
+- --department-years : millésimes départementaux ;
+- --dry-run : simulation sans validation des écritures métier.
+
+Étapes exécutées :
+
+1. création/migration du schéma et des modèles ;
+2. découverte et import des baromètres mensuels Banque de France ;
+3. import des taux départementaux pour chaque millésime ;
+4. harmonisation des contextes historiques ;
+5. import de l’endettement moyen ;
+6. import de l’inflation INSEE ;
+7. recalcul de tous les scores régionaux ;
+8. recalcul de tous les scores départementaux ;
+9. contrôles qualité.
+
+Le pipeline est idempotent : une observation possédant la même clé métier et
+la même version source n’est pas insérée une seconde fois.
+
+========================================================================
+8. JOURNAL PERSISTANT
+========================================================================
+
+Table :
+
+    pipeline_runs
+
+Colonnes :
+
+- id ;
+- pipeline_name ;
+- status ;
+- started_at ;
+- finished_at ;
+- configuration_json ;
+- step_results_json ;
+- quality_report_json ;
+- error_message.
+
+Statuts autorisés :
+
+- running ;
+- success ;
+- failed ;
+- quality_failed.
+
+Le résultat de chaque étape est enregistré immédiatement. Une panne permet donc
+de savoir jusqu’où l’exécution a progressé.
+
+La page Streamlit Supervision affiche les vingt dernières exécutions.
+
+========================================================================
+9. CONTRÔLES QUALITÉ BLOQUANTS
+========================================================================
+
+Le pipeline ne reçoit le statut success que si :
+
+- aucune erreur d’intégrité n’est détectée ;
+- les dossiers 2023 couvrent 96 départements ;
+- les dossiers 2024 couvrent 96 départements ;
+- l’endettement moyen 2023 couvre 96 départements ;
+- l’endettement moyen 2024 couvre 96 départements.
+
+Les avertissements non bloquants restent visibles.
+
+Avertissement actuel :
+
+- Île-de-France, juin 2026 ;
+- le PDF officiel Banque de France est incomplet ou corrompu ;
+- aucune valeur n’est inventée ;
+- le document reste en needs_review.
+
+========================================================================
+10. OBSERVABILITÉ
+========================================================================
+
+Fichier principal :
+
+    src/observability.py
+
+Route :
+
+    GET /api/data/observability
+
+Page Streamlit :
+
+    Supervision
+
+Informations affichées :
+
+- nombre de documents ;
+- nombre d’observations ;
+- nombre de scores ;
+- modèle actif ;
+- fraîcheur par indicateur ;
+- statuts des documents ;
+- couverture des scores ;
+- couples région-mois manquants ;
+- documents à vérifier ;
+- versions de pipeline ;
+- dernières exécutions automatisées ;
+- violations de clés étrangères ;
+- incohérences entre indicator_id et indicator_code ;
+- état de la base analytique.
+
+La lecture opérationnelle est compatible avec SQLite et PostgreSQL via
+SQLAlchemy. La base analytique reste actuellement un fichier SQLite.
+
+========================================================================
+11. API
+========================================================================
+
+Endpoints principaux :
+
+    GET /api/risk-scores
+    GET /api/risk-score-models
+    POST /api/risk-scores/calculate
+
+Endpoint de comparaison :
+
+    GET /api/risk-score-model-comparison
+
+Nouveaux endpoints :
+
+    GET /api/risk-score-series/{geographic_level}/{geographic_code}
+    GET /api/risk-score-factors/{geographic_level}/{geographic_code}/{period}
+
+Les filtres disponibles incluent :
+
+- niveau géographique ;
+- code géographique ;
+- période ;
+- code du modèle ;
+- version du modèle ;
+- niveau de risque ;
+- modèle actif uniquement ;
+- limite et décalage de pagination.
+
+Les réponses de facteurs contiennent :
+
+- valeur brute ;
+- unité ;
+- bornes de normalisation ;
+- valeur normalisée ;
+- poids configuré ;
+- poids effectif ;
+- contribution ;
+- direction ;
+- observation source ;
+- URL de publication.
+
+========================================================================
+12. STREAMLIT
+========================================================================
+
+Page Scores territoriaux :
+
+- choix région/département ;
+- sélection multiple de territoires ;
+- sélection des niveaux de risque ;
+- plage temporelle ;
+- couverture minimale ;
+- filtre sur les indicateurs obligatoirement présents ;
+- évolution temporelle ;
+- classement ;
+- couverture ;
+- carte régionale ou départementale ;
+- comparaison de deux périodes ;
+- variation entre périodes ;
+- détecteur de ruptures mensuelles ;
+- seuil de rupture paramétrable ;
+- détail des contributions ;
+- liens sources ;
+- synthèse textuelle automatique ;
+- comparaison 1.1.0/1.2.0 ;
+- validation métier quantitative ;
+- export CSV ;
+- export Excel.
+
+Le bouton Actualiser les scores vide les caches Streamlit des scores et du
+comparateur.
+
+========================================================================
+13. DOCKER ET POSTGRESQL
+========================================================================
+
+Fichiers :
+
+    docker/Dockerfile
+    docker/compose.yaml
+
+Services :
+
+1. postgres
+   - image PostgreSQL 16 Alpine ;
+   - volume persistant ;
+   - healthcheck pg_isready ;
+   - mot de passe obligatoire.
+
+2. api
+   - FastAPI/Uvicorn ;
+   - port interne 8020 ;
+   - connexion PostgreSQL avec psycopg ;
+   - base analytique montée en lecture seule.
+
+3. streamlit
+   - port interne 8501 ;
+   - URLs API internes vers le service api.
+
+Le mot de passe n’est pas stocké dans le dépôt. La variable
+POSTGRES_PASSWORD doit être fournie au démarrage.
+
+Exemple :
+
+    POSTGRES_PASSWORD='mot-de-passe-fort' \
+      docker compose -f docker/compose.yaml up --build
+
+La configuration Compose a été validée syntaxiquement. Aucun conteneur de
+production permanent n’a été lancé.
+
+========================================================================
+14. TESTS
+========================================================================
+
+Résultat à la fin du lot :
+
+    68 tests réussis
+
+Les tests couvrent notamment :
+
+- extraction des baromètres ;
+- idempotence ;
+- dimensions conformes ;
+- passerelle analytique ;
+- Filosofi ;
+- inflation ;
+- taux départementaux ;
+- harmonisation historique ;
+- endettement moyen ;
+- calcul des scores ;
+- sélection explicite d’une version ;
+- comparaison des modèles ;
+- analyse de sensibilité ;
+- API ;
+- observabilité ;
+- journal du pipeline.
+
+Commande :
+
+    .venv/bin/python -m pytest -q
+
+========================================================================
+15. SAUVEGARDE DE SÉCURITÉ
+========================================================================
+
+Pendant la correction du parseur PDF 2024, 109 observations intermédiaires
+produites par les essais ont été supprimées puis reconstruites proprement.
+
+La suppression était limitée à :
+
+- extraction_method = risk-score-bdf-department-rates-v1 ;
+- reference_period = 2024.
+
+Sauvegarde préalable :
+
+    /tmp/surendettement_before_department_history_cleanup.db
+
+Après reconstruction :
+
+- 96 observations ;
+- 96 codes distincts ;
+- aucun doublon ;
+- aucune violation de clé étrangère.
+
+========================================================================
+16. LIMITES ET POINTS NON FINALISÉS
+========================================================================
+
+- Le PDF Île-de-France juin 2026 reste inexploitable.
+- La validation experte des indicateurs, poids et seuils reste externe.
+- Les bornes fixes sont candidates et non actives.
+- La base analytique reste distincte et stockée en SQLite.
+- PostgreSQL est préparé mais la migration complète des données existantes
+  n’est pas encore automatisée.
+- La CI distante n’est pas encore créée.
+- Les environnements développement, recette et production ne sont pas encore
+  décrits dans des fichiers distincts.
+- La sauvegarde/restauration PostgreSQL n’est pas encore automatisée.
+- L’authentification API devra être activée avant une exposition publique.
+
+========================================================================
+17. PROCHAIN LOT
+========================================================================
+
+Le prochain lot doit contenir :
+
+1. migrations de schéma PostgreSQL versionnées ;
+2. commande de migration SQLite vers PostgreSQL ;
+3. sauvegarde et restauration PostgreSQL ;
+4. environnements développement, recette et production ;
+5. contrôle de configuration et de secrets ;
+6. service CI exécutant les tests et les contrôles qualité ;
+7. healthchecks applicatifs ;
+8. procédure de déploiement et de retour arrière ;
+9. stratégie de cache API avec invalidation après recalcul ;
+10. option d’authentification API avant exposition publique.
+
+FIN DU DOCUMENT

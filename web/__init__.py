@@ -1,0 +1,1 @@
+"""Standalone Django web service."""

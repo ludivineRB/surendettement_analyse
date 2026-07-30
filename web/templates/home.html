@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}Accueil — Surendettement territorial{% endblock %}
+
+{% block content %}
+  <h1>Analyse territoriale du surendettement</h1>
+  <p>
+    Ce service présente des indicateurs statistiques territoriaux. Il ne
+    fournit aucun diagnostic ni aucune décision individuelle.
+  </p>
+  {% if user.is_authenticated %}
+    <a href="{% url 'dashboard' %}">Accéder au tableau de bord</a>
+  {% else %}
+    <a href="{% url 'login' %}">Se connecter</a>
+  {% endif %}
+{% endblock %}

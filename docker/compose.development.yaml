@@ -19,3 +19,14 @@ services:
     volumes:
       - ..:/workspace
 
+  django:
+    environment:
+      APP_ENV: development
+      DJANGO_DEBUG: "true"
+    volumes:
+      - ..:/workspace
+    command:
+      - python
+      - web/manage.py
+      - runserver
+      - 0.0.0.0:8000

@@ -28,6 +28,19 @@ services:
       postgres:
         condition: service_healthy
 
+  assistant-api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: assistant-api
+    environment:
+      ANALYTICS_API_BASE_URL: http://api:8020
+    ports:
+      - "${ASSISTANT_API_PORT:-8030}:8030"
+    depends_on:
+      api:
+        condition: service_started
+
   streamlit:
     build:
       context: ..
@@ -43,6 +56,27 @@ services:
       - "${STREAMLIT_PORT:-8501}:8501"
     depends_on:
       - api
+
+  django:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: django
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-surendettement}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-surendettement}
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-}
+      DJANGO_DEBUG: ${DJANGO_DEBUG:-false}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1}
+      ANALYTICS_API_BASE_URL: http://api:8020
+      ANALYTICS_API_TIMEOUT_SECONDS: ${ANALYTICS_API_TIMEOUT_SECONDS:-5}
+    ports:
+      - "${DJANGO_PORT:-8000}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      api:
+        condition: service_started
 
 volumes:
   postgres_data:

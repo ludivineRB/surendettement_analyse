@@ -6,10 +6,14 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /workspace
 
 COPY requirements.txt .
+COPY web/requirements.txt web-requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt \
+    && pip install --no-cache-dir -r web-requirements.txt \
     && pip install --no-cache-dir "psycopg[binary]==3.2.3"
 
 COPY app ./app
+COPY assistant_api ./assistant_api
+COPY web ./web
 COPY src ./src
 COPY config ./config
 COPY tests ./tests
@@ -28,6 +32,14 @@ FROM runtime AS api
 EXPOSE 8020
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8020"]
 
+FROM runtime AS assistant-api
+EXPOSE 8030
+CMD ["uvicorn", "assistant_api.main:app", "--host", "0.0.0.0", "--port", "8030"]
+
 FROM runtime AS streamlit
 EXPOSE 8501
 CMD ["streamlit", "run", "app.py", "--server.address", "0.0.0.0", "--server.port", "8501"]
+
+FROM runtime AS django
+EXPOSE 8000
+CMD ["python", "web/manage.py", "runserver", "0.0.0.0:8000"]

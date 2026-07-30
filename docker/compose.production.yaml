@@ -33,3 +33,20 @@ services:
     depends_on:
       api:
         condition: service_healthy
+
+  django:
+    restart: unless-stopped
+    init: true
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/', timeout=5)"
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    depends_on:
+      postgres:
+        condition: service_healthy

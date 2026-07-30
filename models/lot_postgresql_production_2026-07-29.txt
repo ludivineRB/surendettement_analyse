@@ -1,0 +1,752 @@
+LOT 2 — MIGRATIONS POSTGRESQL ET PRÉPARATION À LA PRODUCTION
+Date : 29 juillet 2026
+Projet : surendettement_analyse
+
+===============================================================================
+1. OBJECTIF DU LOT
+===============================================================================
+
+Ce deuxième lot prépare le projet à quitter progressivement une exécution
+principalement locale fondée sur SQLite pour aller vers une exploitation
+industrialisée avec PostgreSQL, Docker et plusieurs environnements.
+
+Il poursuit six objectifs :
+
+1. versionner les évolutions du schéma de la base opérationnelle ;
+2. transférer les données SQLite existantes vers PostgreSQL sans les écraser ;
+3. formaliser les sauvegardes et restaurations PostgreSQL ;
+4. distinguer les environnements développement, recette et production ;
+5. vérifier automatiquement la disponibilité des services ;
+6. fournir une commande de contrôle réutilisable dans une future CI.
+
+Ce lot ne met pas encore l’application en production. Il fournit le socle
+technique permettant de le faire de manière contrôlée et reproductible.
+
+Aucune donnée existante n’a été supprimée ou remplacée. Aucun commit ou push
+Git n’a été effectué.
+
+===============================================================================
+2. PÉRIMÈTRE DES FICHIERS
+===============================================================================
+
+Fichiers créés :
+
+- src/storage/schema_migrations.py
+- src/storage/migrate_to_postgres.py
+- app/tests/test_schema_migrations.py
+- docker/backup_postgres.sh
+- docker/restore_postgres.sh
+- docker/compose.development.yaml
+- docker/compose.staging.yaml
+- docker/compose.production.yaml
+- docker/run_ci.sh
+- models/lot_postgresql_production_2026-07-29.txt
+
+Fichiers existants utilisés sans modification dans ce lot :
+
+- src/storage/models.py
+- src/storage/database.py
+- docker/compose.yaml
+- docker/Dockerfile
+- app/main.py
+- app/views/analytics_api.py
+
+Le fichier docker/compose.yaml et le Dockerfile avaient été préparés dans le
+lot précédent. Le présent lot les complète au moyen de fichiers de surcharge
+Docker Compose spécialisés.
+
+===============================================================================
+3. MIGRATIONS DE SCHÉMA VERSIONNÉES
+===============================================================================
+
+Fichier :
+
+src/storage/schema_migrations.py
+
+Rôle :
+
+Ce module fournit un registre minimal de migrations compatible avec SQLite et
+PostgreSQL. Il évite de dépendre uniquement de create_all(), qui crée les
+objets absents mais ne permet pas, à lui seul, de savoir quelles évolutions de
+schéma ont déjà été exécutées.
+
+3.1. Table de suivi
+
+Le système crée une table :
+
+schema_migrations
+
+Elle contient :
+
+- version : identifiant unique de la migration ;
+- description : description lisible de l’évolution ;
+- applied_at : date UTC d’application.
+
+Cette table constitue la mémoire technique du schéma. Chaque migration ne doit
+être exécutée qu’une seule fois par base.
+
+3.2. Migrations initiales
+
+Deux versions ont été définies.
+
+001_application_schema
+
+- crée le schéma SQLAlchemy de l’application ;
+- utilise Base.metadata.create_all() ;
+- crée uniquement les tables absentes ;
+- ne supprime aucune table ni aucune donnée.
+
+002_operational_indexes
+
+- crée l’index ix_pipeline_runs_name_started sur :
+  pipeline_runs(pipeline_name, started_at) ;
+- crée l’index ix_source_documents_period_status sur :
+  source_documents(reference_period, extraction_status) ;
+- crée l’index ix_observations_period_level_code sur :
+  observations(reference_period, geographic_level, geographic_code).
+
+Ces index accélèrent les consultations les plus courantes :
+
+- historique d’exécution d’un pipeline ;
+- contrôle des documents par période et statut d’extraction ;
+- recherche des observations par période et territoire.
+
+Les instructions CREATE INDEX utilisent IF NOT EXISTS. Elles restent donc
+réexécutables sans créer de doublon.
+
+3.3. Idempotence
+
+La fonction apply_migrations() :
+
+1. crée la table schema_migrations si elle n’existe pas ;
+2. récupère les versions déjà enregistrées ;
+3. ignore les migrations déjà appliquées ;
+4. exécute les nouvelles migrations dans l’ordre déclaré ;
+5. enregistre chaque version après son exécution.
+
+Elle renvoie un rapport séparant :
+
+- applied : migrations nouvellement appliquées ;
+- already_applied : migrations déjà présentes.
+
+L’ensemble est exécuté dans une transaction gérée par SQLAlchemy.
+
+3.4. Limites actuelles
+
+Ce registre est volontairement léger. Il convient au schéma actuel, mais ne
+remplace pas encore un outil complet tel qu’Alembic pour :
+
+- les modifications complexes de colonnes ;
+- les migrations de données élaborées ;
+- les branches de migrations ;
+- la génération automatique de révisions ;
+- les rétrogradations de schéma.
+
+Une adoption future d’Alembic reste possible. Les versions présentes devront
+alors être reprises dans la base de référence afin d’éviter leur réexécution.
+
+===============================================================================
+4. TRANSFERT SQLITE VERS POSTGRESQL
+===============================================================================
+
+Fichier :
+
+src/storage/migrate_to_postgres.py
+
+Rôle :
+
+Ce module copie les données de la base opérationnelle SQLite actuelle vers une
+base PostgreSQL déjà accessible.
+
+4.1. Conditions préalables
+
+- le fichier SQLite source doit exister ;
+- la cible doit réellement utiliser le dialecte PostgreSQL ;
+- la cible doit être accessible avec l’URL fournie ;
+- le pilote PostgreSQL psycopg doit être installé ;
+- l’utilisateur PostgreSQL doit pouvoir créer les tables et insérer les
+  données.
+
+Le programme refuse explicitement une cible qui n’est pas PostgreSQL.
+
+4.2. Déroulement
+
+Le transfert :
+
+1. ouvre la base SQLite source ;
+2. ouvre la base PostgreSQL cible ;
+3. applique les migrations de schéma sur PostgreSQL ;
+4. inspecte les tables présentes dans SQLite ;
+5. reprend l’ordre des tables défini par les métadonnées SQLAlchemy ;
+6. lit les lignes source ;
+7. les insère dans les tables PostgreSQL correspondantes ;
+8. ignore les conflits de clés primaires ;
+9. recale les séquences des clés entières auto-incrémentées ;
+10. produit un rapport par table.
+
+4.3. Protection contre l’écrasement
+
+Les insertions PostgreSQL utilisent ON CONFLICT DO NOTHING lorsqu’une clé
+primaire est disponible.
+
+Conséquences :
+
+- une ligne déjà présente n’est pas remplacée ;
+- une nouvelle ligne est insérée ;
+- une relance ne duplique pas les lignes ayant la même clé primaire ;
+- le transfert est adapté à une reprise après interruption.
+
+Il s’agit d’une stratégie de conservation. Ce mécanisme ne met pas à jour une
+ligne PostgreSQL déjà existante si son contenu diffère de SQLite.
+
+4.4. Rapport
+
+Le rapport indique :
+
+- le chemin de la source ;
+- le dialecte de la cible ;
+- le nombre de lignes insérées par table ;
+- le nombre de lignes ignorées par table.
+
+4.5. Mode simulation
+
+L’option --dry-run inspecte les lignes disponibles sans les insérer. Dans ce
+mode, toutes les lignes détectées sont comptabilisées comme ignorées.
+
+4.6. Commande
+
+Exemple :
+
+.venv/bin/python -m src.storage.migrate_to_postgres \
+  --source data/processed/surendettement.db \
+  --target-url "postgresql+psycopg://UTILISATEUR:MOT_DE_PASSE@HOTE:5432/BASE"
+
+La cible peut également être fournie avec :
+
+TARGET_DATABASE_URL
+
+Exemple de simulation :
+
+TARGET_DATABASE_URL="postgresql+psycopg://..." \
+.venv/bin/python -m src.storage.migrate_to_postgres \
+  --source data/processed/surendettement.db \
+  --dry-run
+
+4.7. Séquences PostgreSQL
+
+Après insertion, le programme recherche une unique clé primaire entière
+auto-incrémentée. Il utilise ensuite pg_get_serial_sequence et setval pour
+aligner la séquence sur la plus grande clé copiée.
+
+Le contrôle du type entier est important : les tables possédant une clé
+primaire textuelle ne doivent pas être traitées comme si elles utilisaient une
+séquence PostgreSQL.
+
+4.8. Limites actuelles
+
+- le transfert n’a pas été exécuté sur une base PostgreSQL réelle pendant ce
+  lot, afin de ne pas créer ni modifier une infrastructure externe sans cible
+  explicitement fournie ;
+- ON CONFLICT DO NOTHING ne synchronise pas les mises à jour ;
+- l’outil copie les tables appartenant au modèle SQLAlchemy connu ;
+- les très grandes tables sont actuellement chargées en mémoire table par
+  table et ne sont pas encore copiées par lots ;
+- une validation fonctionnelle après transfert reste nécessaire :
+  comptage, sommes de contrôle, périodes, indicateurs et scores.
+
+===============================================================================
+5. TEST AUTOMATISÉ DES MIGRATIONS
+===============================================================================
+
+Fichier :
+
+app/tests/test_schema_migrations.py
+
+Le test :
+
+1. crée une base SQLite temporaire ;
+2. applique les migrations une première fois ;
+3. vérifie que 001 et 002 sont appliquées ;
+4. applique les migrations une seconde fois ;
+5. vérifie qu’elles sont reconnues comme déjà appliquées ;
+6. vérifie la présence de la table pipeline_runs ;
+7. vérifie que schema_migrations contient exactement deux versions.
+
+Résultat du test ciblé :
+
+1 passed
+
+Ce test couvre l’idempotence du registre et la création du schéma sur SQLite.
+Il ne constitue pas encore un test d’intégration PostgreSQL.
+
+===============================================================================
+6. SAUVEGARDE POSTGRESQL
+===============================================================================
+
+Fichier :
+
+docker/backup_postgres.sh
+
+Rôle :
+
+Créer une sauvegarde logique de PostgreSQL à partir du service postgres de
+Docker Compose.
+
+6.1. Fonctionnement
+
+Le script :
+
+- active l’arrêt immédiat en cas d’erreur ;
+- lit BACKUP_DIR ou utilise ./backups ;
+- lit POSTGRES_DB ou utilise surendettement ;
+- lit POSTGRES_USER ou utilise surendettement ;
+- crée le dossier de sauvegarde ;
+- applique umask 077 pour protéger le fichier créé ;
+- exécute pg_dump dans le conteneur PostgreSQL ;
+- utilise le format custom de PostgreSQL ;
+- exclut les propriétaires et privilèges spécifiques ;
+- vérifie que le fichier final existe et n’est pas vide ;
+- affiche le chemin de la sauvegarde.
+
+Format du nom :
+
+BASE_YYYYMMDDTHHMMSSZ.dump
+
+La date est exprimée en UTC.
+
+6.2. Commande
+
+POSTGRES_PASSWORD="..." sh docker/backup_postgres.sh
+
+Avec un dossier choisi :
+
+BACKUP_DIR="/chemin/securise" \
+POSTGRES_PASSWORD="..." \
+sh docker/backup_postgres.sh
+
+6.3. Propriétés
+
+Le format custom permet une restauration avec pg_restore et offre davantage de
+contrôle qu’un simple fichier SQL texte.
+
+Le mot de passe n’est pas écrit dans le script. Docker Compose le reçoit par
+variable d’environnement.
+
+6.4. Limites
+
+- le service postgres doit être démarré ;
+- Docker Compose doit être disponible ;
+- la rétention et la rotation des sauvegardes ne sont pas encore automatisées ;
+- la copie vers un stockage externe n’est pas incluse ;
+- le chiffrement externe du fichier n’est pas inclus ;
+- une sauvegarde n’est considérée fiable qu’après un test de restauration.
+
+===============================================================================
+7. RESTAURATION POSTGRESQL
+===============================================================================
+
+Fichier :
+
+docker/restore_postgres.sh
+
+Rôle :
+
+Restaurer une sauvegarde custom dans PostgreSQL en imposant une confirmation
+explicite.
+
+7.1. Protections
+
+Le script exige :
+
+- exactement un chemin de sauvegarde ;
+- un fichier existant ;
+- un fichier non vide ;
+- la variable CONFIRM_RESTORE=yes.
+
+Sans cette confirmation, l’opération est refusée.
+
+7.2. Commande
+
+CONFIRM_RESTORE=yes \
+POSTGRES_PASSWORD="..." \
+sh docker/restore_postgres.sh backups/BASE_DATE.dump
+
+7.3. Comportement
+
+pg_restore utilise :
+
+- --clean : suppression des objets restaurés déjà présents ;
+- --if-exists : évite les erreurs lorsque certains objets sont absents ;
+- --no-owner : ne restaure pas les propriétaires d’origine ;
+- --no-privileges : ne restaure pas les privilèges d’origine ;
+- --exit-on-error : interrompt la restauration dès la première erreur.
+
+7.4. Avertissement important
+
+La restauration est destructive pour les objets concernés, car --clean
+remplace le contenu de la base cible par celui de la sauvegarde.
+
+Avant toute utilisation réelle, il faut :
+
+1. vérifier précisément l’environnement ciblé ;
+2. faire une sauvegarde de l’état actuel ;
+3. interrompre ou mettre en lecture seule les écritures applicatives ;
+4. restaurer ;
+5. appliquer les migrations éventuellement plus récentes ;
+6. exécuter les contrôles de qualité ;
+7. remettre les services en fonctionnement.
+
+Le script a été contrôlé syntaxiquement, mais aucune restauration réelle n’a
+été déclenchée pendant ce lot.
+
+===============================================================================
+8. ENVIRONNEMENT DE DÉVELOPPEMENT
+===============================================================================
+
+Fichier :
+
+docker/compose.development.yaml
+
+Ce fichier surcharge docker/compose.yaml.
+
+API :
+
+- APP_ENV=development ;
+- montage du dépôt dans /workspace ;
+- lancement d’Uvicorn avec --reload ;
+- rechargement automatique lors des modifications du code.
+
+Streamlit :
+
+- APP_ENV=development ;
+- montage du dépôt dans /workspace.
+
+Commande indicative :
+
+POSTGRES_PASSWORD="mot-de-passe-local" \
+docker compose \
+  -f docker/compose.yaml \
+  -f docker/compose.development.yaml \
+  up --build
+
+Ce mode est destiné au poste du développeur. Le montage du code et le reload ne
+doivent pas être utilisés en production.
+
+===============================================================================
+9. ENVIRONNEMENT DE RECETTE
+===============================================================================
+
+Fichier :
+
+docker/compose.staging.yaml
+
+Ce fichier positionne :
+
+APP_ENV=staging
+
+pour PostgreSQL, l’API et Streamlit.
+
+Il peut être combiné avec la configuration de production afin de tester les
+conditions proches de la production, notamment les healthchecks et les règles
+de redémarrage.
+
+Commande indicative :
+
+POSTGRES_PASSWORD="mot-de-passe-recette" \
+docker compose \
+  -f docker/compose.yaml \
+  -f docker/compose.production.yaml \
+  -f docker/compose.staging.yaml \
+  up --build -d
+
+La recette doit utiliser ses propres volumes, secrets, noms de projet Docker et
+ports afin de ne pas partager les données de production.
+
+===============================================================================
+10. ENVIRONNEMENT DE PRODUCTION
+===============================================================================
+
+Fichier :
+
+docker/compose.production.yaml
+
+Ce fichier renforce docker/compose.yaml.
+
+10.1. PostgreSQL
+
+- restart: unless-stopped ;
+- délai d’arrêt de 30 secondes.
+
+Ce délai permet à PostgreSQL de terminer proprement ses opérations lors de
+l’arrêt du conteneur.
+
+10.2. API
+
+- restart: unless-stopped ;
+- init: true pour une meilleure gestion des signaux et processus ;
+- healthcheck HTTP sur /api/data/health ;
+- vérification toutes les 30 secondes ;
+- délai maximal de 10 secondes ;
+- trois échecs avant déclaration d’indisponibilité ;
+- délai initial de 30 secondes.
+
+Le contrôle HTTP utilise Python urllib déjà présent dans l’image. Il n’ajoute
+donc pas de dépendance système à curl.
+
+10.3. Streamlit
+
+- restart: unless-stopped ;
+- init: true ;
+- healthcheck sur /_stcore/health ;
+- mêmes intervalles et délais que l’API ;
+- démarrage conditionné par une API déclarée saine.
+
+10.4. Chaîne de dépendances
+
+L’ordre logique est :
+
+PostgreSQL sain
+    -> API démarrée et saine
+        -> Streamlit démarré et surveillé
+
+Cela limite les erreurs de démarrage provoquées par une dépendance encore
+indisponible.
+
+10.5. Commande indicative
+
+POSTGRES_PASSWORD="secret-fort" \
+docker compose \
+  -f docker/compose.yaml \
+  -f docker/compose.production.yaml \
+  up --build -d
+
+10.6. Secrets
+
+Le mot de passe PostgreSQL reste obligatoire dans docker/compose.yaml :
+
+POSTGRES_PASSWORD
+
+Aucun mot de passe réel n’a été ajouté au dépôt.
+
+Pour une production définitive, il reste recommandé d’utiliser un gestionnaire
+de secrets ou les secrets du moteur d’orchestration au lieu d’une variable
+saisie dans le terminal.
+
+===============================================================================
+11. COMMANDE CI REPRODUCTIBLE
+===============================================================================
+
+Fichier :
+
+docker/run_ci.sh
+
+Rôle :
+
+Fournir un point d’entrée commun pour les contrôles automatisés, indépendamment
+de la plateforme CI qui sera choisie.
+
+Le script :
+
+1. définit un mot de passe PostgreSQL éphémère si aucun n’est fourni ;
+2. construit l’image Docker de l’API ;
+3. exécute toute la suite pytest dans cette image ;
+4. valide docker/compose.yaml ;
+5. valide la combinaison base + production ;
+6. s’arrête immédiatement si une étape échoue.
+
+Commande :
+
+sh docker/run_ci.sh
+
+Ce script pourra être appelé par GitHub Actions, GitLab CI, Jenkins ou un autre
+système sans dupliquer les commandes techniques.
+
+Limites :
+
+- aucun workflow propre à une plateforme n’a encore été créé ;
+- le script nécessite Docker ;
+- la construction de l’image peut nécessiter un accès réseau pour télécharger
+  les dépendances ;
+- le test PostgreSQL d’intégration complet reste à ajouter.
+
+===============================================================================
+12. VALIDATIONS EFFECTUÉES
+===============================================================================
+
+12.1. Test ciblé
+
+Le test des migrations a été exécuté :
+
+.venv/bin/python -m pytest app/tests/test_schema_migrations.py -q
+
+Résultat :
+
+1 passed
+
+12.2. Syntaxe des scripts
+
+Les trois scripts suivants ont été contrôlés avec sh -n :
+
+- docker/backup_postgres.sh
+- docker/restore_postgres.sh
+- docker/run_ci.sh
+
+Aucune erreur syntaxique n’a été détectée.
+
+12.3. Docker Compose
+
+Ont été validées avec docker compose config --quiet :
+
+- configuration de base + développement ;
+- configuration de base + production ;
+- configuration de base + production + recette.
+
+Le mot de passe utilisé pour cette validation était une valeur de test. Aucun
+secret réel n’a été écrit dans les fichiers.
+
+12.4. Suite complète
+
+Commande :
+
+.venv/bin/python -m pytest -q
+
+Résultat :
+
+69 tests réussis en 4,32 secondes.
+
+Ce résultat montre que les ajouts n’ont pas introduit de régression détectée
+par la suite actuelle.
+
+===============================================================================
+13. CE QUI N’A PAS ÉTÉ FAIT
+===============================================================================
+
+Les opérations suivantes n’ont volontairement pas été exécutées :
+
+- création d’une base PostgreSQL distante ;
+- transfert réel de la base SQLite vers une cible externe ;
+- remplacement de la base SQLite utilisée localement ;
+- restauration réelle d’une sauvegarde ;
+- suppression de données ou de volumes ;
+- publication d’images Docker ;
+- déploiement sur un serveur ;
+- ajout d’un secret réel ;
+- création d’un workflow dépendant d’un fournisseur CI ;
+- commit ou push Git.
+
+Ces actions nécessitent une cible, des secrets, une politique d’exploitation ou
+une validation explicite supplémentaire.
+
+===============================================================================
+14. PROCÉDURE CONSEILLÉE POUR LA PREMIÈRE MIGRATION RÉELLE
+===============================================================================
+
+1. Créer une instance PostgreSQL de recette.
+2. Définir un mot de passe robuste hors du dépôt.
+3. Démarrer PostgreSQL.
+4. Sauvegarder la base SQLite et les fichiers analytiques.
+5. Exécuter le transfert en recette.
+6. Comparer les nombres de lignes table par table.
+7. Contrôler les périodes, territoires, indicateurs et unités.
+8. Recalculer ou vérifier les scores régionaux et départementaux.
+9. Démarrer l’API avec DATABASE_URL pointant vers PostgreSQL.
+10. Vérifier /api/data/health et les routes analytiques.
+11. Démarrer Streamlit et vérifier les filtres, cartes et exports.
+12. Tester une sauvegarde PostgreSQL.
+13. Restaurer cette sauvegarde dans une deuxième base de test.
+14. Rejouer les contrôles fonctionnels.
+15. Documenter le résultat et seulement ensuite préparer la production.
+
+===============================================================================
+15. CONTRÔLES DE DONNÉES RECOMMANDÉS APRÈS TRANSFERT
+===============================================================================
+
+Pour chaque table :
+
+- nombre total de lignes SQLite/PostgreSQL ;
+- nombre de clés primaires distinctes ;
+- absence de clés nulles inattendues ;
+- première et dernière période disponibles.
+
+Pour observations :
+
+- nombre par indicator_code ;
+- nombre par geographic_level ;
+- nombre par année et mois ;
+- unités distinctes par indicateur ;
+- territoires manquants ;
+- doublons fonctionnels.
+
+Pour les scores :
+
+- nombre par version de modèle ;
+- nombre par niveau géographique ;
+- répartition des statuts valid, partial et insufficient_data ;
+- couverture moyenne ;
+- comparaison de quelques scores de référence ;
+- cohérence des facteurs et des pondérations.
+
+Pour le pipeline :
+
+- historique pipeline_runs ;
+- dernier statut de chaque traitement ;
+- durée des traitements ;
+- dernière période importée ;
+- documents en échec ou à vérifier.
+
+===============================================================================
+16. POINTS D’ATTENTION
+===============================================================================
+
+1. Une migration de schéma réussie ne garantit pas la qualité des données.
+2. Un transfert sans conflit ne garantit pas que la cible est complète.
+3. ON CONFLICT DO NOTHING protège les lignes présentes mais peut masquer une
+   différence de contenu ; un audit comparatif reste nécessaire.
+4. Les sauvegardes doivent être copiées hors de l’hôte PostgreSQL.
+5. Une restauration doit être testée périodiquement.
+6. Les environnements doivent employer des bases, volumes et secrets distincts.
+7. La production doit utiliser HTTPS via un proxy ou une plateforme adaptée.
+8. L’accès PostgreSQL ne doit pas être exposé publiquement.
+9. L’API publique devra recevoir authentification, quotas et journalisation.
+10. Les journaux ne doivent pas contenir de secrets ni de données sensibles.
+11. Les images Docker devront être versionnées précisément.
+12. La CI devra vérifier PostgreSQL réellement, et pas seulement SQLite.
+
+===============================================================================
+17. PROCHAIN LOT RECOMMANDÉ
+===============================================================================
+
+Le prochain lot logique est la validation complète de PostgreSQL en recette :
+
+- ajouter un test d’intégration PostgreSQL ;
+- exécuter une migration réelle sur une base de recette ;
+- produire un rapport comparatif SQLite/PostgreSQL ;
+- tester effectivement sauvegarde et restauration sur une base jetable ;
+- ajouter les contrôles de configuration et de secrets au démarrage ;
+- formaliser le workflow CI de la plateforme retenue ;
+- définir la rotation, la rétention et le stockage externe des sauvegardes ;
+- documenter une procédure de retour arrière ;
+- ajouter les métriques et alertes d’exploitation.
+
+Ce lot doit précéder le basculement officiel de l’API et de Streamlit vers
+PostgreSQL en production.
+
+===============================================================================
+18. SYNTHÈSE
+===============================================================================
+
+Le projet dispose désormais :
+
+- d’un historique versionné des migrations ;
+- d’un mécanisme prudent de copie SQLite vers PostgreSQL ;
+- d’un recalage contrôlé des séquences entières ;
+- de scripts explicites de sauvegarde et de restauration ;
+- de profils Docker pour développement, recette et production ;
+- de contrôles de santé PostgreSQL, API et Streamlit ;
+- d’un script CI indépendant de la plateforme ;
+- d’un test d’idempotence des migrations ;
+- d’une suite de 69 tests entièrement verte.
+
+Le socle est prêt pour une expérimentation PostgreSQL en recette. Le passage en
+production reste conditionné à une migration réelle contrôlée, à un test de
+restauration et à la validation des données et scores obtenus.

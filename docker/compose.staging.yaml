@@ -11,3 +11,6 @@ services:
     environment:
       APP_ENV: staging
 
+  django:
+    environment:
+      APP_ENV: staging

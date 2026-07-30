@@ -59,7 +59,7 @@ def _operational_report(connection: sqlite3.Connection, report: dict) -> None:
         connection,
         """
         SELECT code, version, minimum_coverage_ratio, updated_at
-        FROM risk_score_models WHERE is_active = 1
+        FROM risk_score_models WHERE is_active IS TRUE
         ORDER BY id DESC LIMIT 1
         """,
     )

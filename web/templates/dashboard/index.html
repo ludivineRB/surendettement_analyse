@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}Tableau de bord{% endblock %}
+
+{% block content %}
+  <h1>Tableau de bord analytique</h1>
+  <p>
+    Indicateurs statistiques territoriaux — aucun diagnostic ni aucune
+    décision individuelle.
+  </p>
+
+  {% if analytics_error %}
+    <div class="alert" role="alert">{{ analytics_error }}</div>
+  {% endif %}
+
+  {% if form %}
+    <form method="get" class="filters">
+      {{ form.as_p }}
+      <button type="submit">Afficher</button>
+    </form>
+  {% endif %}
+
+  {% if score %}
+    <section aria-labelledby="score-title">
+      <h2 id="score-title">
+        {{ score.geographic_name|default:score.geographic_code }}
+        — {{ score.reference_period }}
+      </h2>
+      <div class="kpis">
+        <article>
+          <h3>Score territorial</h3>
+          <strong>{{ score.score|floatformat:2|default:"Indisponible" }}</strong>
+        </article>
+        <article>
+          <h3>Couverture</h3>
+          <strong>{% widthratio score.coverage_ratio 1 100 %} %</strong>
+        </article>
+        <article>
+          <h3>Statut</h3>
+          <strong>{{ score.status }}</strong>
+        </article>
+        <article>
+          <h3>Modèle</h3>
+          <strong>{{ score.model.version }}</strong>
+        </article>
+      </div>
+    </section>
+
+    <section aria-labelledby="factors-title">
+      <h2 id="factors-title">Facteurs du score</h2>
+      {% if factors %}
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Indicateur</th>
+                <th>Valeur</th>
+                <th>Unité</th>
+                <th>Poids effectif</th>
+                <th>Contribution</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for factor in factors %}
+                <tr>
+                  <td>{{ factor.indicator_code }}</td>
+                  <td>{{ factor.raw_value|floatformat:2 }}</td>
+                  <td>{{ factor.unit|default:"—" }}</td>
+                  <td>{% widthratio factor.effective_weight 1 100 %} %</td>
+                  <td>{{ factor.contribution|floatformat:2 }}</td>
+                  <td>
+                    {% if factor.source_url %}
+                      <a href="{{ factor.source_url }}" rel="noopener">Document</a>
+                    {% else %}
+                      —
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p>Aucun facteur disponible.</p>
+      {% endif %}
+    </section>
+  {% elif form and not analytics_error %}
+    <p>Aucun score ne correspond aux filtres sélectionnés.</p>
+  {% endif %}
+
+  {% if series %}
+    <section aria-labelledby="series-title">
+      <h2 id="series-title">Évolution temporelle</h2>
+      <div class="series" role="img" aria-label="Évolution du score par période">
+        {% for item in series %}
+          <div class="series-row">
+            <span>{{ item.reference_period }}</span>
+            <span class="score-track">
+              <span class="score-fill" style="width: {{ item.score|default:0 }}%"></span>
+            </span>
+            <strong>{{ item.score|floatformat:2|default:"—" }}</strong>
+          </div>
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
+
+  {% if period_comparison %}
+    <section aria-labelledby="period-comparison-title">
+      <h2 id="period-comparison-title">Comparaison entre périodes</h2>
+      <div class="kpis">
+        {% for item in period_comparison %}
+          <article>
+            <h3>{{ item.reference_period }}</h3>
+            <strong>{{ item.score|floatformat:2|default:"—" }}</strong>
+            <p>Couverture : {% widthratio item.coverage_ratio 1 100 %} %</p>
+          </article>
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
+
+  {% if model_comparison %}
+    <section aria-labelledby="model-comparison-title">
+      <h2 id="model-comparison-title">Comparaison des modèles</h2>
+      <p>
+        {{ model_comparison.version_a }} / {{ model_comparison.version_b }} —
+        {{ model_comparison.territory_periods_compared }} territoires-périodes.
+      </p>
+      <dl>
+        <dt>Écart absolu moyen</dt>
+        <dd>{{ model_comparison.mean_absolute_score_delta|floatformat:3 }}</dd>
+        <dt>Écart absolu maximal</dt>
+        <dd>{{ model_comparison.maximum_absolute_score_delta|floatformat:3 }}</dd>
+        <dt>Changements de niveau</dt>
+        <dd>{{ model_comparison.risk_level_changes }}</dd>
+      </dl>
+    </section>
+  {% endif %}
+
+  {% if observability %}
+    <p class="service-status">Service analytique connecté.</p>
+  {% endif %}
+{% endblock %}
