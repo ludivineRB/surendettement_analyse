@@ -36,3 +36,26 @@ class ServiceUnavailableResponse(BaseModel):
     status: Literal["not_ready"]
     detail: str
     request_id: UUID
+
+
+class RetrievalRequest(BaseModel):
+    query: str = Field(min_length=2, max_length=500)
+    limit: int = Field(default=5, ge=1, le=20)
+
+
+class RetrievalHit(BaseModel):
+    chunk_id: str
+    source_id: str
+    source_url: str
+    source_title: str
+    publisher: str
+    reference_period: str
+    geographic_scope: str
+    section: str
+    content: str
+    rank: float
+
+
+class RetrievalResponse(BaseModel):
+    query: str
+    results: list[RetrievalHit]

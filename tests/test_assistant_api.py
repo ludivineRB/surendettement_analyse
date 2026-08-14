@@ -1,8 +1,10 @@
 import pytest
 from fastapi import HTTPException
 
-from assistant_api.main import answer_question, health
-from assistant_api.schemas import AnswerRequest
+from unittest.mock import Mock, patch
+
+from assistant_api.main import answer_question, health, retrieval_search
+from assistant_api.schemas import AnswerRequest, RetrievalRequest
 
 
 def test_health_identifies_assistant_service():
@@ -23,3 +25,30 @@ def test_answer_refuses_to_invent_content_before_engines_are_ready():
     body = error.value.detail
     assert body["status"] == "not_ready"
     assert body["request_id"]
+
+
+@patch("assistant_api.main.search_active_chunks")
+def test_retrieval_returns_ranked_cited_chunks(search):
+    search.return_value = [
+        {
+            "chunk_id": "a" * 64,
+            "source_id": "insee-definition-ipc",
+            "source_url": "https://www.insee.fr/fr/metadonnees/definition/c1557",
+            "source_title": "Prix à la consommation (Indice des)",
+            "publisher": "Insee",
+            "reference_period": "base 2025",
+            "geographic_scope": "France",
+            "section": "Définition",
+            "content": "L'IPC est un instrument de mesure.",
+            "rank": 0.8,
+        }
+    ]
+
+    response = retrieval_search(
+        RetrievalRequest(query="inflation", limit=3),
+        Mock(),
+    )
+
+    assert response.results[0].publisher == "Insee"
+    assert str(response.results[0].source_url).startswith("https://")
+    search.assert_called_once()

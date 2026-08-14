@@ -2,9 +2,17 @@
 
 from uuid import uuid4
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
+from sqlalchemy import Engine
+from sqlalchemy.exc import SQLAlchemyError
 
-from assistant_api.schemas import AnswerRequest
+from assistant_api.repository import search_active_chunks
+from assistant_api.schemas import (
+    AnswerRequest,
+    RetrievalRequest,
+    RetrievalResponse,
+)
+from assistant_api.storage import get_engine
 
 
 app = FastAPI(
@@ -16,6 +24,25 @@ app = FastAPI(
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok", "service": "assistant-api"}
+
+
+@app.post("/v1/retrieval/search", response_model=RetrievalResponse)
+def retrieval_search(
+    request: RetrievalRequest,
+    engine: Engine = Depends(get_engine),
+) -> RetrievalResponse:
+    try:
+        results = search_active_chunks(
+            engine,
+            request.query,
+            limit=request.limit,
+        )
+    except SQLAlchemyError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="Le corpus documentaire est indisponible.",
+        ) from exc
+    return RetrievalResponse(query=request.query, results=results)
 
 
 @app.post(
