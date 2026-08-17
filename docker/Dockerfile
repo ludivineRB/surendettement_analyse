@@ -32,7 +32,19 @@ FROM runtime AS api
 EXPOSE 8020
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8020"]
 
-FROM runtime AS assistant-api
+FROM python:3.12-slim AS assistant-runtime
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+WORKDIR /workspace
+
+COPY assistant_api/requirements.txt assistant-requirements.txt
+RUN pip install --no-cache-dir -r assistant-requirements.txt
+
+COPY assistant_api ./assistant_api
+
+FROM assistant-runtime AS assistant-api
 EXPOSE 8030
 CMD ["uvicorn", "assistant_api.main:app", "--host", "0.0.0.0", "--port", "8030"]
 

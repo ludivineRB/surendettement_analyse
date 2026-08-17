@@ -18,13 +18,49 @@ def test_answer_refuses_to_invent_content_before_engines_are_ready():
     request = AnswerRequest(
         question="Quelle est la situation en France ?"
     )
+    analytics = Mock()
+    analytics.fetch.return_value = []
     with pytest.raises(HTTPException) as error:
-        answer_question(request)
+        answer_question(request, Mock(), analytics, Mock())
 
     assert error.value.status_code == 503
     body = error.value.detail
     assert body["status"] == "not_ready"
     assert body["request_id"]
+
+
+@patch("assistant_api.main.build_grounding_context")
+def test_answer_returns_method_and_citations(build_context):
+    from assistant_api.orchestration import GroundingContext
+
+    build_context.return_value = GroundingContext(
+        method="documents",
+        documentary_chunks=[
+            {
+                "source_title": "Définition IPC",
+                "source_url": "https://www.insee.fr/fr/test",
+                "publisher": "Insee",
+                "reference_period": "2026",
+                "section": "Définition",
+                "content": "Contenu",
+            }
+        ],
+        analytics_dataset=None,
+        analytics_rows=[],
+    )
+    generator = Mock()
+    generator.generate.return_value = "Réponse [S1]"
+
+    response = answer_question(
+        AnswerRequest(question="Définissez l'IPC"),
+        Mock(),
+        Mock(),
+        generator,
+    )
+
+    assert response.method == "documents"
+    assert response.answer == "Réponse [S1]"
+    assert response.sources[0].publisher == "Insee"
 
 
 @patch("assistant_api.main.search_active_chunks")

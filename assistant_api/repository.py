@@ -48,28 +48,71 @@ def search_active_chunks(
     query = query.strip()
     if not query:
         return []
+    expanded_query = _expand_business_query(query)
     bounded_limit = max(1, min(limit, 20))
     with engine.connect() as connection:
         rows = connection.execute(
             text(
                 """
+                WITH normalized_query AS (
+                    SELECT to_tsquery(
+                        'french',
+                        array_to_string(
+                            tsvector_to_array(
+                                to_tsvector('french', :query)
+                            ),
+                            ' | '
+                        )
+                    ) AS value
+                )
+                , ranked_chunks AS (
+                    SELECT chunk_id, source_id, source_url, source_title,
+                           publisher, reference_period, geographic_scope,
+                           section, content,
+                           ts_rank_cd(
+                               search_vector,
+                               normalized_query.value
+                           ) AS rank,
+                           row_number() OVER (
+                               PARTITION BY source_id
+                               ORDER BY ts_rank_cd(
+                                   search_vector,
+                                   normalized_query.value
+                               ) DESC, ordinal
+                           ) AS source_position
+                    FROM assistant.corpus_chunks
+                    CROSS JOIN normalized_query
+                    WHERE is_active = TRUE
+                      AND search_vector @@ normalized_query.value
+                )
                 SELECT chunk_id, source_id, source_url, source_title,
                        publisher, reference_period, geographic_scope,
-                       section, content,
-                       ts_rank_cd(
-                           search_vector,
-                           websearch_to_tsquery('french', :query)
-                       ) AS rank
-                FROM assistant.corpus_chunks
-                WHERE is_active = TRUE
-                  AND search_vector @@ websearch_to_tsquery('french', :query)
-                ORDER BY rank DESC, source_id, ordinal
+                       section, content, rank
+                FROM ranked_chunks
+                WHERE source_position = 1
+                ORDER BY rank DESC, source_id
                 LIMIT :limit
                 """
             ),
-            {"query": query, "limit": bounded_limit},
+            {"query": expanded_query, "limit": bounded_limit},
         )
         return [dict(row) for row in rows.mappings().all()]
+
+
+def _expand_business_query(query: str) -> str:
+    normalized = query.casefold()
+    expansions = {
+        "inflation": "ipc indice prix consommation",
+        "chômage": "bit population active",
+        "chomage": "bit population active",
+        "pauvreté": "niveau vie seuil",
+        "pauvrete": "niveau vie seuil",
+        "surendettement": "dossiers dettes ménages",
+    }
+    added = [
+        terms for keyword, terms in expansions.items() if keyword in normalized
+    ]
+    return " ".join((query, *added))
 
 
 _UPSERT_CHUNK_SQL = """
