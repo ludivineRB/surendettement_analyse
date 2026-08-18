@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import Protocol
 
 from assistant_api.orchestration import GroundingContext
@@ -10,6 +11,10 @@ from assistant_api.orchestration import GroundingContext
 
 class InsufficientGrounding(RuntimeError):
     """Raised when no approved evidence can support an answer."""
+
+
+class InvalidCitation(InsufficientGrounding):
+    """Raised when generated text references evidence that was not supplied."""
 
 
 class GeneratorUnavailable(RuntimeError):
@@ -34,18 +39,31 @@ def generate_grounded_answer(
         raise InsufficientGrounding(
             "Aucune source approuvée ne permet de répondre."
         )
+    allowed_document_citations = [
+        f"S{index}"
+        for index in range(1, len(context.documentary_chunks) + 1)
+    ]
+    allowed_data_citations = [
+        f"D{index}" for index in range(1, len(context.analytics_rows[:100]) + 1)
+    ]
     system_prompt = (
         "Tu es un assistant métier sur le surendettement en France. "
         "Réponds uniquement à partir des preuves fournies. "
         "Distingue constat statistique et interprétation. "
         "N'invente jamais une causalité, une valeur ou une source. "
-        "Cite les documents avec [S1], [S2] et les données avec [D1], [D2]. "
+        "Utilise uniquement les identifiants de citation explicitement autorisés. "
+        "N'utilise jamais une citation [D...] si aucune donnée analytique "
+        "n'est fournie. "
         "Si les preuves sont insuffisantes, indique-le explicitement."
     )
     user_prompt = json.dumps(
         {
             "question": question,
             "method": context.method,
+            "allowed_citations": {
+                "documents": allowed_document_citations,
+                "analytics": allowed_data_citations,
+            },
             "documentary_evidence": [
                 {
                     "citation": f"S{index}",
@@ -71,7 +89,23 @@ def generate_grounded_answer(
         ensure_ascii=False,
         default=str,
     )
-    return generator.generate(
+    answer = generator.generate(
         system_prompt=system_prompt,
         user_prompt=user_prompt,
     ).strip()
+    _validate_citations(
+        answer,
+        allowed={*allowed_document_citations, *allowed_data_citations},
+    )
+    return answer
+
+
+def _validate_citations(answer: str, *, allowed: set[str]) -> None:
+    cited = set(re.findall(r"\[([SD]\d+)\]", answer))
+    invalid = cited - allowed
+    if invalid:
+        raise InvalidCitation(
+            f"Références non autorisées: {', '.join(sorted(invalid))}"
+        )
+    if allowed and not cited:
+        raise InvalidCitation("La réponse ne contient aucune citation")

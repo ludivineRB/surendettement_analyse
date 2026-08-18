@@ -96,6 +96,7 @@ def list_risk_scores(
     model_version: str | None = None,
     active_model_only: bool = False,
     risk_level: str | None = None,
+    include_details: bool = True,
     sort: str = Query("score_desc", pattern="^(score_asc|score_desc)$"),
     limit: int = Query(100, ge=1, le=5000),
     offset: int = Query(0, ge=0),
@@ -125,7 +126,9 @@ def list_risk_scores(
     factory = get_session_factory()
     with factory() as session:
         return [
-            _serialize_score(session, score, model, include_details=True)
+            _serialize_score(
+                session, score, model, include_details=include_details
+            )
             for score, model in session.execute(statement)
         ]
 

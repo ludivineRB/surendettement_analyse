@@ -4,6 +4,7 @@ from unittest.mock import Mock
 import pytest
 
 from assistant_api.generation import (
+    InvalidCitation,
     InsufficientGrounding,
     generate_grounded_answer,
 )
@@ -41,3 +42,25 @@ def test_generation_refuses_to_answer_without_evidence():
 
     with pytest.raises(InsufficientGrounding):
         generate_grounded_answer("Question", context, Mock())
+
+
+def test_generation_rejects_a_data_citation_without_analytics():
+    generator = Mock()
+    generator.generate.return_value = "Affirmation [S1] [D1]"
+    context = GroundingContext(
+        method="documents",
+        documentary_chunks=[
+            {
+                "source_title": "Définition",
+                "publisher": "Insee",
+                "reference_period": "2026",
+                "section": "Définition",
+                "content": "Contenu officiel",
+            }
+        ],
+        analytics_dataset=None,
+        analytics_rows=[],
+    )
+
+    with pytest.raises(InvalidCitation, match="D1"):
+        generate_grounded_answer("Question", context, generator)

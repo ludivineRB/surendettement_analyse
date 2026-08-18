@@ -75,12 +75,16 @@ services:
       DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1}
       ANALYTICS_API_BASE_URL: http://api:8020
       ANALYTICS_API_TIMEOUT_SECONDS: ${ANALYTICS_API_TIMEOUT_SECONDS:-5}
+      ASSISTANT_API_BASE_URL: http://assistant-api:8030
+      ASSISTANT_API_TIMEOUT_SECONDS: ${ASSISTANT_API_TIMEOUT_SECONDS:-90}
     ports:
       - "${DJANGO_PORT:-8000}:8000"
     depends_on:
       postgres:
         condition: service_healthy
       api:
+        condition: service_started
+      assistant-api:
         condition: service_started
 
 volumes:

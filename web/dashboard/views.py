@@ -27,7 +27,10 @@ def dashboard(request):
     }
     try:
         models = client.list_models()
-        catalog = client.list_scores(active_model_only=True)
+        catalog = client.list_scores(
+            active_model_only=True,
+            include_details=False,
+        )
         defaults = dashboard_defaults(catalog, models)
         form = DashboardFilterForm(
             request.GET or defaults,

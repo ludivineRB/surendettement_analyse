@@ -71,6 +71,10 @@ class DashboardTests(TestCase):
         response = self.client.get(reverse("dashboard"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "42,50")
+        self.assertIn(
+            {"active_model_only": True, "include_details": False},
+            [call.kwargs for call in analytics.list_scores.call_args_list],
+        )
         analytics.get_series.assert_called_once_with(
             "department",
             "59",

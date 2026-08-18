@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Créer un compte{% endblock %}
+
+{% block content %}
+  <h1>Créer un compte</h1>
+  <p>
+    Après l'inscription, un administrateur devra valider le compte et lui
+    attribuer un rôle avant sa première connexion.
+  </p>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Envoyer ma demande</button>
+  </form>
+  <p><a href="{% url 'login' %}">Retour à la connexion</a></p>
+{% endblock %}

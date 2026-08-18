@@ -1,5 +1,6 @@
 from django.contrib.postgres.indexes import GinIndex
 from django.contrib.postgres.search import SearchVectorField
+from django.conf import settings
 from django.db import models
 
 
@@ -125,3 +126,44 @@ class RagIndexRun(models.Model):
 
     def __str__(self):
         return f"{self.started_at:%Y-%m-%d %H:%M} — {self.status}"
+
+
+class Conversation(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="assistant_conversations",
+    )
+    title = models.CharField(max_length=200)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ("-updated_at", "-id")
+
+    def __str__(self):
+        return self.title
+
+
+class ConversationMessage(models.Model):
+    class Role(models.TextChoices):
+        USER = "user", "Utilisateur"
+        ASSISTANT = "assistant", "Assistant"
+
+    conversation = models.ForeignKey(
+        Conversation,
+        on_delete=models.CASCADE,
+        related_name="messages",
+    )
+    role = models.CharField(max_length=16, choices=Role.choices)
+    content = models.TextField()
+    method = models.CharField(max_length=16, blank=True)
+    request_id = models.UUIDField(null=True, blank=True)
+    citations = models.JSONField(default=list, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("created_at", "id")
+
+    def __str__(self):
+        return f"{self.conversation_id} — {self.role}"

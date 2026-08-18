@@ -1,12 +1,35 @@
 from django.contrib import admin
 
 from web.assistant.models import (
+    Conversation,
+    ConversationMessage,
     RagChunk,
     RagDocument,
     RagDocumentVersion,
     RagIndexRun,
     RagSource,
 )
+
+
+class ConversationMessageInline(admin.TabularInline):
+    model = ConversationMessage
+    extra = 0
+    readonly_fields = (
+        "role",
+        "content",
+        "method",
+        "request_id",
+        "citations",
+        "created_at",
+    )
+
+
+@admin.register(Conversation)
+class ConversationAdmin(admin.ModelAdmin):
+    list_display = ("title", "user", "updated_at", "created_at")
+    search_fields = ("title", "user__username")
+    readonly_fields = ("user", "title", "created_at", "updated_at")
+    inlines = (ConversationMessageInline,)
 
 
 @admin.register(RagSource)

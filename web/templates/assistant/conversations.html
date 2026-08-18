@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Assistant métier — Surendettement territorial{% endblock %}
+
+{% block content %}
+<div class="assistant-layout">
+  <aside class="conversation-list" aria-label="Conversations récentes">
+    <h2>Conversations</h2>
+    <a class="button-link" href="{% url 'assistant' %}">Nouvelle conversation</a>
+    <ul>
+      {% for item in recent_conversations %}
+        <li>
+          <a href="{% url 'assistant-conversation' item.id %}">
+            {{ item.title|truncatechars:55 }}
+          </a>
+        </li>
+      {% empty %}
+        <li>Aucune conversation.</li>
+      {% endfor %}
+    </ul>
+  </aside>
+
+  <section class="assistant-panel">
+    <h1>Assistant métier</h1>
+    <p>
+      Posez une question sur le surendettement en France ou sur les
+      indicateurs macro-économiques. Les réponses affichent leurs sources.
+    </p>
+
+    {% if assistant_error %}
+      <div class="alert" role="alert">{{ assistant_error }}</div>
+    {% endif %}
+
+    <div class="message-list" aria-live="polite">
+      {% if conversation %}
+        {% for message in conversation.messages.all %}
+          <article class="message message-{{ message.role }}">
+            <header>
+              {% if message.role == "user" %}Vous{% else %}Assistant{% endif %}
+              {% if message.method %}<small>{{ message.method }}</small>{% endif %}
+            </header>
+            <div>{{ message.content|linebreaksbr }}</div>
+            {% if message.citations %}
+              <details>
+                <summary>Sources et données</summary>
+                <ul>
+                  {% for citation in message.citations %}
+                    <li>
+                      {% if citation.kind == "source" %}
+                        <a href="{{ citation.url }}" rel="noopener noreferrer" target="_blank">
+                          {{ citation.title }}
+                        </a>
+                        — {{ citation.publisher }}{% if citation.reference_period %}, {{ citation.reference_period }}{% endif %}
+                      {% else %}
+                        {{ citation.indicator_code }} — {{ citation.territory }}, {{ citation.reference_period }}
+                      {% endif %}
+                    </li>
+                  {% endfor %}
+                </ul>
+              </details>
+            {% endif %}
+          </article>
+        {% endfor %}
+      {% else %}
+        <p class="empty-state">Commencez par poser une question métier.</p>
+      {% endif %}
+    </div>
+
+    <form method="post" class="question-form">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit">Envoyer</button>
+    </form>
+  </section>
+</div>
+{% endblock %}

@@ -12,4 +12,8 @@
     {{ form.as_p }}
     <button type="submit">Se connecter</button>
   </form>
+  <p>
+    Pas encore de compte ?
+    <a href="{% url 'register' %}">Envoyer une demande d'inscription</a>.
+  </p>
 {% endblock %}

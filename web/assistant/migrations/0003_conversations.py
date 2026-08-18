@@ -1,0 +1,77 @@
+import django.db.models.deletion
+from django.conf import settings
+from django.db import migrations, models
+
+
+class Migration(migrations.Migration):
+    dependencies = [
+        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
+        ("assistant", "0002_retire_technical_corpus"),
+    ]
+
+    operations = [
+        migrations.CreateModel(
+            name="Conversation",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("title", models.CharField(max_length=200)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="assistant_conversations",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+            ],
+            options={"ordering": ("-updated_at", "-id")},
+        ),
+        migrations.CreateModel(
+            name="ConversationMessage",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "role",
+                    models.CharField(
+                        choices=[
+                            ("user", "Utilisateur"),
+                            ("assistant", "Assistant"),
+                        ],
+                        max_length=16,
+                    ),
+                ),
+                ("content", models.TextField()),
+                ("method", models.CharField(blank=True, max_length=16)),
+                ("request_id", models.UUIDField(blank=True, null=True)),
+                ("citations", models.JSONField(blank=True, default=list)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "conversation",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="messages",
+                        to="assistant.conversation",
+                    ),
+                ),
+            ],
+            options={"ordering": ("created_at", "id")},
+        ),
+    ]

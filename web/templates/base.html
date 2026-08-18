@@ -13,16 +13,23 @@
     <nav aria-label="Navigation principale">
       {% if user.is_authenticated %}
         <a href="{% url 'dashboard' %}">Tableau de bord</a>
+        <a href="{% url 'assistant' %}">Assistant métier</a>
         <form method="post" action="{% url 'logout' %}">
           {% csrf_token %}
           <button type="submit">Déconnexion</button>
         </form>
       {% else %}
         <a href="{% url 'login' %}">Connexion</a>
+        <a href="{% url 'register' %}">Créer un compte</a>
       {% endif %}
     </nav>
   </header>
   <main>
+    {% if messages %}
+      {% for message in messages %}
+        <p role="status">{{ message }}</p>
+      {% endfor %}
+    {% endif %}
     {% block content %}{% endblock %}
   </main>
 </body>
