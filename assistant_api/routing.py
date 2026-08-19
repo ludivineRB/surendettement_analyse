@@ -3,7 +3,7 @@
 from typing import Literal
 
 
-AnswerMethod = Literal["documents", "analytics", "hybrid"]
+AnswerMethod = Literal["documents", "analytics", "hybrid", "advanced_sql"]
 
 _ANALYTICS_TERMS = {
     "combien",
@@ -21,6 +21,16 @@ _ANALYTICS_TERMS = {
     "france",
     "année",
     "annee",
+    "fraîcheur",
+    "fraicheur",
+    "mise à jour",
+    "mise a jour",
+    "pipeline",
+    "import",
+    "classement",
+    "top ",
+    "modèle",
+    "modele",
 }
 _INTERPRETATION_TERMS = {
     "cause",

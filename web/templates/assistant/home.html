@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Assistants métier{% endblock %}
+{% block content %}
+  <h1>Assistants métier</h1>
+  <section>
+    <h2>Informations et indicateurs</h2>
+    <p>Questions documentaires et analyses structurées, avec leurs sources.</p>
+    <a class="button-link" href="{% url 'assistant-information' %}">Ouvrir l'assistant d'information</a>
+  </section>
+  {% if perms.accounts.use_analytics %}
+    <section>
+      <h2>Analyse SQL avancée</h2>
+      <p>Requêtes avancées en lecture seule sur les vues analytiques autorisées.</p>
+      <a class="button-link" href="{% url 'assistant-sql' %}">Ouvrir l'assistant SQL</a>
+    </section>
+  {% endif %}
+{% endblock %}

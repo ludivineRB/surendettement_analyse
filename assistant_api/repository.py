@@ -99,6 +99,50 @@ def search_active_chunks(
         return [dict(row) for row in rows.mappings().all()]
 
 
+def record_sql_execution(engine: Engine, execution: dict) -> None:
+    """Persist a bounded audit record without connection credentials."""
+    allowed = {
+        "execution_id",
+        "request_id",
+        "actor_id",
+        "question",
+        "interpretation_json",
+        "schema_version",
+        "generated_sql",
+        "validation_status",
+        "validation_error",
+        "duration_ms",
+        "row_count",
+        "plan_cost",
+        "prompt_version",
+        "model_version",
+    }
+    record = {key: execution.get(key) for key in allowed}
+    record["question"] = str(record["question"] or "")[:2_000]
+    record["generated_sql"] = str(record["generated_sql"] or "")[:10_000]
+    if record["validation_error"] is not None:
+        record["validation_error"] = str(record["validation_error"])[:512]
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                """
+                INSERT INTO assistant.sql_executions (
+                    execution_id, request_id, actor_id, question,
+                    interpretation_json, schema_version, generated_sql,
+                    validation_status, validation_error, duration_ms,
+                    row_count, plan_cost, prompt_version, model_version
+                ) VALUES (
+                    :execution_id, :request_id, :actor_id, :question,
+                    :interpretation_json, :schema_version, :generated_sql,
+                    :validation_status, :validation_error, :duration_ms,
+                    :row_count, :plan_cost, :prompt_version, :model_version
+                )
+                """
+            ),
+            record,
+        )
+
+
 def _expand_business_query(query: str) -> str:
     normalized = query.casefold()
     expansions = {

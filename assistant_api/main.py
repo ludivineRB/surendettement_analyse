@@ -1,13 +1,16 @@
 """HTTP entry point for the standalone business assistant."""
 
+import os
+import secrets
 from uuid import uuid4
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException
 from sqlalchemy import Engine
 from sqlalchemy.exc import SQLAlchemyError
 
 from assistant_api.repository import search_active_chunks
 from assistant_api.analytics import AnalyticsClient, AnalyticsUnavailable
+from assistant_api.conversation_routing import classify_question
 from assistant_api.generation import (
     GeneratorUnavailable,
     InsufficientGrounding,
@@ -15,7 +18,7 @@ from assistant_api.generation import (
     UnconfiguredGenerator,
     generate_grounded_answer,
 )
-from assistant_api.orchestration import build_grounding_context
+from assistant_api.orchestration import GroundingContext, build_grounding_context
 from assistant_api.openai_provider import get_text_generator
 from assistant_api.schemas import (
     AnswerRequest,
@@ -26,6 +29,8 @@ from assistant_api.schemas import (
     SourceReference,
 )
 from assistant_api.storage import get_engine
+from assistant_api.sql_executor import get_readonly_engine
+from assistant_api.sql_service import run_text_to_sql
 
 
 app = FastAPI(
@@ -68,8 +73,62 @@ def answer_question(
     engine: Engine = Depends(get_engine),
     analytics_client: AnalyticsClient = Depends(AnalyticsClient),
     generator: TextGenerator = Depends(get_text_generator),
+    x_internal_token: str | None = Header(default=None),
 ) -> AnswerResponse:
     request_id = uuid4()
+    category = classify_question(request.question, request.mode)
+    if category in {"unsupported", "sensitive_or_individual_request"}:
+        answer = (
+            "Je ne peux pas produire de diagnostic ou de conseil individuel. "
+            "Je peux uniquement présenter des informations statistiques territoriales."
+            if category == "sensitive_or_individual_request"
+            else "Cette demande est trop large ou ne correspond pas aux analyses autorisées."
+        )
+        return AnswerResponse(
+            answer=answer,
+            sources=[],
+            data_references=[],
+            method="refusal",
+            category=category,
+            request_id=request_id,
+        )
+    if category == "advanced_sql":
+        configured_token = os.getenv("ASSISTANT_INTERNAL_TOKEN", "")
+        supplied_token = x_internal_token if isinstance(x_internal_token, str) else ""
+        if not configured_token or not secrets.compare_digest(configured_token, supplied_token):
+            raise HTTPException(status_code=403, detail="Capacité SQL non autorisée.")
+        try:
+            sql_result = run_text_to_sql(
+                request.question,
+                generator=generator,
+                readonly_engine=get_readonly_engine(),
+                audit_engine=engine,
+                request_id=request_id,
+                actor_id=request.actor_id,
+                model_version=os.getenv("OPENAI_MODEL", "unknown"),
+            )
+            context = GroundingContext(
+                method="advanced_sql",
+                documentary_chunks=[],
+                analytics_dataset=None,
+                analytics_rows=sql_result.sql_execution.rows,
+            )
+            answer = generate_grounded_answer(request.question, context, generator)
+        except Exception as exc:
+            if isinstance(exc, HTTPException):
+                raise
+            raise HTTPException(status_code=503, detail="Analyse SQL indisponible.") from exc
+        return AnswerResponse(
+            answer=answer,
+            sources=[],
+            data_references=[],
+            method="advanced_sql",
+            category=category,
+            result_rows=sql_result.sql_execution.rows,
+            generated_sql=sql_result.sql_execution.validated.sql,
+            sql_execution_id=sql_result.execution_id,
+            request_id=request_id,
+        )
     try:
         context = build_grounding_context(
             request.question,
@@ -106,10 +165,19 @@ def answer_question(
     ]
     data_references = [
         DataReference(
-            indicator_code=str(row.get("indicator_code", "unknown")),
+            indicator_code=str(
+                row.get("indicator_code")
+                or (
+                    context.analytical_intent.metric
+                    if context.analytical_intent
+                    else "unknown"
+                )
+            ),
             territory=str(
                 row.get("departement_name")
                 or row.get("region_name")
+                or row.get("geographic_name")
+                or row.get("geographic_code")
                 or "France"
             ),
             reference_period=str(
@@ -125,5 +193,12 @@ def answer_question(
         sources=sources,
         data_references=data_references,
         method=context.method,
+        category=category,
+        interpreted_filters=(
+            context.analytical_intent.model_dump(mode="json", exclude_none=True)
+            if context.analytical_intent
+            else {}
+        ),
+        result_rows=context.analytics_rows[:100],
         request_id=request_id,
     )

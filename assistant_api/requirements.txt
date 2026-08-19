@@ -4,4 +4,5 @@ psycopg[binary]==3.2.3
 pydantic==2.13.4
 requests==2.32.3
 sqlalchemy==2.0.32
+sqlglot==26.33.0
 uvicorn==0.34.0

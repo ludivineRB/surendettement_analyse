@@ -5,6 +5,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
+from web.accounts.services import assign_role
 from web.assistant.models import Conversation, ConversationMessage
 
 
@@ -13,6 +14,8 @@ class AssistantViewTests(TestCase):
         user_model = get_user_model()
         self.user = user_model.objects.create_user("alice", password="test-pass")
         self.other = user_model.objects.create_user("bob", password="test-pass")
+        assign_role(self.user, "viewer")
+        assign_role(self.other, "viewer")
 
     def test_anonymous_user_is_redirected_to_login(self):
         response = self.client.get(reverse("assistant"))
@@ -24,11 +27,12 @@ class AssistantViewTests(TestCase):
         conversation = Conversation.objects.create(
             user=self.other,
             title="Conversation privée",
+            kind=Conversation.Kind.INFORMATION,
         )
         self.client.force_login(self.user)
 
         response = self.client.get(
-            reverse("assistant-conversation", args=(conversation.id,))
+            reverse("assistant-information-conversation", args=(conversation.id,))
         )
 
         self.assertEqual(response.status_code, 404)
@@ -47,19 +51,24 @@ class AssistantViewTests(TestCase):
             ],
             "data_references": [],
             "method": "documents",
+            "category": "documentary_question",
+            "interpreted_filters": {},
+            "result_rows": [],
+            "generated_sql": None,
+            "sql_execution_id": None,
             "request_id": str(uuid4()),
         }
         self.client.force_login(self.user)
 
         response = self.client.post(
-            reverse("assistant"),
+            reverse("assistant-information"),
             {"question": "Qu’est-ce que l’inflation ?"},
         )
 
         conversation = Conversation.objects.get(user=self.user)
         self.assertRedirects(
             response,
-            reverse("assistant-conversation", args=(conversation.id,)),
+            reverse("assistant-information-conversation", args=(conversation.id,)),
         )
         messages = list(conversation.messages.all())
         self.assertEqual(
@@ -71,3 +80,29 @@ class AssistantViewTests(TestCase):
         )
         self.assertEqual(messages[1].method, "documents")
         self.assertEqual(messages[1].citations[0]["publisher"], "Insee")
+
+    def test_viewer_cannot_access_sql_assistant(self):
+        self.client.force_login(self.user)
+        self.assertEqual(self.client.get(reverse("assistant-sql")).status_code, 403)
+
+    def test_analyst_can_access_sql_assistant(self):
+        assign_role(self.user, "analyst")
+        self.client.force_login(self.user)
+        self.assertEqual(self.client.get(reverse("assistant-sql")).status_code, 200)
+
+    def test_feedback_is_persisted_for_owned_assistant_message(self):
+        conversation = Conversation.objects.create(
+            user=self.user, title="Test", kind=Conversation.Kind.INFORMATION
+        )
+        message = ConversationMessage.objects.create(
+            conversation=conversation,
+            role=ConversationMessage.Role.ASSISTANT,
+            content="Réponse",
+        )
+        self.client.force_login(self.user)
+        self.client.post(
+            reverse("assistant-feedback", args=(message.id,)),
+            {"feedback": "useful"},
+        )
+        message.refresh_from_db()
+        self.assertEqual(message.feedback, "useful")

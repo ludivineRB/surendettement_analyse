@@ -15,6 +15,8 @@ from assistant_api.routing import route_question
             "Pourquoi le taux augmente-t-il dans ce département ?",
             "hybrid",
         ),
+        ("Quelle est la fraîcheur des données ?", "analytics"),
+        ("Quel est le statut du pipeline d'import ?", "analytics"),
     ],
 )
 def test_route_question(question, expected):

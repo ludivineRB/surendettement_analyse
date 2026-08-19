@@ -19,6 +19,11 @@ def validate_answer(payload: Any) -> dict:
         "sources",
         "data_references",
         "method",
+        "category",
+        "interpreted_filters",
+        "result_rows",
+        "generated_sql",
+        "sql_execution_id",
         "request_id",
     }
     missing = required - payload.keys()
@@ -26,7 +31,9 @@ def validate_answer(payload: Any) -> dict:
         raise AssistantResponseError(
             f"answer response is missing: {', '.join(sorted(missing))}"
         )
-    if payload["method"] not in {"documents", "analytics", "hybrid"}:
+    if payload["method"] not in {
+        "documents", "analytics", "hybrid", "advanced_sql", "refusal"
+    }:
         raise AssistantResponseError("answer method is invalid")
     if not isinstance(payload["answer"], str) or not payload["answer"].strip():
         raise AssistantResponseError("answer text is empty")
@@ -34,6 +41,10 @@ def validate_answer(payload: Any) -> dict:
         raise AssistantResponseError("answer sources must be a list")
     if not isinstance(payload["data_references"], list):
         raise AssistantResponseError("data references must be a list")
+    if not isinstance(payload["interpreted_filters"], Mapping):
+        raise AssistantResponseError("interpreted filters must be an object")
+    if not isinstance(payload["result_rows"], list):
+        raise AssistantResponseError("result rows must be a list")
     try:
         UUID(str(payload["request_id"]))
     except ValueError as exc:

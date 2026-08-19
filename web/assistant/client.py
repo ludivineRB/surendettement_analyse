@@ -30,16 +30,28 @@ class AssistantClient:
         self.timeout = timeout or settings.ASSISTANT_API_TIMEOUT_SECONDS
         self.session = session or requests.Session()
 
-    def answer(self, question: str, *, conversation_id=None) -> dict:
-        payload = {"question": question}
+    def answer(
+        self,
+        question: str,
+        *,
+        mode: str = "information",
+        actor_id: str | None = None,
+        conversation_id=None,
+    ) -> dict:
+        payload = {"question": question, "mode": mode}
+        if actor_id:
+            payload["actor_id"] = actor_id
         if conversation_id:
             payload["conversation_id"] = str(conversation_id)
         try:
+            headers = {"Accept": "application/json"}
+            if mode == "sql":
+                headers["X-Internal-Token"] = settings.ASSISTANT_INTERNAL_TOKEN
             response = self.session.post(
                 f"{self.base_url}/v1/answers",
                 json=payload,
                 timeout=self.timeout,
-                headers={"Accept": "application/json"},
+                headers=headers,
             )
             response.raise_for_status()
             return validate_answer(response.json())

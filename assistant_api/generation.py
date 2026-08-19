@@ -60,6 +60,11 @@ def generate_grounded_answer(
         {
             "question": question,
             "method": context.method,
+            "analytical_intent": (
+                context.analytical_intent.model_dump(mode="json")
+                if context.analytical_intent
+                else None
+            ),
             "allowed_citations": {
                 "documents": allowed_document_citations,
                 "analytics": allowed_data_citations,

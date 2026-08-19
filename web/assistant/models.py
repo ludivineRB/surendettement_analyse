@@ -129,12 +129,21 @@ class RagIndexRun(models.Model):
 
 
 class Conversation(models.Model):
+    class Kind(models.TextChoices):
+        INFORMATION = "information", "Informations métier"
+        SQL = "sql", "Analyse SQL"
+
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="assistant_conversations",
     )
     title = models.CharField(max_length=200)
+    kind = models.CharField(
+        max_length=16,
+        choices=Kind.choices,
+        default=Kind.INFORMATION,
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -160,6 +169,14 @@ class ConversationMessage(models.Model):
     method = models.CharField(max_length=16, blank=True)
     request_id = models.UUIDField(null=True, blank=True)
     citations = models.JSONField(default=list, blank=True)
+    category = models.CharField(max_length=48, blank=True)
+    response_metadata = models.JSONField(default=dict, blank=True)
+    generated_sql = models.TextField(blank=True)
+    feedback = models.CharField(
+        max_length=16,
+        choices=(("useful", "Utile"), ("not_useful", "Inutile")),
+        blank=True,
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

@@ -1,6 +1,6 @@
 """Public contracts for the conversational assistant service."""
 
-from typing import Literal
+from typing import Any, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -8,7 +8,9 @@ from pydantic import BaseModel, Field
 
 class AnswerRequest(BaseModel):
     question: str = Field(min_length=3, max_length=2_000)
-    conversation_id: UUID | None = None
+    conversation_id: str | None = Field(default=None, max_length=128)
+    mode: Literal["information", "sql"] = "information"
+    actor_id: str | None = Field(default=None, max_length=128)
 
 
 class SourceReference(BaseModel):
@@ -28,7 +30,18 @@ class AnswerResponse(BaseModel):
     answer: str
     sources: list[SourceReference] = Field(default_factory=list)
     data_references: list[DataReference] = Field(default_factory=list)
-    method: Literal["documents", "analytics", "hybrid"]
+    method: Literal["documents", "analytics", "hybrid", "advanced_sql", "refusal"]
+    category: Literal[
+        "documentary_question",
+        "structured_analytics",
+        "advanced_sql",
+        "unsupported",
+        "sensitive_or_individual_request",
+    ]
+    interpreted_filters: dict[str, Any] = Field(default_factory=dict)
+    result_rows: list[dict[str, Any]] = Field(default_factory=list)
+    generated_sql: str | None = None
+    sql_execution_id: UUID | None = None
     request_id: UUID
 
 

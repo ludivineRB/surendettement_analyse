@@ -22,4 +22,7 @@ def test_database_configuration_requires_psycopg(monkeypatch):
 
 
 def test_corpus_schema_has_a_versioned_first_migration():
-    assert migration_versions() == ("001_corpus_chunks",)
+    assert migration_versions() == (
+        "001_corpus_chunks",
+        "002_sql_execution_audit",
+    )

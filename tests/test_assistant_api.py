@@ -14,9 +14,17 @@ def test_health_identifies_assistant_service():
     }
 
 
+def test_answer_request_accepts_django_numeric_conversation_id():
+    request = AnswerRequest(
+        question="Quel est le score ?",
+        conversation_id="42",
+    )
+    assert request.conversation_id == "42"
+
+
 def test_answer_refuses_to_invent_content_before_engines_are_ready():
     request = AnswerRequest(
-        question="Quelle est la situation en France ?"
+        question="Quel est le taux de chômage en France ?"
     )
     analytics = Mock()
     analytics.fetch.return_value = []
@@ -61,6 +69,60 @@ def test_answer_returns_method_and_citations(build_context):
     assert response.method == "documents"
     assert response.answer == "Réponse [S1]"
     assert response.sources[0].publisher == "Insee"
+
+
+@patch("assistant_api.main.build_grounding_context")
+def test_structured_score_reference_keeps_territory_name(build_context):
+    from assistant_api.analytical_intents import AnalyticalIntent
+    from assistant_api.orchestration import GroundingContext
+
+    build_context.return_value = GroundingContext(
+        method="analytics",
+        documentary_chunks=[],
+        analytics_dataset=None,
+        analytics_rows=[
+            {
+                "geographic_code": "59",
+                "geographic_name": "Nord",
+                "reference_period": "2025",
+                "score": 42,
+            }
+        ],
+        analytical_intent=AnalyticalIntent(
+            intent="get_score",
+            geographic_level="department",
+            geographic_code="59",
+            period_start="2025",
+        ),
+    )
+
+    generator = Mock()
+    generator.generate.return_value = "Le score est 42 [D1]"
+    response = answer_question(
+        AnswerRequest(question="Quel est le score du département 59 en 2025 ?"),
+        Mock(),
+        Mock(),
+        generator,
+    )
+
+    assert response.data_references[0].indicator_code == "risk_score"
+    assert response.data_references[0].territory == "Nord"
+    assert response.data_references[0].reference_period == "2025"
+
+
+def test_sql_mode_rejects_missing_internal_token(monkeypatch):
+    monkeypatch.setenv("ASSISTANT_INTERNAL_TOKEN", "expected-token")
+
+    with pytest.raises(HTTPException) as error:
+        answer_question(
+            AnswerRequest(question="Calcule la médiane", mode="sql"),
+            Mock(),
+            Mock(),
+            Mock(),
+            x_internal_token=None,
+        )
+
+    assert error.value.status_code == 403
 
 
 @patch("assistant_api.main.search_active_chunks")

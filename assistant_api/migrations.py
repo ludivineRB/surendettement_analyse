@@ -52,6 +52,38 @@ _MIGRATIONS: tuple[tuple[str, tuple[str, ...]], ...] = (
             """,
         ),
     ),
+    (
+        "002_sql_execution_audit",
+        (
+            """
+            CREATE TABLE IF NOT EXISTS assistant.sql_executions (
+                execution_id UUID PRIMARY KEY,
+                request_id UUID NOT NULL,
+                actor_id VARCHAR(128),
+                question TEXT NOT NULL,
+                interpretation_json TEXT NOT NULL DEFAULT '{}',
+                schema_version VARCHAR(64) NOT NULL,
+                generated_sql TEXT NOT NULL,
+                validation_status VARCHAR(32) NOT NULL,
+                validation_error VARCHAR(512),
+                duration_ms INTEGER,
+                row_count INTEGER,
+                plan_cost DOUBLE PRECISION,
+                prompt_version VARCHAR(64) NOT NULL,
+                model_version VARCHAR(128) NOT NULL,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+            """,
+            """
+            CREATE INDEX IF NOT EXISTS ix_assistant_sql_executions_request
+            ON assistant.sql_executions (request_id, created_at)
+            """,
+            """
+            CREATE INDEX IF NOT EXISTS ix_assistant_sql_executions_actor
+            ON assistant.sql_executions (actor_id, created_at)
+            """,
+        ),
+    ),
 )
 
 

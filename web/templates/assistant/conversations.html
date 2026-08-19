@@ -6,11 +6,15 @@
 <div class="assistant-layout">
   <aside class="conversation-list" aria-label="Conversations récentes">
     <h2>Conversations</h2>
-    <a class="button-link" href="{% url 'assistant' %}">Nouvelle conversation</a>
+    {% if assistant_kind == "sql" %}
+      <a class="button-link" href="{% url 'assistant-sql' %}">Nouvelle analyse SQL</a>
+    {% else %}
+      <a class="button-link" href="{% url 'assistant-information' %}">Nouvelle conversation</a>
+    {% endif %}
     <ul>
       {% for item in recent_conversations %}
         <li>
-          <a href="{% url 'assistant-conversation' item.id %}">
+          <a href="{% if assistant_kind == 'sql' %}{% url 'assistant-sql-conversation' item.id %}{% else %}{% url 'assistant-information-conversation' item.id %}{% endif %}">
             {{ item.title|truncatechars:55 }}
           </a>
         </li>
@@ -21,7 +25,7 @@
   </aside>
 
   <section class="assistant-panel">
-    <h1>Assistant métier</h1>
+    <h1>{% if assistant_kind == "sql" %}Assistant SQL{% else %}Assistant d'information{% endif %}</h1>
     <p>
       Posez une question sur le surendettement en France ou sur les
       indicateurs macro-économiques. Les réponses affichent leurs sources.
@@ -58,6 +62,24 @@
                   {% endfor %}
                 </ul>
               </details>
+            {% endif %}
+            {% if message.response_metadata.interpreted_filters %}
+              <details><summary>Filtres compris</summary><pre>{{ message.response_metadata.interpreted_filters }}</pre></details>
+            {% endif %}
+            {% if assistant_kind == "sql" and message.generated_sql %}
+              <details><summary>SQL exécuté</summary><pre><code>{{ message.generated_sql }}</code></pre></details>
+            {% endif %}
+            {% if message.response_metadata.result_rows %}
+              <details><summary>Résultats analytiques</summary>
+                <table><tbody>{% for row in message.response_metadata.result_rows %}<tr><td><pre>{{ row }}</pre></td></tr>{% endfor %}</tbody></table>
+              </details>
+            {% endif %}
+            {% if message.role == "assistant" %}
+              <form method="post" action="{% url 'assistant-feedback' message.id %}">
+                {% csrf_token %}
+                <button name="feedback" value="useful" type="submit">Utile</button>
+                <button name="feedback" value="not_useful" type="submit">Inutile</button>
+              </form>
             {% endif %}
           </article>
         {% endfor %}
