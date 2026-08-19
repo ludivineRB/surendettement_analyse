@@ -1,8 +1,8 @@
 beautifulsoup4==4.12.3
-fastapi==0.115.6
+fastapi==0.141.1
 psycopg[binary]==3.2.3
 pydantic==2.13.4
-requests==2.32.3
+requests==2.33.0
 sqlalchemy==2.0.32
 sqlglot==26.33.0
 uvicorn==0.34.0

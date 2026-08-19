@@ -12,6 +12,11 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    logging: &bounded-logging
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
 
   api:
     build:
@@ -23,7 +28,33 @@ services:
     volumes:
       - ../data/processed/analytics:/workspace/data/processed/analytics:ro
     ports:
-      - "${API_PORT:-8020}:8020"
+      - "${BIND_ADDRESS:-127.0.0.1}:${API_PORT:-8020}:8020"
+    logging: *bounded-logging
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://localhost:8020/api/data/health', timeout=5)"
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  ci:
+    profiles: ["ci"]
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: ci
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-surendettement}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-surendettement}
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-ci-only-secret}
+      ASSISTANT_DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-surendettement}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-surendettement}
+      ASSISTANT_INTERNAL_TOKEN: ${ASSISTANT_INTERNAL_TOKEN:-ci-only-token}
     depends_on:
       postgres:
         condition: service_healthy
@@ -41,7 +72,18 @@ services:
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-5.6-terra}
       ASSISTANT_INTERNAL_TOKEN: ${ASSISTANT_INTERNAL_TOKEN:-}
     ports:
-      - "${ASSISTANT_API_PORT:-8030}:8030"
+      - "${BIND_ADDRESS:-127.0.0.1}:${ASSISTANT_API_PORT:-8030}:8030"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://localhost:8030/health', timeout=5)"
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    logging: *bounded-logging
     depends_on:
       postgres:
         condition: service_healthy
@@ -60,7 +102,8 @@ services:
       RISK_SCORES_API_URL: http://api:8020/api/risk-scores
       OBSERVABILITY_API_URL: http://api:8020/api/data/observability
     ports:
-      - "${STREAMLIT_PORT:-8501}:8501"
+      - "${BIND_ADDRESS:-127.0.0.1}:${STREAMLIT_PORT:-8501}:8501"
+    logging: *bounded-logging
     depends_on:
       - api
 
@@ -81,14 +124,25 @@ services:
       ASSISTANT_API_TIMEOUT_SECONDS: ${ASSISTANT_API_TIMEOUT_SECONDS:-90}
       ASSISTANT_INTERNAL_TOKEN: ${ASSISTANT_INTERNAL_TOKEN:-}
     ports:
-      - "${DJANGO_PORT:-8000}:8000"
+      - "${BIND_ADDRESS:-127.0.0.1}:${DJANGO_PORT:-8000}:8000"
+    logging: *bounded-logging
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/', timeout=5)"
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     depends_on:
       postgres:
         condition: service_healthy
       api:
         condition: service_started
       assistant-api:
-        condition: service_started
+        condition: service_healthy
 
 volumes:
   postgres_data:

@@ -1,7 +1,11 @@
 """HTTP entry point for the standalone business assistant."""
 
 import os
+import json
+import logging
 import secrets
+from collections import Counter
+from time import monotonic
 from uuid import uuid4
 
 from fastapi import Depends, FastAPI, Header, HTTPException
@@ -37,11 +41,52 @@ app = FastAPI(
     title="Surendettement Business Assistant API",
     version="0.1.0",
 )
+logger = logging.getLogger("assistant.requests")
+_metrics = Counter()
+
+
+@app.middleware("http")
+async def operational_metrics(request, call_next):
+    request_id = request.headers.get("X-Request-ID") or str(uuid4())
+    started = monotonic()
+    _metrics["requests_in_progress"] += 1
+    try:
+        response = await call_next(request)
+        status = response.status_code
+    except Exception:
+        status = 500
+        raise
+    finally:
+        duration_ms = round((monotonic() - started) * 1000)
+        _metrics["requests_in_progress"] -= 1
+        _metrics["requests_total"] += 1
+        _metrics[f"responses_{status}"] += 1
+        _metrics["duration_ms_total"] += duration_ms
+        logger.info(
+            json.dumps(
+                {
+                    "message": "request_completed",
+                    "request_id": request_id,
+                    "method": request.method,
+                    "path": request.url.path,
+                    "status": status,
+                    "duration_ms": duration_ms,
+                },
+                ensure_ascii=False,
+            )
+        )
+    response.headers["X-Request-ID"] = request_id
+    return response
 
 
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok", "service": "assistant-api"}
+
+
+@app.get("/metrics")
+def metrics() -> dict[str, int]:
+    return dict(_metrics)
 
 
 @app.post("/v1/retrieval/search", response_model=RetrievalResponse)

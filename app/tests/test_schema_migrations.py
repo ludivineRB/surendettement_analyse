@@ -10,6 +10,7 @@ def test_schema_migrations_are_idempotent(tmp_path):
     assert first.applied == [
         "001_application_schema",
         "002_operational_indexes",
+        "003_readonly_analytics_views",
     ]
     assert second.already_applied == first.applied
     assert "pipeline_runs" in inspect(engine).get_table_names()
@@ -17,4 +18,4 @@ def test_schema_migrations_are_idempotent(tmp_path):
         versions = connection.execute(
             text("SELECT COUNT(*) FROM schema_migrations")
         ).scalar_one()
-    assert versions == 2
+    assert versions == 3

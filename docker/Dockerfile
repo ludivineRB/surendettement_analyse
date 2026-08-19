@@ -32,6 +32,13 @@ FROM runtime AS api
 EXPOSE 8020
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8020"]
 
+FROM runtime AS ci
+COPY requirements-ci.txt requirements-ci.txt
+COPY assistant_api/requirements.txt assistant-requirements.txt
+RUN pip install --no-cache-dir -r requirements-ci.txt \
+    && pip install --no-cache-dir -r assistant-requirements.txt
+CMD ["python", "-m", "pytest", "-q"]
+
 FROM python:3.12-slim AS assistant-runtime
 
 ENV PYTHONDONTWRITEBYTECODE=1 \

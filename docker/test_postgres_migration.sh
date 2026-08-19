@@ -86,7 +86,8 @@ docker compose $compose_files run --rm --no-deps api \
 printf '+ PostgreSQL integration tests\n'
 docker compose $compose_files run --rm --no-deps \
   -e TEST_POSTGRES_DATABASE_URL="$container_url" \
-  api python -m pytest -m postgres_integration -q
+  api python -m pytest app/tests/test_postgres_migration.py \
+  -m postgres_integration -q
 
 mkdir -p "$report_dir"
 printf '+ data comparison and report generation\n'

@@ -3,7 +3,7 @@ from fastapi import HTTPException
 
 from unittest.mock import Mock, patch
 
-from assistant_api.main import answer_question, health, retrieval_search
+from assistant_api.main import answer_question, health, metrics, retrieval_search
 from assistant_api.schemas import AnswerRequest, RetrievalRequest
 
 
@@ -12,6 +12,10 @@ def test_health_identifies_assistant_service():
         "status": "ok",
         "service": "assistant-api",
     }
+
+
+def test_metrics_contract_is_machine_readable():
+    assert isinstance(metrics(), dict)
 
 
 def test_answer_request_accepts_django_numeric_conversation_id():

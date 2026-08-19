@@ -69,6 +69,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "web.security.middleware.RequestSecurityMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -133,6 +134,22 @@ LOGOUT_REDIRECT_URL = "home"
 
 SESSION_COOKIE_SECURE = env_bool("DJANGO_SECURE_COOKIES")
 CSRF_COOKIE_SECURE = env_bool("DJANGO_SECURE_COOKIES")
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_SAMESITE = "Lax"
+SECURE_SSL_REDIRECT = env_bool("DJANGO_SECURE_SSL_REDIRECT")
+SECURE_HSTS_SECONDS = int(os.getenv("DJANGO_HSTS_SECONDS", "0"))
+SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool("DJANGO_HSTS_INCLUDE_SUBDOMAINS")
+SECURE_HSTS_PRELOAD = env_bool("DJANGO_HSTS_PRELOAD")
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
+X_FRAME_OPTIONS = "DENY"
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",")
+    if origin.strip()
+]
 SECURE_PROXY_SSL_HEADER = (
     ("HTTP_X_FORWARDED_PROTO", "https")
     if env_bool("DJANGO_TRUST_PROXY_HEADERS")
@@ -155,3 +172,34 @@ ASSISTANT_API_TIMEOUT_SECONDS = float(
     os.getenv("ASSISTANT_API_TIMEOUT_SECONDS", "90")
 )
 ASSISTANT_INTERNAL_TOKEN = os.getenv("ASSISTANT_INTERNAL_TOKEN", "")
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "surendettement-security",
+    }
+}
+RATE_LIMIT_REQUESTS = int(os.getenv("DJANGO_RATE_LIMIT_REQUESTS", "300"))
+RATE_LIMIT_WINDOW_SECONDS = int(os.getenv("DJANGO_RATE_LIMIT_WINDOW_SECONDS", "60"))
+LOGIN_RATE_LIMIT_REQUESTS = int(os.getenv("DJANGO_LOGIN_RATE_LIMIT_REQUESTS", "10"))
+LOGIN_RATE_LIMIT_WINDOW_SECONDS = int(os.getenv("DJANGO_LOGIN_RATE_LIMIT_WINDOW_SECONDS", "300"))
+INFORMATION_DAILY_QUOTA = int(os.getenv("INFORMATION_DAILY_QUOTA", "100"))
+SQL_DAILY_QUOTA = int(os.getenv("SQL_DAILY_QUOTA", "30"))
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {"json": {"()": "web.security.logging.JSONFormatter"}},
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "json",
+        }
+    },
+    "loggers": {
+        "web.requests": {"handlers": ["console"], "level": "INFO", "propagate": False},
+        "web.analytics": {"handlers": ["console"], "level": "INFO", "propagate": False},
+        "web.assistant": {"handlers": ["console"], "level": "INFO", "propagate": False},
+        "django.security": {"handlers": ["console"], "level": "WARNING", "propagate": False},
+    },
+}

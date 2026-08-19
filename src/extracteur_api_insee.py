@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 import json
 import time
-import xml.etree.ElementTree as ET
+from defusedxml import ElementTree as ET
 
 import pandas as pd
 import requests
