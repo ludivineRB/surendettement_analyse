@@ -5,25 +5,24 @@
   "tables": {
     "dim_period": {
       "sqlite": {
-        "rows": 0,
-        "distinct_primary_keys": 0,
-        "minimum_primary_key": null,
-        "maximum_primary_key": null,
-        "first_period": null,
-        "last_period": null,
+        "rows": 17,
+        "distinct_primary_keys": 17,
+        "minimum_primary_key": "2025-02",
+        "maximum_primary_key": "2026-06",
+        "first_period": "2025-02",
+        "last_period": "2026-06",
         "unexpected_nulls": {
-          "period_key": 0,
           "reference_year": 0,
           "granularity": 0
         }
       },
       "postgresql": {
-        "rows": 0,
-        "distinct_primary_keys": 0,
-        "minimum_primary_key": null,
-        "maximum_primary_key": null,
-        "first_period": null,
-        "last_period": null,
+        "rows": 17,
+        "distinct_primary_keys": 17,
+        "minimum_primary_key": "2025-02",
+        "maximum_primary_key": "2026-06",
+        "first_period": "2025-02",
+        "last_period": "2026-06",
         "unexpected_nulls": {
           "period_key": 0,
           "reference_year": 0,
@@ -34,21 +33,20 @@
     },
     "dim_region": {
       "sqlite": {
-        "rows": 0,
-        "distinct_primary_keys": 0,
-        "minimum_primary_key": null,
-        "maximum_primary_key": null,
+        "rows": 13,
+        "distinct_primary_keys": 13,
+        "minimum_primary_key": "11",
+        "maximum_primary_key": "94",
         "unexpected_nulls": {
-          "region_code": 0,
           "region_name": 0,
           "is_metropolitan_scope": 0
         }
       },
       "postgresql": {
-        "rows": 0,
-        "distinct_primary_keys": 0,
-        "minimum_primary_key": null,
-        "maximum_primary_key": null,
+        "rows": 13,
+        "distinct_primary_keys": 13,
+        "minimum_primary_key": "11",
+        "maximum_primary_key": "94",
         "unexpected_nulls": {
           "region_code": 0,
           "region_name": 0,
@@ -59,10 +57,10 @@
     },
     "indicators": {
       "sqlite": {
-        "rows": 0,
-        "distinct_primary_keys": 0,
-        "minimum_primary_key": null,
-        "maximum_primary_key": null,
+        "rows": 9,
+        "distinct_primary_keys": 9,
+        "minimum_primary_key": 1,
+        "maximum_primary_key": 9,
         "unexpected_nulls": {
           "id": 0,
           "code": 0,
@@ -72,10 +70,10 @@
         }
       },
       "postgresql": {
-        "rows": 0,
-        "distinct_primary_keys": 0,
-        "minimum_primary_key": null,
-        "maximum_primary_key": null,
+        "rows": 9,
+        "distinct_primary_keys": 9,
+        "minimum_primary_key": 1,
+        "maximum_primary_key": 9,
         "unexpected_nulls": {
           "id": 0,
           "code": 0,
@@ -88,12 +86,12 @@
     },
     "observations": {
       "sqlite": {
-        "rows": 0,
-        "distinct_primary_keys": 0,
-        "minimum_primary_key": null,
-        "maximum_primary_key": null,
-        "first_period": null,
-        "last_period": null,
+        "rows": 11543,
+        "distinct_primary_keys": 11543,
+        "minimum_primary_key": 1,
+        "maximum_primary_key": 11543,
+        "first_period": "2023",
+        "last_period": "2026-06",
         "unexpected_nulls": {
           "id": 0,
           "source_document_id": 0,
@@ -109,12 +107,12 @@
         }
       },
       "postgresql": {
-        "rows": 0,
-        "distinct_primary_keys": 0,
-        "minimum_primary_key": null,
-        "maximum_primary_key": null,
-        "first_period": null,
-        "last_period": null,
+        "rows": 11543,
+        "distinct_primary_keys": 11543,
+        "minimum_primary_key": 1,
+        "maximum_primary_key": 11543,
+        "first_period": "2023",
+        "last_period": "2026-06",
         "unexpected_nulls": {
           "id": 0,
           "source_document_id": 0,
@@ -166,10 +164,10 @@
     },
     "risk_score_details": {
       "sqlite": {
-        "rows": 0,
-        "distinct_primary_keys": 0,
-        "minimum_primary_key": null,
-        "maximum_primary_key": null,
+        "rows": 12928,
+        "distinct_primary_keys": 12928,
+        "minimum_primary_key": 881,
+        "maximum_primary_key": 30992,
         "unexpected_nulls": {
           "id": 0,
           "risk_score_id": 0,
@@ -187,10 +185,10 @@
         }
       },
       "postgresql": {
-        "rows": 0,
-        "distinct_primary_keys": 0,
-        "minimum_primary_key": null,
-        "maximum_primary_key": null,
+        "rows": 12928,
+        "distinct_primary_keys": 12928,
+        "minimum_primary_key": 881,
+        "maximum_primary_key": 30992,
         "unexpected_nulls": {
           "id": 0,
           "risk_score_id": 0,
@@ -211,10 +209,10 @@
     },
     "risk_score_indicator_configs": {
       "sqlite": {
-        "rows": 0,
-        "distinct_primary_keys": 0,
-        "minimum_primary_key": null,
-        "maximum_primary_key": null,
+        "rows": 18,
+        "distinct_primary_keys": 18,
+        "minimum_primary_key": 1,
+        "maximum_primary_key": 18,
         "unexpected_nulls": {
           "id": 0,
           "risk_score_model_id": 0,
@@ -230,10 +228,10 @@
         }
       },
       "postgresql": {
-        "rows": 0,
-        "distinct_primary_keys": 0,
-        "minimum_primary_key": null,
-        "maximum_primary_key": null,
+        "rows": 18,
+        "distinct_primary_keys": 18,
+        "minimum_primary_key": 1,
+        "maximum_primary_key": 18,
         "unexpected_nulls": {
           "id": 0,
           "risk_score_model_id": 0,
@@ -252,10 +250,10 @@
     },
     "risk_score_models": {
       "sqlite": {
-        "rows": 0,
-        "distinct_primary_keys": 0,
-        "minimum_primary_key": null,
-        "maximum_primary_key": null,
+        "rows": 3,
+        "distinct_primary_keys": 3,
+        "minimum_primary_key": 1,
+        "maximum_primary_key": 3,
         "unexpected_nulls": {
           "id": 0,
           "code": 0,
@@ -270,10 +268,10 @@
         }
       },
       "postgresql": {
-        "rows": 0,
-        "distinct_primary_keys": 0,
-        "minimum_primary_key": null,
-        "maximum_primary_key": null,
+        "rows": 3,
+        "distinct_primary_keys": 3,
+        "minimum_primary_key": 1,
+        "maximum_primary_key": 3,
         "unexpected_nulls": {
           "id": 0,
           "code": 0,
@@ -291,12 +289,12 @@
     },
     "risk_scores": {
       "sqlite": {
-        "rows": 0,
-        "distinct_primary_keys": 0,
-        "minimum_primary_key": null,
-        "maximum_primary_key": null,
-        "first_period": null,
-        "last_period": null,
+        "rows": 4090,
+        "distinct_primary_keys": 4090,
+        "minimum_primary_key": 1,
+        "maximum_primary_key": 4090,
+        "first_period": "2023",
+        "last_period": "2026-06",
         "unexpected_nulls": {
           "id": 0,
           "risk_score_model_id": 0,
@@ -313,12 +311,12 @@
         }
       },
       "postgresql": {
-        "rows": 0,
-        "distinct_primary_keys": 0,
-        "minimum_primary_key": null,
-        "maximum_primary_key": null,
-        "first_period": null,
-        "last_period": null,
+        "rows": 4090,
+        "distinct_primary_keys": 4090,
+        "minimum_primary_key": 1,
+        "maximum_primary_key": 4090,
+        "first_period": "2023",
+        "last_period": "2026-06",
         "unexpected_nulls": {
           "id": 0,
           "risk_score_model_id": 0,
@@ -338,12 +336,12 @@
     },
     "source_documents": {
       "sqlite": {
-        "rows": 0,
-        "distinct_primary_keys": 0,
-        "minimum_primary_key": null,
-        "maximum_primary_key": null,
-        "first_period": null,
-        "last_period": null,
+        "rows": 1763,
+        "distinct_primary_keys": 1763,
+        "minimum_primary_key": 1,
+        "maximum_primary_key": 1763,
+        "first_period": "2023",
+        "last_period": "2026-06",
         "unexpected_nulls": {
           "id": 0,
           "source_name": 0,
@@ -363,12 +361,12 @@
         }
       },
       "postgresql": {
-        "rows": 0,
-        "distinct_primary_keys": 0,
-        "minimum_primary_key": null,
-        "maximum_primary_key": null,
-        "first_period": null,
-        "last_period": null,
+        "rows": 1763,
+        "distinct_primary_keys": 1763,
+        "minimum_primary_key": 1,
+        "maximum_primary_key": 1763,
+        "first_period": "2023",
+        "last_period": "2026-06",
         "unexpected_nulls": {
           "id": 0,
           "source_name": 0,
@@ -391,12 +389,12 @@
     },
     "surendettement_data": {
       "sqlite": {
-        "rows": 1,
-        "distinct_primary_keys": 1,
+        "rows": 38,
+        "distinct_primary_keys": 38,
         "minimum_primary_key": 1,
-        "maximum_primary_key": 1,
+        "maximum_primary_key": 38,
         "first_period": 2024,
-        "last_period": 2024,
+        "last_period": 2025,
         "unexpected_nulls": {
           "id": 0,
           "indicator": 0,
@@ -404,12 +402,12 @@
         }
       },
       "postgresql": {
-        "rows": 1,
-        "distinct_primary_keys": 1,
+        "rows": 38,
+        "distinct_primary_keys": 38,
         "minimum_primary_key": 1,
-        "maximum_primary_key": 1,
+        "maximum_primary_key": 38,
         "first_period": 2024,
-        "last_period": 2024,
+        "last_period": 2025,
         "unexpected_nulls": {
           "id": 0,
           "indicator": 0,
@@ -423,18 +421,264 @@
     "observations": {
       "counts_by_indicator_code": {
         "matches": true,
-        "sqlite": [],
-        "postgresql": []
+        "sqlite": [
+          [
+            "dossiers_surendettement_1000_habitants",
+            1468
+          ],
+          [
+            "droit_compte_designations",
+            220
+          ],
+          [
+            "endettement_moyen",
+            1248
+          ],
+          [
+            "fcc_personnes_inscrites",
+            207
+          ],
+          [
+            "inflation",
+            2045
+          ],
+          [
+            "revenu_median",
+            2045
+          ],
+          [
+            "surendettement_dossiers_deposes",
+            220
+          ],
+          [
+            "taux_chomage",
+            2045
+          ],
+          [
+            "taux_pauvrete",
+            2045
+          ]
+        ],
+        "postgresql": [
+          [
+            "dossiers_surendettement_1000_habitants",
+            1468
+          ],
+          [
+            "droit_compte_designations",
+            220
+          ],
+          [
+            "endettement_moyen",
+            1248
+          ],
+          [
+            "fcc_personnes_inscrites",
+            207
+          ],
+          [
+            "inflation",
+            2045
+          ],
+          [
+            "revenu_median",
+            2045
+          ],
+          [
+            "surendettement_dossiers_deposes",
+            220
+          ],
+          [
+            "taux_chomage",
+            2045
+          ],
+          [
+            "taux_pauvrete",
+            2045
+          ]
+        ]
       },
       "counts_by_geographic_level": {
         "matches": true,
-        "sqlite": [],
-        "postgresql": []
+        "sqlite": [
+          [
+            "department",
+            9792
+          ],
+          [
+            "region",
+            1751
+          ]
+        ],
+        "postgresql": [
+          [
+            "department",
+            9792
+          ],
+          [
+            "region",
+            1751
+          ]
+        ]
       },
       "counts_by_reference_period": {
         "matches": true,
-        "sqlite": [],
-        "postgresql": []
+        "sqlite": [
+          [
+            "2023",
+            576
+          ],
+          [
+            "2024",
+            576
+          ],
+          [
+            "2025-02",
+            680
+          ],
+          [
+            "2025-03",
+            680
+          ],
+          [
+            "2025-04",
+            667
+          ],
+          [
+            "2025-05",
+            680
+          ],
+          [
+            "2025-06",
+            680
+          ],
+          [
+            "2025-07",
+            680
+          ],
+          [
+            "2025-08",
+            680
+          ],
+          [
+            "2025-09",
+            680
+          ],
+          [
+            "2025-10",
+            680
+          ],
+          [
+            "2025-11",
+            680
+          ],
+          [
+            "2025-12",
+            680
+          ],
+          [
+            "2026-01",
+            488
+          ],
+          [
+            "2026-02",
+            488
+          ],
+          [
+            "2026-03",
+            488
+          ],
+          [
+            "2026-04",
+            488
+          ],
+          [
+            "2026-05",
+            488
+          ],
+          [
+            "2026-06",
+            484
+          ]
+        ],
+        "postgresql": [
+          [
+            "2023",
+            576
+          ],
+          [
+            "2024",
+            576
+          ],
+          [
+            "2025-02",
+            680
+          ],
+          [
+            "2025-03",
+            680
+          ],
+          [
+            "2025-04",
+            667
+          ],
+          [
+            "2025-05",
+            680
+          ],
+          [
+            "2025-06",
+            680
+          ],
+          [
+            "2025-07",
+            680
+          ],
+          [
+            "2025-08",
+            680
+          ],
+          [
+            "2025-09",
+            680
+          ],
+          [
+            "2025-10",
+            680
+          ],
+          [
+            "2025-11",
+            680
+          ],
+          [
+            "2025-12",
+            680
+          ],
+          [
+            "2026-01",
+            488
+          ],
+          [
+            "2026-02",
+            488
+          ],
+          [
+            "2026-03",
+            488
+          ],
+          [
+            "2026-04",
+            488
+          ],
+          [
+            "2026-05",
+            488
+          ],
+          [
+            "2026-06",
+            484
+          ]
+        ]
       },
       "functional_duplicates": {
         "sqlite": 0,
@@ -447,22 +691,196 @@
       },
       "units_by_indicator": {
         "matches": true,
-        "sqlite": [],
-        "postgresql": []
+        "sqlite": [
+          [
+            "dossiers_surendettement_1000_habitants",
+            "dossiers_pour_1000_habitants"
+          ],
+          [
+            "droit_compte_designations",
+            "désignations"
+          ],
+          [
+            "endettement_moyen",
+            "euros"
+          ],
+          [
+            "fcc_personnes_inscrites",
+            "inscriptions"
+          ],
+          [
+            "inflation",
+            "%"
+          ],
+          [
+            "revenu_median",
+            "euros"
+          ],
+          [
+            "surendettement_dossiers_deposes",
+            "dossiers"
+          ],
+          [
+            "taux_chomage",
+            "%"
+          ],
+          [
+            "taux_pauvrete",
+            "%"
+          ]
+        ],
+        "postgresql": [
+          [
+            "dossiers_surendettement_1000_habitants",
+            "dossiers_pour_1000_habitants"
+          ],
+          [
+            "droit_compte_designations",
+            "désignations"
+          ],
+          [
+            "endettement_moyen",
+            "euros"
+          ],
+          [
+            "fcc_personnes_inscrites",
+            "inscriptions"
+          ],
+          [
+            "inflation",
+            "%"
+          ],
+          [
+            "revenu_median",
+            "euros"
+          ],
+          [
+            "surendettement_dossiers_deposes",
+            "dossiers"
+          ],
+          [
+            "taux_chomage",
+            "%"
+          ],
+          [
+            "taux_pauvrete",
+            "%"
+          ]
+        ]
       }
     },
     "risk_scores": {
       "distribution_matches": true,
-      "sqlite_distribution": [],
-      "postgresql_distribution": [],
+      "sqlite_distribution": [
+        [
+          2,
+          "department",
+          "insufficient_data",
+          1632,
+          0.55
+        ],
+        [
+          2,
+          "department",
+          "valid",
+          192,
+          1.0
+        ],
+        [
+          2,
+          "region",
+          "insufficient_data",
+          1,
+          0.55
+        ],
+        [
+          2,
+          "region",
+          "partial",
+          220,
+          0.85
+        ],
+        [
+          3,
+          "department",
+          "partial",
+          576,
+          0.6
+        ],
+        [
+          3,
+          "department",
+          "valid",
+          1248,
+          1.0
+        ],
+        [
+          3,
+          "region",
+          "partial",
+          221,
+          0.8986425339366516
+        ]
+      ],
+      "postgresql_distribution": [
+        [
+          2,
+          "department",
+          "insufficient_data",
+          1632,
+          0.55
+        ],
+        [
+          2,
+          "department",
+          "valid",
+          192,
+          1.0
+        ],
+        [
+          2,
+          "region",
+          "insufficient_data",
+          1,
+          0.55
+        ],
+        [
+          2,
+          "region",
+          "partial",
+          220,
+          0.85
+        ],
+        [
+          3,
+          "department",
+          "partial",
+          576,
+          0.6
+        ],
+        [
+          3,
+          "department",
+          "valid",
+          1248,
+          1.0
+        ],
+        [
+          3,
+          "region",
+          "partial",
+          221,
+          0.8986425339366516
+        ]
+      ],
       "deterministic_sample_matches": true,
-      "maximum_score_difference": 0.0,
+      "maximum_score_difference": 4.938257802677981e-09,
       "maximum_coverage_difference": 0.0
     },
     "risk_score_details": {
       "deterministic_sample_matches": true,
-      "maximum_contribution_difference": 0.0,
-      "maximum_effective_weight_difference": 0.0
+      "maximum_contribution_difference": 4.958870647442382e-09,
+      "maximum_effective_weight_difference": 3.529411762848156e-09
     },
     "pipeline_runs": {
       "matches": true,
@@ -470,8 +888,18 @@
       "postgresql": []
     },
     "documents_requiring_attention": {
-      "sqlite": [],
-      "postgresql": []
+      "sqlite": [
+        [
+          "needs_review",
+          1
+        ]
+      ],
+      "postgresql": [
+        [
+          "needs_review",
+          1
+        ]
+      ]
     }
   },
   "warnings": [],

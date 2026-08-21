@@ -6,17 +6,17 @@ Status: **PASS**
 
 | Table | SQLite | PostgreSQL | Match |
 |---|---:|---:|:---:|
-| dim_period | 0 | 0 | yes |
-| dim_region | 0 | 0 | yes |
-| indicators | 0 | 0 | yes |
-| observations | 0 | 0 | yes |
+| dim_period | 17 | 17 | yes |
+| dim_region | 13 | 13 | yes |
+| indicators | 9 | 9 | yes |
+| observations | 11543 | 11543 | yes |
 | pipeline_runs | 0 | 0 | yes |
-| risk_score_details | 0 | 0 | yes |
-| risk_score_indicator_configs | 0 | 0 | yes |
-| risk_score_models | 0 | 0 | yes |
-| risk_scores | 0 | 0 | yes |
-| source_documents | 0 | 0 | yes |
-| surendettement_data | 1 | 1 | yes |
+| risk_score_details | 12928 | 12928 | yes |
+| risk_score_indicator_configs | 18 | 18 | yes |
+| risk_score_models | 3 | 3 | yes |
+| risk_scores | 4090 | 4090 | yes |
+| source_documents | 1763 | 1763 | yes |
+| surendettement_data | 38 | 38 | yes |
 
 ## Errors
 

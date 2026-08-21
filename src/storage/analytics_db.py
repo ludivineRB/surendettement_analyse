@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import re
 import sqlite3
 from datetime import datetime, timezone
@@ -106,13 +107,24 @@ def build_analytics_database(
         _migrate_analytics(connection)
         connection.commit()
 
-        return {
+        summary = {
             "departments": _count_rows(connection, "dim_department"),
             "indicators": _count_rows(connection, "dim_indicator"),
             "surendettement_rows": _count_rows(connection, "fact_surendettement"),
             "bdf_rows": _count_rows(connection, "fact_bdf_statinfo"),
             "insee_rows": _count_rows(connection, "fact_insee_macro"),
         }
+    if os.getenv("PUBLISH_ANALYTICS_TO_POSTGRES") == "yes":
+        target_url = os.getenv("ANALYTICS_DATABASE_URL")
+        if not target_url:
+            raise ValueError(
+                "ANALYTICS_DATABASE_URL is required when PostgreSQL "
+                "publication is enabled"
+            )
+        from src.storage.migrate_analytics_to_postgres import migrate_analytics
+
+        migrate_analytics(output_db, target_url, replace_snapshot=True)
+    return summary
 
 
 def _load_bdf_curated(path: Path) -> pd.DataFrame:

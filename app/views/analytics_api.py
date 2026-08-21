@@ -5,7 +5,15 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy import select
 
-from app.core.analytics import analytics_connection, fetch_all, fetch_one, utc_now
+from app.core.analytics import (
+    analytics_connection,
+    database_objects,
+    execute,
+    fetch_all,
+    fetch_one,
+    table_columns,
+    utc_now,
+)
 from app.schemas.analytics import MacroOverrideCreate, MacroOverrideRead, MacroOverrideUpdate
 from src.storage.database import get_session_factory
 from src.storage.models import InclusionIndicator, InclusionObservation, InclusionSourceDocument
@@ -23,11 +31,8 @@ def observability() -> dict:
 @analytics_api.get("/health")
 def health() -> dict:
     with analytics_connection() as connection:
-        tables = fetch_all(
-            connection,
-            "SELECT name FROM sqlite_master WHERE type IN ('table', 'view') ORDER BY name",
-        )
-    return {"status": "ok", "objects": [row["name"] for row in tables]}
+        objects = database_objects(connection)
+    return {"status": "ok", "objects": objects}
 
 
 @analytics_api.get("/departments")
@@ -317,12 +322,7 @@ def list_regional_macro_economic_data(
         params["reference_year"] = reference_year
     where = "WHERE " + " AND ".join(filters) if filters else ""
     with analytics_connection() as connection:
-        columns = {
-            row["name"]
-            for row in connection.execute(
-                "PRAGMA table_info(v_insee_macro_region_selected)"
-            )
-        }
+        columns = table_columns(connection, "v_insee_macro_region_selected")
         if region_code and "region_code" not in columns:
             raise HTTPException(
                 status_code=409,
@@ -432,12 +432,7 @@ def create_macro_override(payload: MacroOverrideCreate) -> dict:
     now = utc_now()
     indicator_key = f"override:{payload.indicator_code}"
     with analytics_connection() as connection:
-        columns = {
-            row["name"]
-            for row in connection.execute(
-                "PRAGMA table_info(fact_macro_override)"
-            )
-        }
+        columns = table_columns(connection, "fact_macro_override")
         base_params = {
             **payload.model_dump(),
             "departement_code": _standardize_department_code(
@@ -447,7 +442,8 @@ def create_macro_override(payload: MacroOverrideCreate) -> dict:
             "updated_at": now,
         }
         if "period_key" not in columns:
-            cursor = connection.execute(
+            cursor = execute(
+                connection,
                 """
                 INSERT INTO fact_macro_override (
                     reference_year, departement_code, indicator_code,
@@ -461,38 +457,44 @@ def create_macro_override(payload: MacroOverrideCreate) -> dict:
                 """,
                 base_params,
             )
+            override_id = getattr(cursor, "lastrowid", None)
             return fetch_one(
                 connection,
                 "SELECT * FROM fact_macro_override WHERE id = :id",
-                {"id": cursor.lastrowid},
+                {"id": override_id},
             )
-        connection.execute(
+        execute(
+            connection,
             """
-            INSERT OR IGNORE INTO dim_period(
+            INSERT INTO dim_period(
                 period_key, reference_year, reference_month_number, granularity
             ) VALUES (:period_key, :reference_year, NULL, 'year')
+            ON CONFLICT(period_key) DO NOTHING
             """,
             {
                 "period_key": str(payload.reference_year),
                 "reference_year": payload.reference_year,
             },
         )
-        connection.execute(
+        execute(
+            connection,
             """
-            INSERT OR IGNORE INTO dim_indicator(
+            INSERT INTO dim_indicator(
                 indicator_key, source_system, indicator_code, indicator_name,
                 indicator_group, aggregation_rule
             ) VALUES (
                 :indicator_key, 'override', :indicator_code, :indicator_name,
                 :indicator_group, 'manual'
             )
+            ON CONFLICT(indicator_key) DO NOTHING
             """,
             {
                 **base_params,
                 "indicator_key": indicator_key,
             },
         )
-        cursor = connection.execute(
+        cursor = execute(
+            connection,
             """
             INSERT INTO fact_macro_override (
                 period_key, reference_year, departement_code, indicator_key,
@@ -511,10 +513,13 @@ def create_macro_override(payload: MacroOverrideCreate) -> dict:
                 "indicator_key": indicator_key,
             },
         )
+        override_id = getattr(cursor, "lastrowid", None)
+        if override_id is None:
+            override_id = execute(connection, "SELECT MAX(id) FROM fact_macro_override").scalar_one()
         row = fetch_one(
             connection,
             "SELECT * FROM fact_macro_override WHERE id = :id",
-            {"id": cursor.lastrowid},
+            {"id": override_id},
         )
     return row
 
@@ -558,7 +563,8 @@ def update_macro_override(override_id: int, payload: MacroOverrideUpdate) -> dic
     assignments = ", ".join(f"{column} = :{column}" for column in updates)
     params = {**updates, "id": override_id}
     with analytics_connection() as connection:
-        connection.execute(
+        execute(
+            connection,
             f"UPDATE fact_macro_override SET {assignments} WHERE id = :id",
             params,
         )
