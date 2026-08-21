@@ -1,4 +1,6 @@
-from assistant_api.evaluation import evaluate_case, evaluate_dataset
+import pytest
+
+from assistant_api.evaluation import evaluate_case, evaluate_dataset, http_transport
 
 
 def _case(**overrides):
@@ -74,3 +76,9 @@ def test_dataset_fails_when_a_required_refusal_is_not_enforced():
     )
     assert report["status"] == "FAIL"
     assert report["metrics"]["refusal_recall"] == 0.0
+
+
+@pytest.mark.parametrize("base_url", ["file:///etc/passwd", "localhost:8030", ""])
+def test_http_transport_rejects_unsafe_or_incomplete_base_urls(base_url):
+    with pytest.raises(ValueError, match="must use http or https"):
+        http_transport(base_url)

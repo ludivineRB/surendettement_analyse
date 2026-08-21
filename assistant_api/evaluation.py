@@ -9,6 +9,7 @@ import time
 from pathlib import Path
 from typing import Any, Callable
 from urllib import error, request
+from urllib.parse import urlparse
 
 
 Transport = Callable[[str], dict[str, Any]]
@@ -110,6 +111,9 @@ def evaluate_dataset(dataset: dict[str, Any], transport: Transport) -> dict[str,
 
 
 def http_transport(base_url: str, token: str = "") -> Transport:
+    parsed_url = urlparse(base_url)
+    if parsed_url.scheme not in {"http", "https"} or not parsed_url.hostname:
+        raise ValueError("base_url must use http or https and include a host")
     endpoint = f"{base_url.rstrip('/')}/v1/answers"
 
     def send(question: str) -> dict[str, Any]:
@@ -118,7 +122,8 @@ def http_transport(base_url: str, token: str = "") -> Transport:
         if token:
             headers["X-Internal-Token"] = token
         try:
-            with request.urlopen(
+            # The configurable URL is restricted to HTTP(S) with a valid host above.
+            with request.urlopen(  # nosec B310
                 request.Request(endpoint, data=body, headers=headers), timeout=120
             ) as response:
                 return json.loads(response.read())
