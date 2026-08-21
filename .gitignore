@@ -6,5 +6,6 @@ __pycache__/
 .pytest_cache/
 *.pyc
 /data/
+/app/reports/ci-fixtures/
 AGENTS.md
 .codex

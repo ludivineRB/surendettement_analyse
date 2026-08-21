@@ -20,14 +20,6 @@ COPY tests ./tests
 COPY models ./models
 COPY app.py .
 
-# Runtime and migration inputs only. Raw sources, local virtual environments,
-# notebooks, caches, and unrelated processed datasets stay outside the image.
-COPY data/metadata ./data/metadata
-COPY data/processed/surendettement.db ./data/processed/surendettement.db
-COPY data/processed/analytics ./data/processed/analytics
-COPY data/processed/surendettement_unified.csv ./data/processed/surendettement_unified.csv
-COPY data/processed/statinfo_departements_bi_curated.csv ./data/processed/statinfo_departements_bi_curated.csv
-
 FROM runtime AS api
 EXPOSE 8020
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8020"]

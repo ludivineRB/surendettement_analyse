@@ -6,6 +6,7 @@ database=${POSTGRES_DB:-surendettement_staging}
 user=${POSTGRES_USER:-surendettement_staging}
 password=${POSTGRES_PASSWORD:-}
 source_db=${SOURCE_SQLITE_DB:-data/processed/surendettement.db}
+container_source_db=data/processed/surendettement.db
 host_port=${POSTGRES_PORT:-5432}
 report_dir=${POSTGRES_VALIDATION_REPORT_DIR:-app/reports}
 
@@ -34,11 +35,6 @@ if ! docker info >/dev/null 2>&1; then
   printf 'Docker daemon is unavailable. Start Docker and retry.\n' >&2
   exit 2
 fi
-if [ ! -f "$source_db" ]; then
-  printf 'SQLite source not found: %s\n' "$source_db" >&2
-  exit 2
-fi
-
 export COMPOSE_PROJECT_NAME=$compose_project
 export POSTGRES_DB=$database
 export POSTGRES_USER=$user
@@ -47,6 +43,17 @@ export POSTGRES_PORT=$host_port
 
 compose_files="-f docker/compose.yaml -f docker/compose.staging.yaml"
 container_url="postgresql+psycopg://${user}:${password}@postgres:5432/${database}"
+
+if [ ! -f "$source_db" ]; then
+  source_db="$report_dir/ci-fixtures/surendettement.db"
+  mkdir -p "$report_dir/ci-fixtures"
+  printf '+ synthetic SQLite migration fixture\n'
+  docker compose $compose_files run --rm --no-deps \
+    -v "$(pwd)/$report_dir:/workspace/$report_dir" \
+    api python -m src.storage.create_ci_migration_fixture \
+    --output "$source_db"
+fi
+source_mount="$(pwd)/$source_db:/workspace/$container_source_db:ro"
 
 printf '+ docker compose %s up -d --wait --wait-timeout 60 postgres\n' "$compose_files"
 if ! docker compose $compose_files up -d --wait --wait-timeout 60 postgres; then
@@ -63,9 +70,10 @@ docker compose $compose_files exec -T postgres \
   pg_isready --username "$user" --dbname "$database"
 
 printf '+ schema migrations and dry-run\n'
-docker compose $compose_files run --rm --no-deps api \
+docker compose $compose_files run --rm --no-deps \
+  -v "$source_mount" api \
   python -m src.storage.migrate_to_postgres \
-  --source "$source_db" \
+  --source "$container_source_db" \
   --target-url "$container_url" \
   --dry-run
 
@@ -78,25 +86,28 @@ if [ "${CONFIRM_LOCAL_MIGRATION:-no}" != "yes" ]; then
 fi
 
 printf '+ confirmed local migration\n'
-docker compose $compose_files run --rm --no-deps api \
+docker compose $compose_files run --rm --no-deps \
+  -v "$source_mount" api \
   python -m src.storage.migrate_to_postgres \
-  --source "$source_db" \
+  --source "$container_source_db" \
   --target-url "$container_url"
 
 printf '+ PostgreSQL integration tests\n'
 docker compose $compose_files run --rm --no-deps \
   -e TEST_POSTGRES_DATABASE_URL="$container_url" \
+  -v "$source_mount" \
   api python -m pytest app/tests/test_postgres_migration.py \
   -m postgres_integration -q
 
 mkdir -p "$report_dir"
 printf '+ data comparison and report generation\n'
 docker compose $compose_files run --rm --no-deps -T \
-  -e SOURCE_SQLITE_DB="$source_db" \
+  -e SOURCE_SQLITE_DB="$container_source_db" \
   -e TARGET_DATABASE_URL="$container_url" \
   -e REPORT_JSON="/workspace/$report_dir/postgres_migration_validation.json" \
   -e REPORT_MD="/workspace/$report_dir/postgres_migration_validation.md" \
   -v "$(pwd)/$report_dir:/workspace/$report_dir" \
+  -v "$source_mount" \
   api python - <<'PY'
 import json
 import os
