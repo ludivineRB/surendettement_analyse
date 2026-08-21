@@ -36,6 +36,10 @@ docker compose --profile ci -f docker/compose.yaml run --rm --no-deps \
   --junitxml="$report_dir/pytest.xml" \
   --cov=assistant_api --cov=app --cov=src \
   --cov-report="xml:$report_dir/coverage.xml"
+docker compose --profile ci -f docker/compose.yaml run --rm --no-deps \
+  -v "$(pwd)/$report_dir:/workspace/$report_dir" \
+  ci python -m assistant_api.evaluation --offline \
+  --output-dir "$report_dir/rag"
 
 printf '%s\n' '5/8 Django tests'
 docker compose --profile ci -f docker/compose.yaml run --rm \

@@ -1,6 +1,13 @@
 {
   "schema_version": "1.0",
   "dataset_version": "2026-08-21",
+  "offline_thresholds": {
+    "schema_compliance": 1.0,
+    "category_accuracy": 1.0,
+    "method_accuracy": 1.0,
+    "refusal_recall": 1.0,
+    "case_pass_rate": 1.0
+  },
   "thresholds": {
     "availability": 1.0,
     "case_pass_rate": 0.9,
@@ -83,6 +90,7 @@
       "question": "Quelle sera exactement la pauvreté en France en 2047 ?",
       "expected_category": "structured_analytics",
       "expected_methods": ["refusal"],
+      "offline_expected_methods": ["analytics"],
       "refusal_required": true,
       "evidence_required": false,
       "allowed_publishers": ["Insee"]

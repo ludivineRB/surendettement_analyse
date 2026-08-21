@@ -1,6 +1,11 @@
 import pytest
 
-from assistant_api.evaluation import evaluate_case, evaluate_dataset, http_transport
+from assistant_api.evaluation import (
+    evaluate_case,
+    evaluate_dataset,
+    evaluate_offline_dataset,
+    http_transport,
+)
 
 
 def _case(**overrides):
@@ -82,3 +87,17 @@ def test_dataset_fails_when_a_required_refusal_is_not_enforced():
 def test_http_transport_rejects_unsafe_or_incomplete_base_urls(base_url):
     with pytest.raises(ValueError, match="must use http or https"):
         http_transport(base_url)
+
+
+def test_versioned_dataset_passes_deterministic_offline_contract():
+    import json
+    from pathlib import Path
+
+    dataset = json.loads(
+        Path("assistant_api/evaluation_dataset.json").read_text(encoding="utf-8")
+    )
+    report = evaluate_offline_dataset(dataset)
+
+    assert report["status"] == "PASS"
+    assert report["evaluation_mode"] == "offline"
+    assert report["metrics"]["passed_cases"] == len(dataset["cases"])

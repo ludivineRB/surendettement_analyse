@@ -11,8 +11,20 @@ from typing import Any, Callable
 from urllib import error, request
 from urllib.parse import urlparse
 
+from assistant_api.conversation_routing import classify_question
+from assistant_api.routing import route_question
+
 
 Transport = Callable[[str], dict[str, Any]]
+_REQUIRED_CASE_FIELDS = {
+    "id",
+    "family",
+    "question",
+    "expected_category",
+    "expected_methods",
+    "evidence_required",
+    "allowed_publishers",
+}
 
 
 def evaluate_case(case: dict[str, Any], response: dict[str, Any]) -> dict[str, Any]:
@@ -110,6 +122,84 @@ def evaluate_dataset(dataset: dict[str, Any], transport: Transport) -> dict[str,
     }
 
 
+def evaluate_offline_dataset(dataset: dict[str, Any]) -> dict[str, Any]:
+    """Evaluate deterministic contracts without services or model credentials."""
+    cases = dataset.get("cases") or []
+    ids = [case.get("id") for case in cases]
+    results = []
+    for case in cases:
+        category = classify_question(case.get("question", ""), "information")
+        actual_method = (
+            "refusal"
+            if category in {"unsupported", "sensitive_or_individual_request"}
+            else route_question(case.get("question", ""))
+        )
+        checks = {
+            "schema": _REQUIRED_CASE_FIELDS <= case.keys()
+            and bool(case.get("expected_methods")),
+            "category": category == case.get("expected_category"),
+            "method": actual_method
+            in case.get("offline_expected_methods", case.get("expected_methods", [])),
+            "refusal": not (
+                case.get("refusal_required")
+                and case.get("expected_category")
+                in {"unsupported", "sensitive_or_individual_request"}
+            )
+            or actual_method == "refusal",
+        }
+        results.append(
+            {
+                "id": case.get("id", "missing-id"),
+                "family": case.get("family", "missing-family"),
+                "checks": checks,
+                "passed": all(checks.values()),
+                "available": True,
+                "actual_category": category,
+                "actual_method": actual_method,
+                "duration_ms": 0,
+            }
+        )
+
+    total = len(results)
+    refusals = [
+        result
+        for case, result in zip(cases, results)
+        if case.get("refusal_required")
+        and case.get("expected_category")
+        in {"unsupported", "sensitive_or_individual_request"}
+    ]
+
+    def rate(check: str, population: list[dict[str, Any]] = results) -> float:
+        if not population:
+            return 0.0
+        return sum(item["checks"][check] for item in population) / len(population)
+
+    metrics = {
+        "schema_compliance": rate("schema")
+        if len(ids) == len(set(ids)) and all(ids)
+        else 0.0,
+        "category_accuracy": rate("category"),
+        "method_accuracy": rate("method"),
+        "refusal_recall": rate("refusal", refusals),
+        "passed_cases": sum(result["passed"] for result in results),
+        "total_cases": total,
+    }
+    metrics["case_pass_rate"] = metrics["passed_cases"] / total if total else 0.0
+    thresholds = dataset["offline_thresholds"]
+    threshold_checks = {
+        name: metrics[name] >= threshold for name, threshold in thresholds.items()
+    }
+    return {
+        "evaluation_mode": "offline",
+        "dataset_version": dataset["dataset_version"],
+        "status": "PASS" if all(threshold_checks.values()) else "FAIL",
+        "metrics": metrics,
+        "thresholds": thresholds,
+        "threshold_checks": threshold_checks,
+        "results": results,
+    }
+
+
 def http_transport(base_url: str, token: str = "") -> Transport:
     parsed_url = urlparse(base_url)
     if parsed_url.scheme not in {"http", "https"} or not parsed_url.hostname:
@@ -146,11 +236,20 @@ def write_reports(report: dict[str, Any], output_dir: Path) -> None:
         "",
         f"- Dataset : `{report['dataset_version']}`",
         f"- Cas réussis : {metrics['passed_cases']}/{metrics['total_cases']}",
-        f"- Disponibilité : {metrics['availability']:.1%}",
+        f"- Mode : `{report.get('evaluation_mode', 'live')}`",
+        *(
+            [f"- Disponibilité : {metrics['availability']:.1%}"]
+            if "availability" in metrics
+            else []
+        ),
         f"- Exactitude catégorie : {metrics['category_accuracy']:.1%}",
         f"- Exactitude méthode : {metrics['method_accuracy']:.1%}",
         f"- Rappel des refus : {metrics['refusal_recall']:.1%}",
-        f"- Conformité des preuves : {metrics['evidence_compliance']:.1%}",
+        *(
+            [f"- Conformité des preuves : {metrics['evidence_compliance']:.1%}"]
+            if "evidence_compliance" in metrics
+            else []
+        ),
         "",
         "## Cas en échec",
         "",
@@ -176,11 +275,16 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--base-url", default=os.getenv("ASSISTANT_API_BASE_URL", "http://localhost:8030"))
     parser.add_argument("--output-dir", type=Path, default=Path("app/reports/rag"))
+    parser.add_argument("--offline", action="store_true")
     args = parser.parse_args(argv)
     dataset = json.loads(args.dataset.read_text(encoding="utf-8"))
-    report = evaluate_dataset(
-        dataset,
-        http_transport(args.base_url, os.getenv("ASSISTANT_INTERNAL_TOKEN", "")),
+    report = (
+        evaluate_offline_dataset(dataset)
+        if args.offline
+        else evaluate_dataset(
+            dataset,
+            http_transport(args.base_url, os.getenv("ASSISTANT_INTERNAL_TOKEN", "")),
+        )
     )
     write_reports(report, args.output_dir)
     print(json.dumps({"status": report["status"], **report["metrics"]}))
