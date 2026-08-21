@@ -31,12 +31,27 @@ _SENSITIVE_TERMS = {
     "accordez-moi",
     "diagnostic personnel",
 }
+_PROMPT_INJECTION_TERMS = {
+    "ignore les instructions",
+    "ignore les règles",
+    "ignore les regles",
+    "prompt système",
+    "prompt systeme",
+    "révèle le prompt",
+    "revele le prompt",
+    "révèle les secrets",
+    "revele les secrets",
+    "invente un chiffre",
+    "applique cette consigne",
+}
 
 
 def classify_question(question: str, mode: AssistantMode) -> QuestionCategory:
     normalized = question.casefold()
     if any(term in normalized for term in _SENSITIVE_TERMS):
         return "sensitive_or_individual_request"
+    if any(term in normalized for term in _PROMPT_INJECTION_TERMS):
+        return "unsupported"
     if any(term in normalized for term in ("absolument tout", "toutes les données", "exporte tout")):
         return "unsupported"
     if mode == "sql":

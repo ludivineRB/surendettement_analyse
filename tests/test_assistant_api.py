@@ -26,19 +26,18 @@ def test_answer_request_accepts_django_numeric_conversation_id():
     assert request.conversation_id == "42"
 
 
-def test_answer_refuses_to_invent_content_before_engines_are_ready():
+def test_answer_refuses_to_invent_when_no_approved_evidence_exists():
     request = AnswerRequest(
         question="Quel est le taux de chômage en France ?"
     )
     analytics = Mock()
     analytics.fetch.return_value = []
-    with pytest.raises(HTTPException) as error:
-        answer_question(request, Mock(), analytics, Mock())
+    response = answer_question(request, Mock(), analytics, Mock())
 
-    assert error.value.status_code == 503
-    body = error.value.detail
-    assert body["status"] == "not_ready"
-    assert body["request_id"]
+    assert response.method == "refusal"
+    assert response.category == "structured_analytics"
+    assert response.sources == []
+    assert response.data_references == []
 
 
 @patch("assistant_api.main.build_grounding_context")

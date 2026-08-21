@@ -41,10 +41,23 @@ _INTERPRETATION_TERMS = {
     "interpreter",
     "pourquoi",
 }
+_DEFINITION_TERMS = {
+    "comment définit",
+    "comment definit",
+    "définit-il",
+    "definit-il",
+    "définition",
+    "definition",
+    "que signifie",
+    "qu'est-ce",
+    "qu’est-ce",
+}
 
 
 def route_question(question: str) -> AnswerMethod:
     normalized = question.casefold()
+    if any(term in normalized for term in _DEFINITION_TERMS):
+        return "documents"
     requests_analytics = any(
         term in normalized for term in _ANALYTICS_TERMS
     ) or any(character.isdigit() for character in normalized)

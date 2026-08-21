@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sqlite3
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -34,9 +35,14 @@ def build_observability_report(
     else:
         with create_engine(database_url).connect() as connection:
             _operational_report(connection, report)
-    with sqlite3.connect(analytics_db) as connection:
-        connection.row_factory = sqlite3.Row
-        _analytics_report(connection, report)
+    analytics_url = os.getenv("ANALYTICS_DATABASE_URL")
+    if analytics_url:
+        with create_engine(analytics_url).connect() as connection:
+            _analytics_report(connection, report)
+    else:
+        with sqlite3.connect(analytics_db) as connection:
+            connection.row_factory = sqlite3.Row
+            _analytics_report(connection, report)
     if report["alerts"]:
         report["status"] = "warning"
     return report
@@ -191,7 +197,7 @@ def _operational_report(connection: sqlite3.Connection, report: dict) -> None:
         )
 
 
-def _analytics_report(connection: sqlite3.Connection, report: dict) -> None:
+def _analytics_report(connection, report: dict) -> None:
     analytics = report["analytics"]
     analytics["counts"] = {
         table: _count(connection, table)
@@ -214,11 +220,10 @@ def _analytics_report(connection: sqlite3.Connection, report: dict) -> None:
         """,
     )
     analytics["integrity"] = {
-        "foreign_key_violations": len(
-            connection.execute("PRAGMA foreign_key_check").fetchall()
-        ),
-        "departments_without_region": connection.execute(
-            "SELECT COUNT(*) FROM dim_department WHERE region_code IS NULL"
+        "foreign_key_violations": _foreign_key_violations(connection),
+        "departments_without_region": _execute(
+            connection,
+            "SELECT COUNT(*) FROM dim_department WHERE region_code IS NULL",
         ).fetchone()[0],
     }
     if any(analytics["integrity"].values()):

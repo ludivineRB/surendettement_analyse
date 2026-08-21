@@ -127,7 +127,7 @@ def _find_largest_increase(intent, client):
 
 def _get_data_freshness(intent, client):
     payload = client.observability()
-    return payload.get("indicator_freshness", [])[:100]
+    return payload.get("operational", {}).get("indicator_freshness", [])[:100]
 
 
 def _get_pipeline_status(intent, client):

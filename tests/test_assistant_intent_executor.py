@@ -71,7 +71,9 @@ def test_largest_increase_is_sorted_and_limited():
 
 def test_observability_is_reduced_to_freshness_rows():
     client = Mock()
-    client.observability.return_value = {"indicator_freshness": [{"indicator_code": "score"}]}
+    client.observability.return_value = {
+        "operational": {"indicator_freshness": [{"indicator_code": "score"}]}
+    }
 
     result = execute_analytical_intent(
         AnalyticalIntent(intent="get_data_freshness"), client

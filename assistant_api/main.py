@@ -185,12 +185,19 @@ def answer_question(
             context,
             generator,
         )
-    except (
-        AnalyticsUnavailable,
-        GeneratorUnavailable,
-        InsufficientGrounding,
-        SQLAlchemyError,
-    ) as exc:
+    except InsufficientGrounding:
+        return AnswerResponse(
+            answer=(
+                "Les sources approuvées disponibles ne permettent pas de "
+                "répondre à cette question de façon fiable."
+            ),
+            sources=[],
+            data_references=[],
+            method="refusal",
+            category=category,
+            request_id=request_id,
+        )
+    except (AnalyticsUnavailable, GeneratorUnavailable, SQLAlchemyError) as exc:
         raise HTTPException(
             status_code=503,
             detail={
