@@ -1,17 +1,29 @@
 {% extends "base.html" %}
-{% block title %}Assistants métier{% endblock %}
+{% block title %}Assistants analytiques{% endblock %}
 {% block content %}
-  <h1>Assistants métier</h1>
-  <section>
-    <h2>Informations et indicateurs</h2>
-    <p>Questions documentaires et analyses structurées, avec leurs sources.</p>
-    <a class="button-link" href="{% url 'assistant-information' %}">Ouvrir l'assistant d'information</a>
-  </section>
-  {% if perms.accounts.use_analytics %}
-    <section>
-      <h2>Analyse SQL avancée</h2>
-      <p>Requêtes avancées en lecture seule sur les vues analytiques autorisées.</p>
-      <a class="button-link" href="{% url 'assistant-sql' %}">Ouvrir l'assistant SQL</a>
-    </section>
-  {% endif %}
+  <header class="page-header">
+    <div class="page-header__copy">
+      <p class="eyebrow">Explorer les données</p>
+      <h1>Assistants analytiques</h1>
+      <p>Interrogez les documents et indicateurs territoriaux dans un cadre sécurisé.</p>
+    </div>
+  </header>
+  <div class="grid grid--two">
+    <article class="data-card">
+      <header class="data-card__header"><div><p class="eyebrow">Conversation guidée</p><h2>Assistant analytique</h2></div></header>
+      <div class="data-card__body">
+        <p>Posez une question documentaire ou analytique et retrouvez les sources mobilisées.</p>
+        <a class="button-link" href="{% url 'assistant-information' %}">Ouvrir l’assistant</a>
+      </div>
+    </article>
+    {% if perms.accounts.use_analytics %}
+      <article class="data-card">
+        <header class="data-card__header"><div><p class="eyebrow">Utilisateurs avancés</p><h2>Assistant SQL</h2></div><span class="badge">Lecture seule</span></header>
+        <div class="data-card__body">
+          <p>Interrogez uniquement les vues analytiques autorisées. Les protections backend restent actives.</p>
+          <a class="button-link" href="{% url 'assistant-sql' %}">Ouvrir l’assistant SQL</a>
+        </div>
+      </article>
+    {% endif %}
+  </div>
 {% endblock %}

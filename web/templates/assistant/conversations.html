@@ -1,10 +1,11 @@
 {% extends "base.html" %}
 
-{% block title %}Assistant métier — Surendettement territorial{% endblock %}
+{% block title %}{% if assistant_kind == "sql" %}Assistant SQL{% else %}Assistant analytique{% endif %} — Surendettement Analyse{% endblock %}
 
 {% block content %}
 <div class="assistant-layout">
-  <aside class="conversation-list" aria-label="Conversations récentes">
+  <aside class="conversation-list card" aria-label="Conversations récentes">
+    <p class="eyebrow">Historique</p>
     <h2>Conversations</h2>
     {% if assistant_kind == "sql" %}
       <a class="button-link" href="{% url 'assistant-sql' %}">Nouvelle analyse SQL</a>
@@ -13,85 +14,58 @@
     {% endif %}
     <ul>
       {% for item in recent_conversations %}
-        <li>
-          <a href="{% if assistant_kind == 'sql' %}{% url 'assistant-sql-conversation' item.id %}{% else %}{% url 'assistant-information-conversation' item.id %}{% endif %}">
-            {{ item.title|truncatechars:55 }}
-          </a>
-        </li>
-      {% empty %}
-        <li>Aucune conversation.</li>
-      {% endfor %}
+        <li><a href="{% if assistant_kind == 'sql' %}{% url 'assistant-sql-conversation' item.id %}{% else %}{% url 'assistant-information-conversation' item.id %}{% endif %}">{{ item.title|truncatechars:55 }}</a></li>
+      {% empty %}<li class="empty-state">Aucune conversation.</li>{% endfor %}
     </ul>
   </aside>
 
   <section class="assistant-panel">
-    <h1>{% if assistant_kind == "sql" %}Assistant SQL{% else %}Assistant d'information{% endif %}</h1>
-    <p>
-      Posez une question sur le surendettement en France ou sur les
-      indicateurs macro-économiques. Les réponses affichent leurs sources.
-    </p>
+    <header class="assistant-panel__head">
+      <p class="eyebrow">{% if assistant_kind == "sql" %}Analyse avancée{% else %}Données et documentation{% endif %}</p>
+      <h1>{% if assistant_kind == "sql" %}Assistant SQL <span class="badge">Lecture seule</span>{% else %}Assistant analytique{% endif %}</h1>
+      <p>{% if assistant_kind == "sql" %}Interrogez les vues analytiques autorisées. Seules les requêtes en lecture sont exécutées.{% else %}Posez une question sur les données territoriales et consultez les sources mobilisées.{% endif %}</p>
+    </header>
 
-    {% if assistant_error %}
-      <div class="alert" role="alert">{{ assistant_error }}</div>
-    {% endif %}
+    {% if assistant_error %}<div class="alert" role="alert"><strong>La réponse n’a pas pu être générée.</strong><br>{{ assistant_error }}</div>{% endif %}
 
-    <div class="message-list" aria-live="polite">
+    <div class="message-list card" aria-live="polite" aria-label="Conversation">
       {% if conversation %}
         {% for message in conversation.messages.all %}
           <article class="message message-{{ message.role }}">
-            <header>
-              {% if message.role == "user" %}Vous{% else %}Assistant{% endif %}
-              {% if message.method %}<small>{{ message.method }}</small>{% endif %}
-            </header>
+            <header>{% if message.role == "user" %}Vous{% else %}Assistant{% endif %}{% if message.method %}<small>{{ message.method }}</small>{% endif %}</header>
             <div>{{ message.content|linebreaksbr }}</div>
             {% if message.citations %}
-              <details>
-                <summary>Sources et données</summary>
-                <ul>
-                  {% for citation in message.citations %}
-                    <li>
-                      {% if citation.kind == "source" %}
-                        <a href="{{ citation.url }}" rel="noopener noreferrer" target="_blank">
-                          {{ citation.title }}
-                        </a>
-                        — {{ citation.publisher }}{% if citation.reference_period %}, {{ citation.reference_period }}{% endif %}
-                      {% else %}
-                        {{ citation.indicator_code }} — {{ citation.territory }}, {{ citation.reference_period }}
-                      {% endif %}
-                    </li>
-                  {% endfor %}
-                </ul>
-              </details>
+              <details><summary>Sources et données</summary><ul>
+                {% for citation in message.citations %}
+                  <li>{% if citation.kind == "source" %}<a href="{{ citation.url }}" rel="noopener noreferrer" target="_blank">{{ citation.title }}</a> — {{ citation.publisher }}{% if citation.reference_period %}, {{ citation.reference_period }}{% endif %}{% else %}{{ citation.indicator_code }} — {{ citation.territory }}, {{ citation.reference_period }}{% endif %}</li>
+                {% endfor %}
+              </ul></details>
             {% endif %}
-            {% if message.response_metadata.interpreted_filters %}
-              <details><summary>Filtres compris</summary><pre>{{ message.response_metadata.interpreted_filters }}</pre></details>
-            {% endif %}
-            {% if assistant_kind == "sql" and message.generated_sql %}
-              <details><summary>SQL exécuté</summary><pre><code>{{ message.generated_sql }}</code></pre></details>
-            {% endif %}
-            {% if message.response_metadata.result_rows %}
-              <details><summary>Résultats analytiques</summary>
-                <table><tbody>{% for row in message.response_metadata.result_rows %}<tr><td><pre>{{ row }}</pre></td></tr>{% endfor %}</tbody></table>
-              </details>
-            {% endif %}
+            {% if message.response_metadata.interpreted_filters %}<details><summary>Filtres interprétés</summary><pre>{{ message.response_metadata.interpreted_filters }}</pre></details>{% endif %}
+            {% if assistant_kind == "sql" and message.generated_sql %}<details open><summary>SQL généré et exécuté</summary><pre><code>{{ message.generated_sql }}</code></pre></details>{% endif %}
+            {% if message.response_metadata.result_rows %}<details><summary>Résultats analytiques</summary><div class="table-scroll"><table><tbody>{% for row in message.response_metadata.result_rows %}<tr><td><pre>{{ row }}</pre></td></tr>{% endfor %}</tbody></table></div></details>{% endif %}
             {% if message.role == "assistant" %}
-              <form method="post" action="{% url 'assistant-feedback' message.id %}">
-                {% csrf_token %}
-                <button name="feedback" value="useful" type="submit">Utile</button>
-                <button name="feedback" value="not_useful" type="submit">Inutile</button>
+              <form method="post" action="{% url 'assistant-feedback' message.id %}" aria-label="Évaluer cette réponse">
+                {% csrf_token %}<button name="feedback" value="useful" type="submit">Utile</button><button name="feedback" value="not_useful" type="submit">À améliorer</button>
               </form>
             {% endif %}
           </article>
         {% endfor %}
       {% else %}
-        <p class="empty-state">Commencez par poser une question métier.</p>
+        <div class="empty-state">
+          <h2>Comment puis-je vous aider ?</h2>
+          {% if assistant_kind == "sql" %}
+            <p>Décrivez le résultat analytique recherché. Le SQL produit restera strictement en lecture seule.</p>
+          {% else %}
+            <p>Exemple : « Quels facteurs expliquent principalement le score d’un territoire ? »</p>
+          {% endif %}
+        </div>
       {% endif %}
     </div>
 
-    <form method="post" class="question-form">
-      {% csrf_token %}
-      {{ form.as_p }}
-      <button type="submit">Envoyer</button>
+    <form method="post" class="question-form card">
+      {% csrf_token %}{{ form.as_p }}<button type="submit" aria-label="Envoyer la question">Envoyer</button>
+      <p class="assistant-disclaimer">Les réponses sont destinées à l’analyse territoriale et ne constituent pas un conseil financier ou une évaluation individuelle.</p>
     </form>
   </section>
 </div>

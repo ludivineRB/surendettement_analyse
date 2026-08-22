@@ -1,16 +1,36 @@
 {% extends "base.html" %}
 
-{% block title %}Accueil — Surendettement territorial{% endblock %}
+{% block title %}Analyse territoriale du surendettement{% endblock %}
 
 {% block content %}
-  <h1>Analyse territoriale du surendettement</h1>
-  <p>
-    Ce service présente des indicateurs statistiques territoriaux. Il ne
-    fournit aucun diagnostic ni aucune décision individuelle.
-  </p>
-  {% if user.is_authenticated %}
-    <a href="{% url 'dashboard' %}">Accéder au tableau de bord</a>
-  {% else %}
-    <a href="{% url 'login' %}">Se connecter</a>
-  {% endif %}
+  <section class="hero">
+    <div class="hero__copy">
+      <p class="eyebrow">Analyse territoriale · France</p>
+      <h1>Comprendre les évolutions du surendettement avec clarté.</h1>
+      <p>
+        Explorez les niveaux de risque territoriaux, leurs facteurs associés et
+        leur évolution dans un espace analytique fiable et pédagogique.
+      </p>
+      <div class="hero__actions">
+        {% if user.is_authenticated %}
+          <a class="button button--primary" href="{% url 'dashboard' %}">Accéder à l’analyse</a>
+        {% else %}
+          <a class="button button--primary" href="{% url 'login' %}">Se connecter</a>
+          <a class="button button--ghost" href="{% url 'register' %}">Demander un accès</a>
+        {% endif %}
+      </div>
+    </div>
+    <div class="hero__visual" aria-label="Aperçu des capacités d’analyse">
+      <p class="eyebrow">Une lecture prudente des données</p>
+      <h2>Des signaux territoriaux, jamais des diagnostics individuels.</h2>
+      <div class="section-stack">
+        <div class="card kpi-card">
+          <span class="kpi-card__label">Facteurs explicatifs</span>
+          <strong class="kpi-card__value">Lisibles et contextualisés</strong>
+          <p class="kpi-card__meta">Sources, périodes et modèles clairement identifiés.</p>
+        </div>
+        <p>Comparaison temporelle · Indicateurs associés · Assistant analytique</p>
+      </div>
+    </div>
+  </section>
 {% endblock %}

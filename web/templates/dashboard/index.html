@@ -1,145 +1,147 @@
 {% extends "base.html" %}
 
-{% block title %}Tableau de bord{% endblock %}
+{% block title %}Vue d’ensemble — Surendettement Analyse{% endblock %}
 
 {% block content %}
-  <h1>Tableau de bord analytique</h1>
-  <p>
-    Indicateurs statistiques territoriaux — aucun diagnostic ni aucune
-    décision individuelle.
-  </p>
+  <header class="page-header">
+    <div class="page-header__copy">
+      <p class="eyebrow">Vue d’ensemble</p>
+      <h1>Analyse territoriale du surendettement</h1>
+      <p>Explorez les niveaux de risque, leurs facteurs explicatifs et leur évolution dans le temps.</p>
+    </div>
+    {% if observability %}<span class="service-status">Données analytiques disponibles</span>{% endif %}
+  </header>
 
   {% if analytics_error %}
-    <div class="alert" role="alert">{{ analytics_error }}</div>
+    <div class="alert" role="alert">
+      <strong>Impossible de récupérer les données.</strong><br>
+      {{ analytics_error }}
+    </div>
   {% endif %}
 
   {% if form %}
-    <form method="get" class="filters">
+    <form method="get" class="filters card" aria-label="Filtres de l’analyse">
       {{ form.as_p }}
-      <button type="submit">Afficher</button>
+      <button type="submit">Afficher l’analyse</button>
     </form>
   {% endif %}
 
   {% if score %}
-    <section aria-labelledby="score-title">
-      <h2 id="score-title">
-        {{ score.geographic_name|default:score.geographic_code }}
-        — {{ score.reference_period }}
-      </h2>
-      <div class="kpis">
-        <article>
-          <h3>Score territorial</h3>
-          <strong>{{ score.score|floatformat:2|default:"Indisponible" }}</strong>
-        </article>
-        <article>
-          <h3>Couverture</h3>
-          <strong>{% widthratio score.coverage_ratio 1 100 %} %</strong>
-        </article>
-        <article>
-          <h3>Statut</h3>
-          <strong>{{ score.status }}</strong>
-        </article>
-        <article>
-          <h3>Modèle</h3>
-          <strong>{{ score.model.version }}</strong>
-        </article>
-      </div>
-    </section>
-
-    <section aria-labelledby="factors-title">
-      <h2 id="factors-title">Facteurs du score</h2>
-      {% if factors %}
-        <div class="table-scroll">
-          <table>
-            <thead>
-              <tr>
-                <th>Indicateur</th>
-                <th>Valeur</th>
-                <th>Unité</th>
-                <th>Poids effectif</th>
-                <th>Contribution</th>
-                <th>Source</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for factor in factors %}
-                <tr>
-                  <td>{{ factor.indicator_code }}</td>
-                  <td>{{ factor.raw_value|floatformat:2 }}</td>
-                  <td>{{ factor.unit|default:"—" }}</td>
-                  <td>{% widthratio factor.effective_weight 1 100 %} %</td>
-                  <td>{{ factor.contribution|floatformat:2 }}</td>
-                  <td>
-                    {% if factor.source_url %}
-                      <a href="{{ factor.source_url }}" rel="noopener">Document</a>
-                    {% else %}
-                      —
-                    {% endif %}
-                  </td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+    <section aria-labelledby="territory-title">
+      <div class="data-card__header">
+        <div>
+          <p class="eyebrow">Territoire sélectionné</p>
+          <h2 id="territory-title">{{ score.geographic_name|default:score.geographic_code }}</h2>
         </div>
-      {% else %}
-        <p>Aucun facteur disponible.</p>
-      {% endif %}
+        <span class="badge">{{ score.reference_period }}</span>
+      </div>
+      <div class="grid grid--kpis" aria-label="Indicateurs principaux">
+        <article class="card kpi-card">
+          <span class="kpi-card__label">Score territorial</span>
+          <strong class="kpi-card__value">{{ score.score|floatformat:2|default:"Indisponible" }}</strong>
+          <p class="kpi-card__meta">Indicateur agrégé du territoire</p>
+        </article>
+        <article class="card kpi-card">
+          <span class="kpi-card__label">Couverture des données</span>
+          <strong class="kpi-card__value">{% widthratio score.coverage_ratio 1 100 %} %</strong>
+          <p class="kpi-card__meta">Part des indicateurs disponibles</p>
+        </article>
+        <article class="card kpi-card">
+          <span class="kpi-card__label">Niveau observé</span>
+          <strong class="kpi-card__value">{{ score.status|default:"Non qualifié" }}</strong>
+          <p class="kpi-card__meta">Signal statistique, non individuel</p>
+        </article>
+        <article class="card kpi-card">
+          <span class="kpi-card__label">Version du modèle</span>
+          <strong class="kpi-card__value">{{ score.model.version }}</strong>
+          <p class="kpi-card__meta">Modèle utilisé pour ce calcul</p>
+        </article>
+      </div>
     </section>
-  {% elif form and not analytics_error %}
-    <p>Aucun score ne correspond aux filtres sélectionnés.</p>
-  {% endif %}
 
-  {% if series %}
-    <section aria-labelledby="series-title">
-      <h2 id="series-title">Évolution temporelle</h2>
-      <div class="series" role="img" aria-label="Évolution du score par période">
-        {% for item in series %}
-          <div class="series-row">
-            <span>{{ item.reference_period }}</span>
-            <span class="score-track">
-              <span class="score-fill" style="width: {{ item.score|default:0 }}%"></span>
-            </span>
-            <strong>{{ item.score|floatformat:2|default:"—" }}</strong>
+    <div class="section-stack">
+      <section class="data-card" aria-labelledby="factors-title">
+        <header class="data-card__header">
+          <div><p class="eyebrow">Explicabilité</p><h2 id="factors-title">Facteurs contribuant au score</h2></div>
+          <span class="badge">{{ factors|length }} facteur{{ factors|length|pluralize }}</span>
+        </header>
+        <div class="data-card__body">
+          {% if factors %}
+            <div class="table-scroll">
+              <table class="data-table">
+                <thead><tr><th>Indicateur</th><th>Valeur</th><th>Unité</th><th>Poids effectif</th><th>Contribution</th><th>Source</th></tr></thead>
+                <tbody>
+                  {% for factor in factors %}
+                    <tr>
+                      <td>{{ factor.indicator_code }}</td>
+                      <td>{{ factor.raw_value|floatformat:2 }}</td>
+                      <td>{{ factor.unit|default:"—" }}</td>
+                      <td>{% widthratio factor.effective_weight 1 100 %} %</td>
+                      <td>{{ factor.contribution|floatformat:2 }}</td>
+                      <td>{% if factor.source_url %}<a href="{{ factor.source_url }}" rel="noopener noreferrer" target="_blank">Consulter</a>{% else %}—{% endif %}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            <p class="factor-note">Les contributions indiquent l’influence relative de chaque facteur dans le modèle et ne constituent pas une relation causale.</p>
+          {% else %}
+            <p class="empty-state">Aucun facteur disponible pour cette sélection.</p>
+          {% endif %}
+        </div>
+      </section>
+
+      {% if series %}
+        <section class="data-card" aria-labelledby="series-title">
+          <header class="data-card__header"><div><p class="eyebrow">Tendance</p><h2 id="series-title">Évolution observée</h2></div></header>
+          <div class="data-card__body">
+            <div class="series" role="img" aria-label="Évolution du score territorial par période">
+              {% for item in series %}
+                <div class="series-row">
+                  <span>{{ item.reference_period }}</span>
+                  <span class="score-track"><span class="score-fill" style="width: {{ item.score|default:0 }}%"></span></span>
+                  <strong>{{ item.score|floatformat:2|default:"—" }}</strong>
+                </div>
+              {% endfor %}
+            </div>
           </div>
-        {% endfor %}
+        </section>
+      {% endif %}
+
+      <div class="grid grid--two">
+        {% if period_comparison %}
+          <section class="data-card" aria-labelledby="period-comparison-title">
+            <header class="data-card__header"><h2 id="period-comparison-title">Comparaison entre périodes</h2></header>
+            <div class="data-card__body grid grid--two">
+              {% for item in period_comparison %}
+                <article class="card kpi-card">
+                  <span class="kpi-card__label">{{ item.reference_period }}</span>
+                  <strong class="kpi-card__value">{{ item.score|floatformat:2|default:"—" }}</strong>
+                  <p class="kpi-card__meta">Couverture : {% widthratio item.coverage_ratio 1 100 %} %</p>
+                </article>
+              {% endfor %}
+            </div>
+          </section>
+        {% endif %}
+
+        {% if model_comparison %}
+          <section class="data-card" aria-labelledby="model-comparison-title">
+            <header class="data-card__header">
+              <div><h2 id="model-comparison-title">Comparaison des modèles</h2><small>{{ model_comparison.version_a }} / {{ model_comparison.version_b }}</small></div>
+            </header>
+            <div class="data-card__body">
+              <dl class="comparison-list">
+                <div><dt>Écart absolu moyen</dt><dd>{{ model_comparison.mean_absolute_score_delta|floatformat:3 }}</dd></div>
+                <div><dt>Écart absolu maximal</dt><dd>{{ model_comparison.maximum_absolute_score_delta|floatformat:3 }}</dd></div>
+                <div><dt>Changements de niveau</dt><dd>{{ model_comparison.risk_level_changes }}</dd></div>
+              </dl>
+              <p class="kpi-card__meta">{{ model_comparison.territory_periods_compared }} territoires-périodes comparés.</p>
+            </div>
+          </section>
+        {% endif %}
       </div>
-    </section>
-  {% endif %}
-
-  {% if period_comparison %}
-    <section aria-labelledby="period-comparison-title">
-      <h2 id="period-comparison-title">Comparaison entre périodes</h2>
-      <div class="kpis">
-        {% for item in period_comparison %}
-          <article>
-            <h3>{{ item.reference_period }}</h3>
-            <strong>{{ item.score|floatformat:2|default:"—" }}</strong>
-            <p>Couverture : {% widthratio item.coverage_ratio 1 100 %} %</p>
-          </article>
-        {% endfor %}
-      </div>
-    </section>
-  {% endif %}
-
-  {% if model_comparison %}
-    <section aria-labelledby="model-comparison-title">
-      <h2 id="model-comparison-title">Comparaison des modèles</h2>
-      <p>
-        {{ model_comparison.version_a }} / {{ model_comparison.version_b }} —
-        {{ model_comparison.territory_periods_compared }} territoires-périodes.
-      </p>
-      <dl>
-        <dt>Écart absolu moyen</dt>
-        <dd>{{ model_comparison.mean_absolute_score_delta|floatformat:3 }}</dd>
-        <dt>Écart absolu maximal</dt>
-        <dd>{{ model_comparison.maximum_absolute_score_delta|floatformat:3 }}</dd>
-        <dt>Changements de niveau</dt>
-        <dd>{{ model_comparison.risk_level_changes }}</dd>
-      </dl>
-    </section>
-  {% endif %}
-
-  {% if observability %}
-    <p class="service-status">Service analytique connecté.</p>
+    </div>
+  {% elif form and not analytics_error %}
+    <div class="data-card empty-state"><h2>Aucune donnée disponible</h2><p>Aucun score ne correspond aux filtres sélectionnés.</p></div>
   {% endif %}
 {% endblock %}
