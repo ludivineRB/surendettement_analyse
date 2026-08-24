@@ -14,6 +14,7 @@ ALLOWED_VIEWS = frozenset(
         "analytics_score_factors",
         "analytics_observations",
         "analytics_model_comparisons",
+        "analytics_macro_regions",
         "analytics_pipeline_status",
     }
 )

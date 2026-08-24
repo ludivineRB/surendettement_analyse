@@ -28,6 +28,7 @@ class GroundingContext:
     analytics_dataset: AnalyticsDataset | None
     analytics_rows: list[dict]
     analytical_intent: AnalyticalIntent | None = None
+    analytical_sql: str | None = None
 
 
 def build_grounding_context(

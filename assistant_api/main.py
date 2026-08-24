@@ -19,7 +19,6 @@ from assistant_api.generation import (
     GeneratorUnavailable,
     InsufficientGrounding,
     TextGenerator,
-    UnconfiguredGenerator,
     generate_grounded_answer,
 )
 from assistant_api.orchestration import GroundingContext, build_grounding_context
@@ -157,12 +156,38 @@ def answer_question(
                 documentary_chunks=[],
                 analytics_dataset=None,
                 analytics_rows=sql_result.sql_execution.rows,
+                analytical_sql=sql_result.sql_execution.validated.sql,
             )
-            answer = generate_grounded_answer(request.question, context, generator)
         except Exception as exc:
             if isinstance(exc, HTTPException):
                 raise
             raise HTTPException(status_code=503, detail="Analyse SQL indisponible.") from exc
+        row_count = len(sql_result.sql_execution.rows)
+        if row_count == 0:
+            answer = (
+                "La requête en lecture seule a été exécutée correctement, "
+                "mais aucune donnée ne correspond aux critères demandés. "
+                "Vous pouvez élargir la période, le territoire ou "
+                "l’indicateur recherché."
+            )
+        else:
+            try:
+                answer = generate_grounded_answer(request.question, context, generator)
+            except Exception:
+                logger.exception(
+                    "SQL answer synthesis failed after successful execution",
+                    extra={
+                        "request_id": str(request_id),
+                        "sql_execution_id": str(sql_result.execution_id),
+                        "row_count": row_count,
+                    },
+                )
+                answer = (
+                    "La requête en lecture seule a été exécutée avec succès "
+                    f"et a retourné {row_count} ligne(s). La synthèse textuelle "
+                    "est temporairement indisponible ; consultez le SQL généré "
+                    "et les résultats ci-dessous."
+                )
         return AnswerResponse(
             answer=answer,
             sources=[],

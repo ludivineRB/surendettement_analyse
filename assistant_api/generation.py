@@ -55,11 +55,15 @@ def generate_grounded_answer(
         "N'utilise jamais une citation [D...] si aucune donnée analytique "
         "n'est fournie. "
         "Si les preuves sont insuffisantes, indique-le explicitement."
+        "Pour une analyse SQL, le SQL fourni a déjà été validé et exécuté. "
+        "Tu peux décrire ce que démontrent ses opérations de classement, "
+        "d'agrégation et de filtrage, sans extrapoler au-delà de leur périmètre."
     )
     user_prompt = json.dumps(
         {
             "question": question,
             "method": context.method,
+            "validated_analytical_sql": context.analytical_sql,
             "analytical_intent": (
                 context.analytical_intent.model_dump(mode="json")
                 if context.analytical_intent

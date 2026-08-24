@@ -198,6 +198,31 @@ def _create_readonly_analytics_views(connection) -> None:
             connection.execute(text(statement))
 
 
+def _create_macro_region_analytics_view(connection) -> None:
+    if connection.dialect.name != "postgresql":
+        return
+    if "v_insee_macro_region_selected" not in inspect(connection).get_view_names():
+        raise RuntimeError(
+            "La vue source v_insee_macro_region_selected est absente."
+        )
+    connection.execute(
+        text(
+            """
+            CREATE OR REPLACE VIEW analytics_macro_regions AS
+            SELECT
+                reference_year,
+                region_name,
+                indicator_code,
+                indicator_name,
+                indicator_group,
+                aggregation_rule,
+                value AS value_numeric
+            FROM v_insee_macro_region_selected
+            """
+        )
+    )
+
+
 def _now() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 
@@ -218,5 +243,10 @@ MIGRATIONS: tuple[Migration, ...] = (
         "003_readonly_analytics_views",
         "Create the allow-listed read-only analytics views",
         _create_readonly_analytics_views,
+    ),
+    (
+        "004_macro_region_analytics_view",
+        "Expose selected regional macro indicators as a read-only view",
+        _create_macro_region_analytics_view,
     ),
 )
