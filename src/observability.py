@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import sqlite3
 import os
+from time import monotonic
+from datetime import timedelta
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -11,6 +13,7 @@ from sqlalchemy import create_engine, text
 
 from src.storage.conformed_dimensions import ANALYTICS_DB
 from src.storage.database import get_database_url
+from src.observability_thresholds import THRESHOLDS, THRESHOLDS_VERSION
 
 
 def build_observability_report(
@@ -26,6 +29,8 @@ def build_observability_report(
         "operational": {},
         "analytics": {},
         "alerts": [],
+        "thresholds": {"version": THRESHOLDS_VERSION, **THRESHOLDS},
+        "services": {},
     }
     if operational_db is not None or database_url.startswith("sqlite:///"):
         sqlite_path = operational_db or _sqlite_path(database_url)
@@ -33,12 +38,16 @@ def build_observability_report(
             connection.row_factory = sqlite3.Row
             _operational_report(connection, report)
     else:
+        started = monotonic()
         with create_engine(database_url).connect() as connection:
             _operational_report(connection, report)
+        report["services"]["postgres_operational"] = _database_status(started)
     analytics_url = os.getenv("ANALYTICS_DATABASE_URL")
     if analytics_url:
+        started = monotonic()
         with create_engine(analytics_url).connect() as connection:
             _analytics_report(connection, report)
+        report["services"]["postgres_analytics"] = _database_status(started)
     else:
         with sqlite3.connect(analytics_db) as connection:
             connection.row_factory = sqlite3.Row
@@ -124,6 +133,7 @@ def _operational_report(connection: sqlite3.Connection, report: dict) -> None:
         ORDER BY id DESC LIMIT 20
         """,
     )
+    _pipeline_alerts(operational["pipeline_runs"], report)
     operational["missing_regional_dossiers"] = _all(
         connection,
         """
@@ -270,3 +280,53 @@ def _foreign_key_violations(connection) -> int:
         return len(connection.execute("PRAGMA foreign_key_check").fetchall())
     # PostgreSQL enforces declared foreign keys on every write.
     return 0
+
+
+def _database_status(started: float) -> dict:
+    latency_ms = round((monotonic() - started) * 1000, 2)
+    return {
+        "status": (
+            "critical" if latency_ms >= THRESHOLDS["database_latency_critical_ms"]
+            else "warning" if latency_ms >= THRESHOLDS["database_latency_warning_ms"]
+            else "ok"
+        ),
+        "latency_ms": latency_ms,
+    }
+
+
+def _pipeline_alerts(runs: list[dict], report: dict) -> None:
+    now = datetime.now(timezone.utc)
+    if not runs:
+        report["alerts"].append({
+            "severity": "warning", "code": "pipeline_never_run",
+            "message": "Aucune exécution de pipeline n'est enregistrée.",
+        })
+        return
+    latest = runs[0]
+    started = _parse_datetime(latest.get("started_at"))
+    finished = _parse_datetime(latest.get("finished_at"))
+    if latest.get("status") in {"failed", "quality_failed"}:
+        report["alerts"].append({
+            "severity": "error", "code": "pipeline_failed",
+            "message": f"Le dernier pipeline est en échec ({latest.get('status')}).",
+        })
+    if latest.get("status") == "running" and started and (
+        now - started > timedelta(minutes=THRESHOLDS["pipeline_running_warning_minutes"])
+    ):
+        report["alerts"].append({
+            "severity": "warning", "code": "pipeline_running_too_long",
+            "message": "Le pipeline dépasse sa durée normale d'exécution.",
+        })
+    reference = finished or started
+    if reference and now - reference > timedelta(hours=THRESHOLDS["pipeline_stale_warning_hours"]):
+        report["alerts"].append({
+            "severity": "warning", "code": "pipeline_stale",
+            "message": "Aucun pipeline récent n'a été observé.",
+        })
+
+
+def _parse_datetime(value) -> datetime | None:
+    if not value:
+        return None
+    parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    return parsed.replace(tzinfo=timezone.utc) if parsed.tzinfo is None else parsed

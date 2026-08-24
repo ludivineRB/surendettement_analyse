@@ -9,6 +9,7 @@ from time import monotonic
 from uuid import uuid4
 
 from fastapi import Depends, FastAPI, Header, HTTPException
+from fastapi.responses import PlainTextResponse
 from sqlalchemy import Engine
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -34,6 +35,7 @@ from assistant_api.schemas import (
 from assistant_api.storage import get_engine
 from assistant_api.sql_executor import get_readonly_engine
 from assistant_api.sql_service import run_text_to_sql
+from assistant_api.monitoring import metrics as prometheus
 
 
 app = FastAPI(
@@ -61,6 +63,9 @@ async def operational_metrics(request, call_next):
         _metrics["requests_total"] += 1
         _metrics[f"responses_{status}"] += 1
         _metrics["duration_ms_total"] += duration_ms
+        labels = {"method": request.method, "path": request.url.path, "status": str(status)}
+        prometheus.increment("assistant_http_requests_total", **labels)
+        prometheus.observe("assistant_http_request_duration_seconds", duration_ms / 1000, **labels)
         logger.info(
             json.dumps(
                 {
@@ -83,9 +88,29 @@ def health() -> dict[str, str]:
     return {"status": "ok", "service": "assistant-api"}
 
 
+@app.get("/health/live", include_in_schema=False)
+def live() -> dict[str, str]:
+    return health()
+
+
+@app.get("/health/ready", include_in_schema=False)
+def ready(engine: Engine = Depends(get_engine)):
+    try:
+        with engine.connect() as connection:
+            connection.exec_driver_sql("SELECT 1")
+    except SQLAlchemyError as exc:
+        raise HTTPException(status_code=503, detail="assistant database unavailable") from exc
+    return {"status": "ok", "database": "ok"}
+
+
 @app.get("/metrics")
 def metrics() -> dict[str, int]:
     return dict(_metrics)
+
+
+@app.get("/metrics/prometheus", response_class=PlainTextResponse, include_in_schema=False)
+def prometheus_metrics() -> str:
+    return prometheus.render()
 
 
 @app.post("/v1/retrieval/search", response_model=RetrievalResponse)

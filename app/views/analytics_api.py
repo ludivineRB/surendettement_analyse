@@ -46,8 +46,14 @@ def observability() -> dict:
 
 @analytics_api.get("/health")
 def health() -> dict:
-    with analytics_connection() as connection:
-        objects = database_objects(connection)
+    try:
+        with analytics_connection() as connection:
+            objects = database_objects(connection)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=503,
+            detail={"status": "not_ready", "database": "unavailable"},
+        ) from exc
     return {"status": "ok", "objects": objects}
 
 

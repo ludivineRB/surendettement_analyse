@@ -3,7 +3,7 @@ name: Validation
 on:
   pull_request:
   push:
-    branches: [main, initiation_rag, front]
+    branches: [main, initiation_rag, front, 16-lot-16-monitoring-de-lapplication]
   workflow_dispatch:
 
 permissions:

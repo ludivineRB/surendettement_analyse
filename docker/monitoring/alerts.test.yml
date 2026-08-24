@@ -1,0 +1,91 @@
+rule_files:
+  - alerts.yml
+
+evaluation_interval: 1m
+
+tests:
+  - interval: 1m
+    input_series:
+      - series: 'up{job="django"}'
+        values: '0+0x10'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: ServiceUnavailable
+        exp_alerts:
+          - exp_labels: {job: django, severity: critical}
+            exp_annotations:
+              summary: "Service django indisponible"
+              runbook: "LOT-16-RUNBOOK#service-indisponible"
+
+  - interval: 1m
+    input_series:
+      - series: 'fastapi_http_requests_total{status="200"}'
+        values: '0+100x20'
+      - series: 'fastapi_http_requests_total{status="500"}'
+        values: '0+10x20'
+    alert_rule_test:
+      - eval_time: 16m
+        alertname: ApiErrorRateHigh
+        exp_alerts:
+          - exp_labels: {severity: warning}
+            exp_annotations:
+              summary: "Taux d'erreur FastAPI supérieur à 2 %"
+              runbook: "LOT-16-RUNBOOK#erreurs-http"
+
+  - interval: 1m
+    input_series:
+      - series: 'assistant_http_requests_total{status="200"}'
+        values: '0+100x20'
+      - series: 'assistant_http_requests_total{status="503"}'
+        values: '0+10x20'
+    alert_rule_test:
+      - eval_time: 16m
+        alertname: AssistantErrorRateHigh
+        exp_alerts:
+          - exp_labels: {severity: warning}
+            exp_annotations:
+              summary: "Taux d'erreur assistant supérieur à 2 %"
+              runbook: "LOT-16-RUNBOOK#rag-et-agent-sql"
+
+  - interval: 1m
+    input_series:
+      - series: 'assistant_rag_retrievals_total{status="hit"}'
+        values: '0+5x35'
+      - series: 'assistant_rag_retrievals_total{status="empty"}'
+        values: '0+5x35'
+    alert_rule_test:
+      - eval_time: 31m
+        alertname: RagEmptyResultsHigh
+        exp_alerts:
+          - exp_labels: {severity: warning}
+            exp_annotations:
+              summary: "Plus de 20 % des recherches RAG sont vides"
+              runbook: "LOT-16-RUNBOOK#rag-et-agent-sql"
+
+  - interval: 1m
+    input_series:
+      - series: 'assistant_sql_executions_total{status="accepted"}'
+        values: '0+5x35'
+      - series: 'assistant_sql_executions_total{status="rejected"}'
+        values: '0+5x35'
+    alert_rule_test:
+      - eval_time: 31m
+        alertname: SqlRejectionRateHigh
+        exp_alerts:
+          - exp_labels: {severity: warning}
+            exp_annotations:
+              summary: "Plus de 25 % des requêtes SQL sont rejetées"
+              runbook: "LOT-16-RUNBOOK#rag-et-agent-sql"
+
+  - interval: 1m
+    input_series:
+      - series: 'pg_stat_activity_count{datname="surendettement"}'
+        values: '90+0x20'
+    alert_rule_test:
+      - eval_time: 11m
+        alertname: PostgreSQLConnectionsHigh
+        exp_alerts:
+          - exp_labels: {severity: warning}
+            exp_annotations:
+              summary: "Nombre élevé de connexions PostgreSQL"
+              runbook: "LOT-16-RUNBOOK#postgresql"

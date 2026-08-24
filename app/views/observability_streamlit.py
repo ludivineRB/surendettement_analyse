@@ -65,6 +65,7 @@ def render_observability_page() -> None:
 
     operational = report["operational"]
     analytics = report["analytics"]
+    services = report.get("services", {})
     model = operational.get("active_model") or {}
     counts = operational["counts"]
     kpis = st.columns(6)
@@ -83,6 +84,14 @@ def render_observability_page() -> None:
         "Modèle actif",
         f"{model.get('code', '—')} {model.get('version', '')}".strip(),
     )
+
+    if services:
+        st.subheader("Services et bases")
+        service_rows = [
+            {"Service": name, **details}
+            for name, details in services.items()
+        ]
+        st.dataframe(service_rows, use_container_width=True, hide_index=True)
 
     left, right = st.columns(2)
     with left:
@@ -215,3 +224,5 @@ def render_observability_page() -> None:
             hide_index=True,
         )
         st.caption(f"Rapport généré le {report['generated_at']}.")
+        st.write("Seuils opérationnels")
+        st.json(report.get("thresholds", {}))

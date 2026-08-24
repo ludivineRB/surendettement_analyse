@@ -17,6 +17,7 @@ from assistant_api.sql_generation import (
     generate_sql_candidate,
 )
 from assistant_api.sql_validation import SQLValidationError
+from assistant_api.monitoring import metrics
 
 
 @dataclass(frozen=True)
@@ -58,6 +59,11 @@ def run_text_to_sql(
         audit["generated_sql"] = sql
         execution = execute_readonly_sql(sql, engine=readonly_engine)
     except Exception as exc:
+        metrics.increment(
+            "assistant_sql_executions_total",
+            status="rejected",
+            reason=(exc.code if isinstance(exc, SQLValidationError) else type(exc).__name__),
+        )
         audit["validation_error"] = (
             exc.code if isinstance(exc, SQLValidationError) else type(exc).__name__
         )
@@ -72,4 +78,7 @@ def run_text_to_sql(
         }
     )
     record_sql_execution(audit_engine, audit)
+    metrics.increment("assistant_sql_executions_total", status="accepted", reason="none")
+    metrics.observe("assistant_sql_execution_duration_seconds", execution.duration_ms / 1000)
+    metrics.observe("assistant_sql_result_rows", len(execution.rows))
     return TextToSQLResult(execution_id=execution_id, sql_execution=execution)

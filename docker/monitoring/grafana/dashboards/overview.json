@@ -1,0 +1,78 @@
+{
+  "annotations": {"list": []},
+  "editable": false,
+  "graphTooltip": 1,
+  "links": [],
+  "panels": [
+    {
+      "type": "stat", "title": "Disponibilité des services", "id": 1,
+      "gridPos": {"h": 5, "w": 12, "x": 0, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "up{job=~\"fastapi|assistant|django|postgres\"}", "legendFormat": "{{job}}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"min": 0, "max": 1, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}, "overrides": []},
+      "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"], "values": false}}
+    },
+    {
+      "type": "timeseries", "title": "Requêtes HTTP par statut", "id": 2,
+      "gridPos": {"h": 13, "w": 12, "x": 12, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "sum by (status) (rate(fastapi_http_requests_total[5m]))", "legendFormat": "API {{status}}", "refId": "A"},
+        {"expr": "sum by (status) (rate(assistant_http_requests_total[5m]))", "legendFormat": "Assistant {{status}}", "refId": "B"},
+        {"expr": "sum by (status) (rate(django_http_requests_total[5m]))", "legendFormat": "Django {{status}}", "refId": "C"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "reqps"}, "overrides": []}
+    },
+    {
+      "type": "timeseries", "title": "Latence HTTP moyenne", "id": 3,
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 5},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "sum(rate(fastapi_http_request_duration_seconds_sum[5m])) / clamp_min(sum(rate(fastapi_http_request_duration_seconds_count[5m])), 0.001)", "legendFormat": "FastAPI", "refId": "A"},
+        {"expr": "sum(rate(assistant_http_request_duration_seconds_sum[5m])) / clamp_min(sum(rate(assistant_http_request_duration_seconds_count[5m])), 0.001)", "legendFormat": "Assistant", "refId": "B"},
+        {"expr": "sum(rate(django_http_request_duration_seconds_sum[5m])) / clamp_min(sum(rate(django_http_request_duration_seconds_count[5m])), 0.001)", "legendFormat": "Django", "refId": "C"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []}
+    },
+    {
+      "type": "timeseries", "title": "Connexions PostgreSQL", "id": 4,
+      "gridPos": {"h": 7, "w": 8, "x": 0, "y": 13},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum(pg_stat_activity_count)", "legendFormat": "Connexions", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "short", "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "orange", "value": 80}]}}, "overrides": []}
+    },
+    {
+      "type": "timeseries", "title": "Recherches RAG cumulées", "id": 5,
+      "gridPos": {"h": 7, "w": 8, "x": 8, "y": 13},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum by (status) (assistant_rag_retrievals_total)", "legendFormat": "{{status}}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "short", "min": 0}, "overrides": []}
+    },
+    {
+      "type": "timeseries", "title": "Exécutions SQL cumulées", "id": 6,
+      "gridPos": {"h": 7, "w": 8, "x": 16, "y": 13},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "sum(assistant_sql_executions_total{status=\"accepted\"}) or vector(0)", "legendFormat": "acceptées", "refId": "A"},
+        {"expr": "sum(assistant_sql_executions_total{status=\"rejected\"}) or vector(0)", "legendFormat": "rejetées", "refId": "B"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "short", "min": 0}, "overrides": []}
+    },
+    {
+      "type": "logs", "title": "Logs centralisés", "id": 7,
+      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 20},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [{"expr": "{service=~\"api|assistant-api|django|postgres\"}", "refId": "A"}],
+      "options": {"showTime": true, "showLabels": true, "wrapLogMessage": true, "enableLogDetails": true}
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 40,
+  "tags": ["lot-16", "surendettement"],
+  "templating": {"list": []},
+  "time": {"from": "now-6h", "to": "now"},
+  "timezone": "browser",
+  "title": "Surendettement — Vue opérationnelle",
+  "uid": "surendettement-overview",
+  "version": 1
+}

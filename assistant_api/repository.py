@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 from sqlalchemy import Engine, text
+from time import monotonic
 
 from assistant_api.chunking import CorpusChunk
+from assistant_api.monitoring import metrics
 
 
 class EmptyCorpusError(ValueError):
@@ -50,6 +52,7 @@ def search_active_chunks(
         return []
     expanded_query = _expand_business_query(query)
     bounded_limit = max(1, min(limit, 20))
+    started = monotonic()
     with engine.connect() as connection:
         rows = connection.execute(
             text(
@@ -96,7 +99,14 @@ def search_active_chunks(
             ),
             {"query": expanded_query, "limit": bounded_limit},
         )
-        return [dict(row) for row in rows.mappings().all()]
+        results = [dict(row) for row in rows.mappings().all()]
+    metrics.increment(
+        "assistant_rag_retrievals_total",
+        status="hit" if results else "empty",
+    )
+    metrics.observe("assistant_rag_retrieval_duration_seconds", monotonic() - started)
+    metrics.observe("assistant_rag_retrieval_results", len(results))
+    return results
 
 
 def record_sql_execution(engine: Engine, execution: dict) -> None:

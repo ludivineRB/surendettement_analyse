@@ -6,6 +6,7 @@ export POSTGRES_DB=${POSTGRES_DB:-surendettement_ci_test}
 export POSTGRES_USER=${POSTGRES_USER:-surendettement_ci}
 export DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-ci-only-django-secret-key-not-for-production}
 export ASSISTANT_INTERNAL_TOKEN=${ASSISTANT_INTERNAL_TOKEN:-ci-only-internal-token}
+export GRAFANA_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-ci-only-grafana-password-not-for-production}
 export COMPOSE_PROJECT_NAME=${COMPOSE_PROJECT_NAME:-surendettement_ci_validation}
 report_dir=${CI_REPORT_DIR:-app/reports/ci}
 mkdir -p "$report_dir"

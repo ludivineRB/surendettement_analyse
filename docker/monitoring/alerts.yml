@@ -1,0 +1,53 @@
+groups:
+  - name: surendettement-services
+    rules:
+      - alert: ServiceUnavailable
+        expr: up{job=~"fastapi|assistant|django|postgres"} == 0
+        for: 2m
+        labels: {severity: critical}
+        annotations:
+          summary: "Service {{ $labels.job }} indisponible"
+          runbook: "LOT-16-RUNBOOK#service-indisponible"
+      - alert: ApiErrorRateHigh
+        expr: >-
+          sum(rate(fastapi_http_requests_total{status=~"5.."}[5m]))
+          / clamp_min(sum(rate(fastapi_http_requests_total[5m])), 0.001) > 0.02
+        for: 10m
+        labels: {severity: warning}
+        annotations:
+          summary: "Taux d'erreur FastAPI supérieur à 2 %"
+          runbook: "LOT-16-RUNBOOK#erreurs-http"
+      - alert: AssistantErrorRateHigh
+        expr: >-
+          sum(rate(assistant_http_requests_total{status=~"5.."}[5m]))
+          / clamp_min(sum(rate(assistant_http_requests_total[5m])), 0.001) > 0.02
+        for: 10m
+        labels: {severity: warning}
+        annotations:
+          summary: "Taux d'erreur assistant supérieur à 2 %"
+          runbook: "LOT-16-RUNBOOK#rag-et-agent-sql"
+      - alert: RagEmptyResultsHigh
+        expr: >-
+          sum(rate(assistant_rag_retrievals_total{status="empty"}[15m]))
+          / clamp_min(sum(rate(assistant_rag_retrievals_total[15m])), 0.001) > 0.20
+        for: 15m
+        labels: {severity: warning}
+        annotations:
+          summary: "Plus de 20 % des recherches RAG sont vides"
+          runbook: "LOT-16-RUNBOOK#rag-et-agent-sql"
+      - alert: SqlRejectionRateHigh
+        expr: >-
+          sum(rate(assistant_sql_executions_total{status="rejected"}[15m]))
+          / clamp_min(sum(rate(assistant_sql_executions_total[15m])), 0.001) > 0.25
+        for: 15m
+        labels: {severity: warning}
+        annotations:
+          summary: "Plus de 25 % des requêtes SQL sont rejetées"
+          runbook: "LOT-16-RUNBOOK#rag-et-agent-sql"
+      - alert: PostgreSQLConnectionsHigh
+        expr: sum(pg_stat_activity_count) > 80
+        for: 10m
+        labels: {severity: warning}
+        annotations:
+          summary: "Nombre élevé de connexions PostgreSQL"
+          runbook: "LOT-16-RUNBOOK#postgresql"

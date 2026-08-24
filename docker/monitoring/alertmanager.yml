@@ -1,0 +1,11 @@
+route:
+  receiver: local-observability
+  group_by: [alertname, service]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+
+receivers:
+  # Safe default: alerts remain queryable in Alertmanager until an approved
+  # email, Slack or Teams receiver is configured with secrets outside Git.
+  - name: local-observability

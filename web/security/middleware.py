@@ -11,6 +11,8 @@ from django.conf import settings
 from django.core.cache import cache
 from django.http import HttpResponse
 
+from web.security.observability import record_request
+
 logger = logging.getLogger("web.requests")
 
 
@@ -38,6 +40,12 @@ class RequestSecurityMiddleware:
                     else None
                 ),
             },
+        )
+        record_request(
+            request.method,
+            request.path,
+            response.status_code,
+            monotonic() - started,
         )
         return response
 
