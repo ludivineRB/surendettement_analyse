@@ -27,6 +27,56 @@
   {% endif %}
 
   {% if score %}
+    <section class="territorial-dashboard data-card" data-territorial-dashboard
+             data-api-url="{% url 'territorial-indicators' %}"
+             data-departments-geojson="{% url 'territorial-boundaries' %}?level=department"
+             data-regions-geojson="{% url 'territorial-boundaries' %}?level=region">
+      <header class="data-card__header">
+        <div>
+          <p class="eyebrow">Lecture territoriale</p>
+          <h2>Carte des indicateurs</h2>
+          <p class="kpi-card__meta">Comparez les territoires et observez les évolutions disponibles.</p>
+        </div>
+        <span class="badge">Données territoriales</span>
+      </header>
+      <div class="data-card__body">
+        <div class="map-controls" aria-label="Paramètres de la carte">
+          <p><label for="map-level">Niveau géographique</label><select id="map-level"><option value="department">Départements</option><option value="region">Régions</option></select></p>
+          <p><label for="map-indicator">Indicateur</label><select id="map-indicator"></select></p>
+          <p><label for="map-period">Période cartographiée</label><select id="map-period"></select></p>
+          <p><label for="chart-from">Début de l’évolution</label><select id="chart-from"></select></p>
+          <p><label for="chart-to">Fin de l’évolution</label><select id="chart-to"></select></p>
+        </div>
+        <div class="map-status" role="status" aria-live="polite"></div>
+        <div class="territorial-grid">
+          <div class="france-map-panel">
+            <svg class="france-map" viewBox="0 0 720 620" role="img" aria-labelledby="france-map-title france-map-desc">
+              <title id="france-map-title">Carte territoriale de France</title>
+              <desc id="france-map-desc">Sélectionnez un territoire pour afficher son évolution.</desc>
+              <g data-map-layer></g>
+            </svg>
+            <div class="map-legend" aria-label="Légende de la carte">
+              <span><i class="level-low"></i> Niveau faible</span>
+              <span><i class="level-medium"></i> Intermédiaire</span>
+              <span><i class="level-high"></i> Élevé / à surveiller</span>
+              <span><i class="level-missing"></i> Indisponible</span>
+            </div>
+          </div>
+          <aside class="territory-summary card" data-territory-summary>
+            <p class="eyebrow">Territoire sélectionné</p>
+            <h3>Choisissez un territoire</h3>
+            <p class="empty-state">Cliquez sur la carte pour consulter sa valeur et son évolution.</p>
+          </aside>
+        </div>
+        <section class="trend-panel" aria-labelledby="trend-title">
+          <div class="data-card__header"><div><p class="eyebrow">Série temporelle</p><h3 id="trend-title">Évolution observée</h3></div></div>
+          <div class="trend-legend" data-trend-legend hidden aria-label="Légende de la série temporelle"></div>
+          <div class="trend-chart-wrap"><svg class="trend-chart" viewBox="0 0 900 300" role="img" aria-label="Graphique d’évolution" data-trend-chart></svg></div>
+          <p class="trend-note" data-trend-note>Sélectionnez un territoire.</p>
+        </section>
+      </div>
+    </section>
+
     <section aria-labelledby="territory-title">
       <div class="data-card__header">
         <div>

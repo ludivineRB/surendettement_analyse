@@ -28,13 +28,20 @@ class DashboardFilterForm(forms.Form):
             )
             for score in scores
         )
-        self.fields["geographic_code"].choices = _choices(
+        self.fields["geographic_code"].choices = [
             (
-                score["geographic_code"],
-                score.get("geographic_name") or score["geographic_code"],
+                level,
+                _choices(
+                    (
+                        score["geographic_code"],
+                        score.get("geographic_name") or score["geographic_code"],
+                    )
+                    for score in scores
+                    if score["geographic_level"] == level
+                ),
             )
-            for score in scores
-        )
+            for level, _label in self.fields["geographic_level"].choices
+        ]
         periods = _choices(
             (score["reference_period"], score["reference_period"])
             for score in scores

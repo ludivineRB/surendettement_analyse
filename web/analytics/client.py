@@ -16,6 +16,7 @@ from web.analytics.contracts import (
     validate_observability,
     validate_scores,
     validate_series,
+    validate_territorial_rows,
 )
 
 logger = logging.getLogger(__name__)
@@ -108,6 +109,18 @@ class AnalyticsClient:
             "/api/data/observability",
             None,
             validate_observability,
+        )
+
+    def territorial_indicator_catalog(self) -> list[dict]:
+        return self._get(
+            "/api/data/territorial-indicators/catalog", None, validate_territorial_rows
+        )
+
+    def territorial_indicator_data(self, **filters) -> list[dict]:
+        return self._get(
+            "/api/data/territorial-indicators/data",
+            {key: value for key, value in filters.items() if value not in (None, "")},
+            validate_territorial_rows,
         )
 
     def _get(self, path: str, params: dict | None, validator):

@@ -125,3 +125,8 @@ def validate_comparison(payload: Any) -> dict:
 
 def validate_observability(payload: Any) -> dict:
     return dict(_mapping(payload, "observability response"))
+
+
+def validate_territorial_rows(payload: Any) -> list[dict]:
+    rows = _list(payload, "territorial data")
+    return [dict(_mapping(row, f"territorial data[{index}]")) for index, row in enumerate(rows)]

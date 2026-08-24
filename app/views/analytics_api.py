@@ -21,6 +21,22 @@ from src.observability import build_observability_report
 
 analytics_api = APIRouter(prefix="/api/data", tags=["Analytical data"])
 
+INDICATOR_POLARITY = {
+    "risk_score": "higher_is_adverse",
+    "taux_chomage": "higher_is_adverse",
+    "taux_chomage_1564": "higher_is_adverse",
+    "taux_pauvrete": "higher_is_adverse",
+    "inflation": "higher_is_adverse",
+    "dossiers_surendettement_1000_habitants": "higher_is_adverse",
+    "surendettement_dossiers_deposes": "higher_is_adverse",
+    "endettement_moyen": "higher_is_adverse",
+    "part_sans_diplome": "higher_is_adverse",
+    "revenu_median": "higher_is_favorable",
+    "part_diplomees_bac5": "higher_is_favorable",
+    "taux_emploi_1564": "higher_is_favorable",
+    "taux_activite_1564": "higher_is_favorable",
+}
+
 
 @analytics_api.get("/observability")
 def observability() -> dict:
@@ -33,6 +49,120 @@ def health() -> dict:
     with analytics_connection() as connection:
         objects = database_objects(connection)
     return {"status": "ok", "objects": objects}
+
+
+@analytics_api.get("/territorial-indicators/catalog")
+def territorial_indicator_catalog() -> list[dict]:
+    """List only indicators and periods that are actually available."""
+    catalog: list[dict] = []
+    with analytics_connection() as connection:
+        score_rows = fetch_all(
+            connection,
+            """
+            SELECT geographic_level, MIN(reference_period) AS period_min,
+                   MAX(reference_period) AS period_max,
+                   COUNT(DISTINCT reference_period) AS period_count
+            FROM analytics_risk_scores
+            WHERE model_is_active = TRUE
+            GROUP BY geographic_level
+            """,
+        )
+        for row in score_rows:
+            catalog.append({
+                "source": "risk_score", "code": "risk_score",
+                "label": "Score territorial", "group": "surendettement",
+                "level": row["geographic_level"], "unit": "score",
+                "period_min": row["period_min"], "period_max": row["period_max"],
+                "period_count": row["period_count"],
+                "polarity": INDICATOR_POLARITY["risk_score"],
+            })
+        observation_rows = fetch_all(
+            connection,
+            """
+            SELECT o.indicator_code AS code, i.label,
+                   o.geographic_level AS level, MAX(o.unit) AS unit,
+                   MIN(o.reference_period) AS period_min,
+                   MAX(o.reference_period) AS period_max,
+                   COUNT(DISTINCT o.reference_period) AS period_count
+            FROM observations o JOIN indicators i ON i.id = o.indicator_id
+            GROUP BY o.indicator_code, i.label, o.geographic_level
+            """,
+        )
+        for row in observation_rows:
+            catalog.append({
+                "source": "observations", "group": "indicateurs associés",
+                **row,
+                "polarity": INDICATOR_POLARITY.get(row["code"], "neutral"),
+            })
+        macro_rows = fetch_all(
+            connection,
+            """
+            SELECT indicator_code AS code, indicator_name AS label,
+                   indicator_group AS "group", 'region' AS level,
+                   MIN(reference_year) AS period_min,
+                   MAX(reference_year) AS period_max,
+                   COUNT(DISTINCT reference_year) AS period_count
+            FROM analytics_macro_regions
+            GROUP BY indicator_code, indicator_name, indicator_group
+            """,
+        )
+        for row in macro_rows:
+            catalog.append({
+                "source": "macro_regions", "unit": None, **row,
+                "polarity": INDICATOR_POLARITY.get(row["code"], "neutral"),
+            })
+    return catalog
+
+
+@analytics_api.get("/territorial-indicators/data")
+def territorial_indicator_data(
+    source: str,
+    indicator_code: str,
+    geographic_level: str,
+    from_period: str | None = None,
+    to_period: str | None = None,
+) -> list[dict]:
+    """Return bounded territorial values for maps and time series."""
+    if geographic_level not in {"department", "region"}:
+        raise HTTPException(status_code=400, detail="Invalid geographic level")
+    filters = []
+    params = {"level": geographic_level, "code": indicator_code}
+    if source == "risk_score":
+        period_column = "reference_period"
+        query = """
+            SELECT geographic_code, geographic_name, reference_period,
+                   score AS value_numeric
+            FROM analytics_risk_scores
+            WHERE geographic_level = :level AND model_is_active = TRUE
+        """
+    elif source == "observations":
+        period_column = "reference_period"
+        query = """
+            SELECT geographic_code, geographic_name, reference_period,
+                   value_numeric
+            FROM analytics_observations
+            WHERE geographic_level = :level AND indicator_code = :code
+        """
+    elif source == "macro_regions" and geographic_level == "region":
+        period_column = "reference_year"
+        query = """
+            SELECT NULL AS geographic_code, region_name AS geographic_name,
+                   reference_year AS reference_period, value_numeric
+            FROM analytics_macro_regions WHERE indicator_code = :code
+        """
+    else:
+        raise HTTPException(status_code=400, detail="Invalid indicator source")
+    if from_period:
+        filters.append(f"{period_column} >= :from_period")
+        params["from_period"] = from_period
+    if to_period:
+        filters.append(f"{period_column} <= :to_period")
+        params["to_period"] = to_period
+    if filters:
+        query += " AND " + " AND ".join(filters)
+    query += f" ORDER BY {period_column}, geographic_name LIMIT 10000"
+    with analytics_connection() as connection:
+        return fetch_all(connection, query, params)
 
 
 @analytics_api.get("/departments")
