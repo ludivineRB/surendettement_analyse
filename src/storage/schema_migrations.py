@@ -201,10 +201,27 @@ def _create_readonly_analytics_views(connection) -> None:
 def _create_macro_region_analytics_view(connection) -> None:
     if connection.dialect.name != "postgresql":
         return
-    if "v_insee_macro_region_selected" not in inspect(connection).get_view_names():
-        raise RuntimeError(
-            "La vue source v_insee_macro_region_selected est absente."
+    source_exists = (
+        "v_insee_macro_region_selected" in inspect(connection).get_view_names()
+    )
+    if not source_exists:
+        connection.execute(
+            text(
+                """
+                CREATE OR REPLACE VIEW analytics_macro_regions AS
+                SELECT
+                    CAST(NULL AS INTEGER) AS reference_year,
+                    CAST(NULL AS VARCHAR) AS region_name,
+                    CAST(NULL AS VARCHAR) AS indicator_code,
+                    CAST(NULL AS VARCHAR) AS indicator_name,
+                    CAST(NULL AS VARCHAR) AS indicator_group,
+                    CAST(NULL AS VARCHAR) AS aggregation_rule,
+                    CAST(NULL AS DOUBLE PRECISION) AS value_numeric
+                WHERE FALSE
+                """
+            )
         )
+        return
     connection.execute(
         text(
             """

@@ -10,6 +10,8 @@ from pathlib import Path
 from sqlalchemy import MetaData, create_engine, func, select, text
 from sqlalchemy.dialects.postgresql import insert as postgresql_insert
 
+from src.storage.schema_migrations import _create_macro_region_analytics_view
+
 
 TABLES = (
     "dim_region",
@@ -109,6 +111,7 @@ def migrate_analytics(
             inserted_by_table[name] = inserted
             skipped_by_table[name] = len(rows) - inserted
 
+        target.execute(text("DROP VIEW IF EXISTS analytics_macro_regions"))
         for name in reversed(VIEWS):
             target.execute(text(f"DROP VIEW IF EXISTS {name}"))
         for name in VIEWS:
@@ -120,6 +123,7 @@ def migrate_analytics(
                 {"name": name},
             ).scalar_one()
             target.execute(text(definition))
+        _create_macro_region_analytics_view(target)
 
     return AnalyticsMigrationReport(
         source=str(source_path),
