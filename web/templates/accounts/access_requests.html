@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Gestion des accès — Surendettement Analyse{% endblock %}
+
+{% block content %}
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Administration</p>
+      <h1>Gestion des accès</h1>
+      <p>Validez les demandes, modifiez les autorisations et gérez l’ensemble des comptes.</p>
+    </div>
+    <span class="badge">{{ pending_users|length }} en attente</span>
+  </header>
+
+  <section class="data-card" aria-labelledby="requests-title">
+    <header class="data-card__header">
+      <div>
+        <p class="eyebrow">Comptes inactifs</p>
+        <h2 id="requests-title">Demandes d’accès</h2>
+      </div>
+    </header>
+    {% if pending_users %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Utilisateur</th><th>E-mail</th><th>Date de demande</th><th>Approbation</th></tr>
+          </thead>
+          <tbody>
+            {% for pending_user in pending_users %}
+              <tr>
+                <td><strong>{{ pending_user.username }}</strong></td>
+                <td>{{ pending_user.email|default:"Non renseigné" }}</td>
+                <td>{{ pending_user.date_joined|date:"d/m/Y à H:i" }}</td>
+                <td>
+                  <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="user_id" value="{{ pending_user.pk }}">
+                    <label class="sr-only" for="role-{{ pending_user.pk }}">Rôle de {{ pending_user.username }}</label>
+                    <select id="role-{{ pending_user.pk }}" name="role" required>
+                      {% for role, label in role_labels.items %}<option value="{{ role }}">{{ label }}</option>{% endfor %}
+                    </select>
+                    <button class="button button--primary" type="submit">Approuver</button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="empty-state">Aucune demande d’accès n’est actuellement en attente.</p>
+    {% endif %}
+  </section>
+
+  <section class="data-card account-list" aria-labelledby="accounts-title">
+    <header class="data-card__header">
+      <div><p class="eyebrow">Administration</p><h2 id="accounts-title">Tous les comptes</h2></div>
+      <span class="badge">{{ users|length }} compte{{ users|length|pluralize }}</span>
+    </header>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Utilisateur</th><th>E-mail</th><th>Rôle et droits</th><th>État</th><th>Dernière connexion</th><th>Actions</th></tr></thead>
+        <tbody>
+          {% for account in users %}
+            <tr>
+              <td><strong>{{ account.username }}</strong>{% if account.pk == user.pk %}<br><small>Votre compte</small>{% endif %}</td>
+              <td>{{ account.email|default:"—" }}</td>
+              <td>
+                {% for group in account.groups.all %}<span class="quality-status">{{ group.name }}</span>{% endfor %}
+                {% if account.is_superuser %}<span class="quality-status quality-status--superuser">Superuser</span>{% elif account.is_staff %}<span class="quality-status">Staff</span>{% endif %}
+              </td>
+              <td><span class="quality-status quality-status--{% if account.is_active %}success{% else %}pending{% endif %}">{% if account.is_active %}Actif{% else %}Inactif{% endif %}</span></td>
+              <td>{{ account.last_login|date:"d/m/Y à H:i"|default:"Jamais" }}</td>
+              <td class="account-actions">
+                <a class="button button--ghost" href="{% url 'edit-account' account.pk %}">Modifier</a>
+                {% if account.pk != user.pk %}<a class="button button--danger-outline" href="{% url 'delete-account' account.pk %}">Supprimer</a>{% endif %}
+              </td>
+            </tr>
+          {% empty %}<tr><td colspan="6">Aucun compte.</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+{% endblock %}

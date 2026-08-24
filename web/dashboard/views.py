@@ -1,5 +1,6 @@
 from django.contrib.auth.decorators import login_required, permission_required
 from django.core.cache import cache
+from django.core.exceptions import PermissionDenied
 from django.db import connection
 from django.http import JsonResponse
 from django.shortcuts import render
@@ -93,6 +94,53 @@ def dashboard(request):
     except AnalyticsAPIError as exc:
         context["analytics_error"] = str(exc)
     return render(request, "dashboard/index.html", context)
+
+
+@login_required
+def data_quality(request):
+    if not request.user.is_superuser:
+        raise PermissionDenied
+    report = None
+    analytics_error = None
+    try:
+        report = AnalyticsClient().get_observability()
+    except AnalyticsAPIError as exc:
+        analytics_error = str(exc)
+    return render(
+        request,
+        "dashboard/data_quality.html",
+        {"report": report, "analytics_error": analytics_error},
+    )
+
+
+@login_required
+@permission_required("accounts.view_dashboard", raise_exception=True)
+def methodology(request):
+    model = None
+    analytics_error = None
+    try:
+        models = AnalyticsClient().list_models(active_only=True)
+        model = models[0] if models else None
+    except AnalyticsAPIError as exc:
+        analytics_error = str(exc)
+    indicator_labels = {
+        "dossiers_surendettement_1000_habitants": "Dossiers de surendettement pour 1 000 habitants",
+        "taux_chomage": "Taux de chômage",
+        "taux_pauvrete": "Taux de pauvreté",
+        "revenu_median": "Revenu médian",
+        "endettement_moyen": "Endettement moyen",
+        "inflation": "Inflation",
+    }
+    if model:
+        for indicator in model.get("indicators", []):
+            indicator["display_label"] = indicator_labels.get(
+                indicator.get("logical_code"), indicator.get("logical_code", "Indicateur")
+            )
+    return render(
+        request,
+        "dashboard/methodology.html",
+        {"model": model, "analytics_error": analytics_error},
+    )
 
 
 def health(request):

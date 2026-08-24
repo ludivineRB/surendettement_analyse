@@ -3,7 +3,7 @@ from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.urls import reverse
-from unittest.mock import patch
+from unittest.mock import call, patch
 
 from web.accounts.services import ROLE_NAMES, assign_role
 from web.analytics.client import AnalyticsAPIError
@@ -96,6 +96,23 @@ class DashboardTests(TestCase):
         response = self.client.get(reverse("dashboard"))
         self.assertEqual(response.status_code, 403)
 
+    @patch("web.dashboard.views.AnalyticsClient")
+    def test_viewer_can_access_methodology(self, client_class):
+        client_class.return_value.list_models.return_value = [MODEL]
+        self.client.force_login(self.viewer)
+
+        response = self.client.get(reverse("methodology"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Méthodologie et lexique")
+        self.assertContains(response, "Modèle 1.2.0")
+        client_class.return_value.list_models.assert_called_once_with(active_only=True)
+
+    def test_user_without_role_cannot_access_methodology(self):
+        self.client.force_login(self.unassigned)
+        response = self.client.get(reverse("methodology"))
+        self.assertEqual(response.status_code, 403)
+
     def test_login_redirects_to_dashboard(self):
         response = self.client.post(
             reverse("login"),
@@ -126,3 +143,42 @@ class DashboardTests(TestCase):
         self.assertTrue(self.viewer.has_perm("accounts.view_dashboard"))
         with self.assertRaises(ValidationError):
             assign_role(self.viewer, "unsupported")
+
+
+class DataQualityTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.superuser = get_user_model().objects.create_superuser(
+            username="quality-admin", password="test-password"
+        )
+        cls.viewer = get_user_model().objects.create_user(
+            username="quality-viewer", password="test-password"
+        )
+        assign_role(cls.viewer, "viewer")
+
+    def test_page_is_reserved_for_superusers(self):
+        self.client.force_login(self.viewer)
+        response = self.client.get(reverse("data-quality"))
+        self.assertEqual(response.status_code, 403)
+
+    @patch("web.dashboard.views.AnalyticsClient")
+    def test_superuser_can_view_quality_report(self, client_class):
+        client_class.return_value.get_observability.return_value = {
+            "status": "ok",
+            "generated_at": "2026-08-24T12:00:00+00:00",
+            "alerts": [],
+            "operational": {
+                "counts": {"source_documents": 12, "observations": 240, "risk_scores": 30, "pipeline_runs": 4},
+                "document_statuses": [], "pipeline_versions": [],
+                "indicator_freshness": [], "pipeline_runs": [],
+                "missing_regional_dossiers": [], "needs_review": [],
+                "integrity": {"foreign_key_violations": 0, "indicator_code_mismatches": 0},
+            },
+            "analytics": {"integrity": {"foreign_key_violations": 0, "departments_without_region": 0}},
+        }
+        self.client.force_login(self.superuser)
+        response = self.client.get(reverse("data-quality"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Qualité et extraction des données")
+        self.assertContains(response, "240")
+        client_class.return_value.get_observability.assert_called_once_with()

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Supprimer {{ managed_user.username }} — Surendettement Analyse{% endblock %}
+
+{% block content %}
+  <header class="page-header">
+    <div class="page-header__copy">
+      <p class="eyebrow">Administration des comptes</p>
+      <h1>Supprimer {{ managed_user.username }}</h1>
+      <p>Cette opération est définitive et ne pourra pas être annulée.</p>
+    </div>
+  </header>
+
+  <section class="data-card delete-confirmation" aria-labelledby="delete-title">
+    <header class="data-card__header"><div><p class="eyebrow">Confirmation requise</p><h2 id="delete-title">Confirmer la suppression</h2></div>{% if managed_user.is_superuser %}<span class="badge">Superuser</span>{% endif %}</header>
+    <div class="data-card__body">
+      <div class="alert" role="alert">
+        Le compte <strong>{{ managed_user.username }}</strong>, ses données personnelles et ses <strong>{{ conversation_count }} conversation{{ conversation_count|pluralize }}</strong> seront supprimés. Les traces techniques devant être conservées seront anonymisées.
+      </div>
+      <dl class="comparison-list">
+        <div><dt>Identifiant</dt><dd>{{ managed_user.username }}</dd></div>
+        <div><dt>E-mail</dt><dd>{{ managed_user.email|default:"—" }}</dd></div>
+        <div><dt>Statut</dt><dd>{% if managed_user.is_active %}Actif{% else %}Inactif{% endif %}</dd></div>
+      </dl>
+      <form class="delete-actions" method="post">
+        {% csrf_token %}
+        <a class="button button--ghost" href="{% url 'access-requests' %}">Annuler</a>
+        <button class="button button--danger" type="submit">Supprimer définitivement</button>
+      </form>
+    </div>
+  </section>
+{% endblock %}

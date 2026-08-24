@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Modifier {{ managed_user.username }} — Surendettement Analyse{% endblock %}
+
+{% block content %}
+  <header class="page-header">
+    <div class="page-header__copy">
+      <p class="eyebrow">Administration des comptes</p>
+      <h1>Modifier {{ managed_user.username }}</h1>
+      <p>Mettez à jour l’identité, le rôle et les droits techniques de ce compte.</p>
+    </div>
+    <a class="button button--ghost" href="{% url 'access-requests' %}">Retour à la liste</a>
+  </header>
+
+  <form class="data-card account-form" method="post">
+    {% csrf_token %}
+    <div class="data-card__header"><div><p class="eyebrow">Compte</p><h2>Informations et autorisations</h2></div></div>
+    <div class="data-card__body">
+      {{ form.non_field_errors }}
+      <div class="account-form-grid">
+        {% for field in form %}
+          <p class="{% if field.field.widget.input_type == 'checkbox' %}account-checkbox{% endif %}">
+            {{ field.label_tag }}{{ field }}
+            {% if field.help_text %}<span class="helptext">{{ field.help_text }}</span>{% endif %}
+            {{ field.errors }}
+          </p>
+        {% endfor %}
+      </div>
+      <div class="account-form-actions">
+        <a class="button button--ghost" href="{% url 'access-requests' %}">Annuler</a>
+        <button class="button button--primary" type="submit">Enregistrer les modifications</button>
+      </div>
+    </div>
+  </form>
+{% endblock %}

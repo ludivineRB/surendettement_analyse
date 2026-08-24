@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Méthodologie et lexique — Surendettement Analyse{% endblock %}
+
+{% block content %}
+  <header class="page-header">
+    <div class="page-header__copy">
+      <p class="eyebrow">Comprendre les résultats</p>
+      <h1>Méthodologie et lexique</h1>
+      <p>Comprenez la construction du score territorial, ses indicateurs et les précautions nécessaires à son interprétation.</p>
+    </div>
+    {% if model %}<span class="badge">Modèle {{ model.version }}</span>{% endif %}
+  </header>
+
+  <div class="methodology-warning" role="note">
+    <strong>À retenir</strong>
+    <p>Le score compare une vulnérabilité territoriale au surendettement. Il ne mesure pas un risque individuel, ne constitue pas une probabilité et ne doit pas servir à prendre une décision de crédit.</p>
+  </div>
+
+  {% if analytics_error %}<div class="alert" role="alert">Les paramètres du modèle actif sont indisponibles : {{ analytics_error }}</div>{% endif %}
+
+  <nav class="methodology-summary" aria-label="Sommaire de la méthodologie">
+    <a href="#calculation">Calcul</a><a href="#indicators">Indicateurs</a><a href="#levels">Niveaux</a><a href="#sources">Sources et limites</a><a href="#glossary">Lexique</a>
+  </nav>
+
+  <div class="section-stack">
+    <section class="data-card" id="calculation" aria-labelledby="calculation-title">
+      <header class="data-card__header"><div><p class="eyebrow">Du brut au score</p><h2 id="calculation-title">Comment le score est-il calculé ?</h2></div></header>
+      <div class="data-card__body">
+        <ol class="methodology-steps">
+          <li><span>1</span><div><h3>Constituer une cohorte comparable</h3><p>Les territoires sont comparés au même niveau géographique et pour la même période.</p></div></li>
+          <li><span>2</span><div><h3>Borner les valeurs extrêmes</h3><p>Pour le modèle 1.2, chaque indicateur est borné entre les percentiles 5 et 95 de la cohorte. Cette winsorisation limite l’influence des valeurs atypiques.</p></div></li>
+          <li><span>3</span><div><h3>Normaliser entre 0 et 1</h3><p>Une valeur proche de 1 contribue davantage au risque. Le sens est inversé pour un indicateur protecteur comme le revenu médian.</p></div></li>
+          <li><span>4</span><div><h3>Appliquer les poids</h3><p>Chaque valeur normalisée est multipliée par son poids effectif. Si un indicateur manque, les poids disponibles sont redistribués proportionnellement.</p></div></li>
+          <li><span>5</span><div><h3>Additionner les contributions</h3><p>La contribution vaut : valeur normalisée × poids effectif × 100. Leur somme produit un score compris entre 0 et 100.</p></div></li>
+        </ol>
+        <div class="formula" aria-label="Formule du score">Score = Σ (valeur normalisée × poids effectif × 100)</div>
+      </div>
+    </section>
+
+    <section class="data-card" id="indicators" aria-labelledby="indicators-title">
+      <header class="data-card__header"><div><p class="eyebrow">Composition</p><h2 id="indicators-title">Indicateurs et pondérations</h2></div>{% if model %}<span class="badge">Couverture minimale : {% widthratio model.minimum_coverage_ratio 1 100 %} %</span>{% endif %}</header>
+      {% if model.indicators %}
+        <div class="table-scroll"><table><thead><tr><th>Indicateur</th><th>Unité</th><th>Sens</th><th>Poids</th></tr></thead><tbody>
+          {% for indicator in model.indicators %}{% if indicator.is_active %}<tr><td><strong>{{ indicator.display_label }}</strong></td><td>{{ indicator.expected_unit|default:"—" }}</td><td>{% if indicator.direction == "negative" %}Protecteur : une hausse réduit le score{% else %}Risque : une hausse augmente le score{% endif %}</td><td>{% widthratio indicator.weight 1 100 %} %</td></tr>{% endif %}{% endfor %}
+        </tbody></table></div>
+      {% else %}
+        <p class="empty-state">La composition du modèle actif est temporairement indisponible.</p>
+      {% endif %}
+      <div class="data-card__body"><p><strong>Données manquantes :</strong> aucun score valide n’est produit sous 60 % de couverture. Au-dessus de ce seuil, le score reste partiel tant que tous les indicateurs ne sont pas disponibles.</p></div>
+    </section>
+
+    <section class="data-card" id="levels" aria-labelledby="levels-title">
+      <header class="data-card__header"><div><p class="eyebrow">Lecture</p><h2 id="levels-title">Niveaux de risque</h2></div></header>
+      <div class="data-card__body">
+        {% if model.configuration.risk_levels %}<div class="risk-scale">
+          {% for level in model.configuration.risk_levels %}<div><span>{{ level.label }}</span><strong>{{ level.min|floatformat:0 }}–{{ level.max|floatformat:0 }}</strong></div>{% endfor %}
+        </div>{% else %}<p>Le score s’interprète sur une échelle de 0 à 100 : une valeur élevée indique une vulnérabilité territoriale relative plus forte.</p>{% endif %}
+        <p class="factor-note">Les niveaux sont relatifs à une cohorte territoriale et à une période. Une évolution peut provenir du territoire lui-même ou de l’évolution des autres territoires comparés.</p>
+      </div>
+    </section>
+
+    <section class="grid grid--two" id="sources" aria-label="Sources et limites">
+      <article class="data-card"><header class="data-card__header"><div><p class="eyebrow">Provenance</p><h2>Sources principales</h2></div></header><div class="data-card__body"><ul><li><strong>Banque de France :</strong> baromètres mensuels et enquêtes typologiques annuelles.</li><li><strong>INSEE :</strong> inflation, recensement, chômage, pauvreté et données Filosofi.</li><li>Les données annuelles répliquées sur plusieurs mois conservent leur année source.</li></ul></div></article>
+      <article class="data-card"><header class="data-card__header"><div><p class="eyebrow">Précautions</p><h2>Limites d’interprétation</h2></div></header><div class="data-card__body"><ul><li>Le score décrit un territoire, jamais une personne.</li><li>Une contribution statistique ne démontre aucune causalité.</li><li>Les comparaisons entre versions de modèle doivent être prudentes.</li><li>La fraîcheur diffère selon les sources mensuelles ou annuelles.</li><li>Un score partiel comporte davantage d’incertitude.</li></ul></div></article>
+    </section>
+
+    <section class="data-card" id="glossary" aria-labelledby="glossary-title">
+      <header class="data-card__header"><div><p class="eyebrow">Définitions</p><h2 id="glossary-title">Lexique</h2></div></header>
+      <div class="data-card__body glossary-grid">
+        <div><h3>Cohorte</h3><p>Ensemble des territoires du même niveau comparés pour une même période.</p></div>
+        <div><h3>Couverture</h3><p>Part des poids du modèle représentée par les indicateurs effectivement disponibles.</p></div>
+        <div><h3>Contribution</h3><p>Nombre de points apporté par un indicateur au score final.</p></div>
+        <div><h3>Poids configuré</h3><p>Importance théorique attribuée à un indicateur dans le modèle complet.</p></div>
+        <div><h3>Poids effectif</h3><p>Poids utilisé après redistribution proportionnelle des indicateurs manquants.</p></div>
+        <div><h3>Normalisation</h3><p>Transformation d’indicateurs aux unités différentes vers une échelle commune de 0 à 1.</p></div>
+        <div><h3>Percentile</h3><p>Seuil sous lequel se trouve une proportion donnée des valeurs de la cohorte.</p></div>
+        <div><h3>Winsorisation</h3><p>Bornage des valeurs extrêmes, ici aux percentiles 5 et 95, sans supprimer les territoires.</p></div>
+        <div><h3>Score partiel</h3><p>Score calculé avec une couverture suffisante mais inférieure à 100 %.</p></div>
+        <div><h3>Sens protecteur</h3><p>Indicateur dont l’augmentation diminue la contribution au risque.</p></div>
+      </div>
+    </section>
+  </div>
+{% endblock %}

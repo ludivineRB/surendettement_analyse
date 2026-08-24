@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Qualité des données — Surendettement Analyse{% endblock %}
+
+{% block content %}
+  <header class="page-header">
+    <div class="page-header__copy">
+      <p class="eyebrow">Supervision</p>
+      <h1>Qualité et extraction des données</h1>
+      <p>Suivez la fraîcheur, la complétude, les extractions et l’intégrité des données restituées.</p>
+    </div>
+    <a class="button button--ghost" href="{% url 'data-quality' %}">Actualiser</a>
+  </header>
+
+  {% if analytics_error %}
+    <div class="alert" role="alert">{{ analytics_error }}</div>
+  {% elif report %}
+    {% if report.alerts %}
+      <section class="quality-alerts" aria-label="Alertes qualité">
+        {% for alert in report.alerts %}
+          <div class="alert{% if alert.severity == 'warning' %} alert--warning{% endif %}" role="alert">
+            <strong>{{ alert.severity|upper }}</strong> — {{ alert.message }}
+          </div>
+        {% endfor %}
+      </section>
+    {% else %}
+      <div class="alert alert--success" role="status">Tous les contrôles qualité sont au vert.</div>
+    {% endif %}
+
+    <section class="grid grid--kpis quality-kpis" aria-label="Indicateurs de qualité">
+      <article class="card kpi-card"><span class="kpi-card__label">Documents sources</span><strong class="kpi-card__value">{{ report.operational.counts.source_documents|default:"0" }}</strong></article>
+      <article class="card kpi-card"><span class="kpi-card__label">Observations</span><strong class="kpi-card__value">{{ report.operational.counts.observations|default:"0" }}</strong></article>
+      <article class="card kpi-card"><span class="kpi-card__label">Scores calculés</span><strong class="kpi-card__value">{{ report.operational.counts.risk_scores|default:"0" }}</strong></article>
+      <article class="card kpi-card"><span class="kpi-card__label">Exécutions</span><strong class="kpi-card__value">{{ report.operational.counts.pipeline_runs|default:"0" }}</strong></article>
+      <article class="card kpi-card"><span class="kpi-card__label">Documents à vérifier</span><strong class="kpi-card__value">{{ report.operational.needs_review|length }}</strong></article>
+      <article class="card kpi-card"><span class="kpi-card__label">Régions-périodes manquantes</span><strong class="kpi-card__value">{{ report.operational.missing_regional_dossiers|length }}</strong></article>
+    </section>
+
+    <div class="section-stack">
+      <div class="grid grid--two">
+        <section class="data-card" aria-labelledby="documents-title">
+          <header class="data-card__header"><div><p class="eyebrow">Extraction</p><h2 id="documents-title">État des documents</h2></div></header>
+          <div class="table-scroll"><table><thead><tr><th>Statut</th><th>Documents</th><th>Dernière période</th></tr></thead><tbody>
+            {% for item in report.operational.document_statuses %}<tr><td><span class="quality-status quality-status--{{ item.status }}">{{ item.status }}</span></td><td>{{ item.count }}</td><td>{{ item.latest_period|default:"—" }}</td></tr>{% empty %}<tr><td colspan="3">Aucun document journalisé.</td></tr>{% endfor %}
+          </tbody></table></div>
+        </section>
+        <section class="data-card" aria-labelledby="versions-title">
+          <header class="data-card__header"><div><p class="eyebrow">Traçabilité</p><h2 id="versions-title">Versions des extracteurs</h2></div></header>
+          <div class="table-scroll"><table><thead><tr><th>Version</th><th>Statut</th><th>Documents</th><th>Dernière période</th></tr></thead><tbody>
+            {% for item in report.operational.pipeline_versions %}<tr><td>{{ item.extractor_version|default:"Non renseignée" }}</td><td>{{ item.extraction_status }}</td><td>{{ item.documents }}</td><td>{{ item.latest_period|default:"—" }}</td></tr>{% empty %}<tr><td colspan="4">Aucune version journalisée.</td></tr>{% endfor %}
+          </tbody></table></div>
+        </section>
+      </div>
+
+      <section class="data-card" aria-labelledby="coverage-title">
+        <header class="data-card__header"><div><p class="eyebrow">Restitution</p><h2 id="coverage-title">Couverture des scores</h2></div></header>
+        <div class="table-scroll"><table><thead><tr><th>Niveau géographique</th><th>Statut</th><th>Scores</th><th>Couverture moyenne</th><th>Première période</th><th>Dernière période</th></tr></thead><tbody>
+          {% for item in report.operational.score_statuses %}<tr><td>{{ item.geographic_level }}</td><td><span class="quality-status quality-status--{{ item.status }}">{{ item.status }}</span></td><td>{{ item.count }}</td><td>{{ item.average_coverage }}</td><td>{{ item.first_period }}</td><td>{{ item.latest_period }}</td></tr>{% empty %}<tr><td colspan="6">Aucun score disponible.</td></tr>{% endfor %}
+        </tbody></table></div>
+      </section>
+
+      <section class="data-card" aria-labelledby="freshness-title">
+        <header class="data-card__header"><div><p class="eyebrow">Restitution</p><h2 id="freshness-title">Fraîcheur et couverture des indicateurs</h2></div></header>
+        <div class="table-scroll"><table><thead><tr><th>Indicateur</th><th>Observations</th><th>Territoires</th><th>Première période</th><th>Dernière période</th><th>Mise à jour</th></tr></thead><tbody>
+          {% for item in report.operational.indicator_freshness %}<tr><td><strong>{{ item.indicator_label }}</strong><br><small>{{ item.indicator_code }}</small></td><td>{{ item.observations }}</td><td>{{ item.territories }}</td><td>{{ item.first_period }}</td><td>{{ item.latest_period }}</td><td>{{ item.last_updated_at|default:"—" }}</td></tr>{% empty %}<tr><td colspan="6">Aucun indicateur disponible.</td></tr>{% endfor %}
+        </tbody></table></div>
+      </section>
+
+      <section class="data-card" aria-labelledby="runs-title">
+        <header class="data-card__header"><div><p class="eyebrow">Automatisation</p><h2 id="runs-title">Dernières exécutions</h2></div></header>
+        <div class="table-scroll"><table><thead><tr><th>Pipeline</th><th>Statut</th><th>Début</th><th>Fin</th><th>Erreur</th></tr></thead><tbody>
+          {% for run in report.operational.pipeline_runs %}<tr><td>{{ run.pipeline_name }}</td><td><span class="quality-status quality-status--{{ run.status }}">{{ run.status }}</span></td><td>{{ run.started_at }}</td><td>{{ run.finished_at|default:"En cours" }}</td><td>{{ run.error_message|default:"—" }}</td></tr>{% empty %}<tr><td colspan="5">Aucune exécution complète n’est encore journalisée.</td></tr>{% endfor %}
+        </tbody></table></div>
+      </section>
+
+      <div class="grid grid--two">
+        <section class="data-card" aria-labelledby="missing-title">
+          <header class="data-card__header"><div><p class="eyebrow">Complétude</p><h2 id="missing-title">Données régionales manquantes</h2></div></header>
+          <div class="table-scroll quality-table-short"><table><thead><tr><th>Région</th><th>Période</th></tr></thead><tbody>
+            {% for item in report.operational.missing_regional_dossiers %}<tr><td>{{ item.region_name }} ({{ item.region_code }})</td><td>{{ item.reference_period }}</td></tr>{% empty %}<tr><td colspan="2">Aucune donnée régionale manquante.</td></tr>{% endfor %}
+          </tbody></table></div>
+        </section>
+        <section class="data-card" aria-labelledby="review-title">
+          <header class="data-card__header"><div><p class="eyebrow">Contrôle</p><h2 id="review-title">Documents à vérifier</h2></div></header>
+          <div class="table-scroll quality-table-short"><table><thead><tr><th>Région</th><th>Période</th><th>Document</th></tr></thead><tbody>
+            {% for item in report.operational.needs_review %}<tr><td>{{ item.region_name }}</td><td>{{ item.reference_period }}</td><td>{% if item.page_url %}<a href="{{ item.page_url }}" target="_blank" rel="noopener noreferrer">{{ item.pdf_filename|default:"Publication" }}</a>{% else %}{{ item.pdf_filename|default:"—" }}{% endif %}</td></tr>{% empty %}<tr><td colspan="3">Aucun document à vérifier.</td></tr>{% endfor %}
+          </tbody></table></div>
+        </section>
+      </div>
+
+      <details class="data-card quality-details">
+        <summary>Intégrité et volumes techniques</summary>
+        <div class="data-card__body grid grid--two">
+          <div><h3>Base opérationnelle</h3><dl class="comparison-list"><div><dt>Clés étrangères</dt><dd>{{ report.operational.integrity.foreign_key_violations }}</dd></div><div><dt>Codes incohérents</dt><dd>{{ report.operational.integrity.indicator_code_mismatches }}</dd></div></dl></div>
+          <div><h3>Base analytique</h3><dl class="comparison-list"><div><dt>Clés étrangères</dt><dd>{{ report.analytics.integrity.foreign_key_violations }}</dd></div><div><dt>Départements sans région</dt><dd>{{ report.analytics.integrity.departments_without_region }}</dd></div></dl></div>
+        </div>
+      </details>
+    </div>
+    <p class="quality-generated">Rapport généré le {{ report.generated_at }}.</p>
+  {% else %}
+    <p class="empty-state">Le rapport de supervision ne peut pas être produit.</p>
+  {% endif %}
+{% endblock %}
