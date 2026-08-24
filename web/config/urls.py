@@ -4,7 +4,12 @@ from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.urls import include, path
 
+from web.security.observability import live, prometheus_metrics, ready
+
 urlpatterns = [
+    path("health/live/", live, name="health-live"),
+    path("health/ready/", ready, name="health-ready"),
+    path("metrics/", prometheus_metrics, name="prometheus-metrics"),
     path("admin/", admin.site.urls),
     path("assistant/", include("web.assistant.urls")),
     path("accounts/", include("web.accounts.urls")),
