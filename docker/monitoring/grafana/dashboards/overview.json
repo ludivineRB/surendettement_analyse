@@ -14,7 +14,7 @@
     },
     {
       "type": "timeseries", "title": "Requêtes HTTP par statut", "id": 2,
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+      "gridPos": {"h": 13, "w": 12, "x": 12, "y": 0},
       "datasource": {"type": "prometheus", "uid": "prometheus"},
       "targets": [
         {"expr": "sum by (status) (rate(fastapi_http_requests_total[5m]))", "legendFormat": "API {{status}}", "refId": "A"},
@@ -52,7 +52,10 @@
       "type": "timeseries", "title": "Exécutions SQL cumulées", "id": 6,
       "gridPos": {"h": 7, "w": 8, "x": 16, "y": 13},
       "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "targets": [{"expr": "sum by (status) (assistant_sql_executions_total)", "legendFormat": "{{status}}", "refId": "A"}],
+      "targets": [
+        {"expr": "sum(assistant_sql_executions_total{status=\"accepted\"}) or vector(0)", "legendFormat": "acceptées", "refId": "A"},
+        {"expr": "sum(assistant_sql_executions_total{status=\"rejected\"}) or vector(0)", "legendFormat": "rejetées", "refId": "B"}
+      ],
       "fieldConfig": {"defaults": {"unit": "short", "min": 0}, "overrides": []}
     },
     {

@@ -7,6 +7,17 @@
 3. Consulter le dashboard, les cinq dernières minutes de logs via `request_id`, puis PostgreSQL.
 4. Classer : **P1** indisponibilité/perte de données, **P2** dégradation majeure, **P3** anomalie contenue.
 
+## Notifications locales sans service tiers
+
+Sur un poste Linux disposant de `notify-send`, lancer dans une session graphique :
+
+```bash
+python3 -m src.local_alert_notifier
+```
+
+Le processus interroge Alertmanager toutes les 30 secondes et notifie chaque nouvelle empreinte une seule fois.
+Il doit rester actif et ne permet pas de notification distante lorsque le poste est éteint.
+
 ## Service indisponible
 
 - `live` en échec : vérifier le processus et le dernier déploiement.
