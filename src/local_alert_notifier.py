@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import shutil
 import subprocess
 import time
@@ -11,11 +12,15 @@ from pathlib import Path
 from urllib.request import urlopen
 
 DEFAULT_URL = "http://127.0.0.1:9093/api/v2/alerts"
-DEFAULT_STATE = Path("/tmp/surendettement-alert-notifier.json")
+DEFAULT_STATE = (
+    Path(os.getenv("XDG_STATE_HOME", Path.home() / ".local/state"))
+    / "surendettement"
+    / "alerts.json"
+)
 
 
 def fetch_active_alerts(url: str = DEFAULT_URL) -> list[dict]:
-    with urlopen(url, timeout=5) as response:  # nosec B310 - local URL by default
+    with urlopen(url, timeout=5) as response:  # nosec B310
         alerts = json.loads(response.read())
     return [alert for alert in alerts if alert.get("status", {}).get("state") == "active"]
 
@@ -30,7 +35,9 @@ def notify_new_alerts(alerts: list[dict], state_path: Path = DEFAULT_STATE) -> i
         title = f"[{labels.get('severity', 'warning').upper()}] {labels.get('alertname', 'Alerte')}"
         message = annotations.get("summary") or annotations.get("description") or "Alerte active"
         subprocess.run(["notify-send", title, message], check=False)  # noqa: S603
+    state_path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
     state_path.write_text(json.dumps(sorted(current)), encoding="utf-8")
+    state_path.chmod(0o600)
     return len(new_alerts)
 
 
