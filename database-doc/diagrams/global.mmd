@@ -1,0 +1,89 @@
+flowchart TB
+    subgraph SOURCES[Sources externes]
+        BDF[Banque de France]
+        INSEE[INSEE]
+        DOCS[Documents approuvés]
+    end
+
+    subgraph OP[Opérationnel]
+        SD[Documents sources]
+        IND[Indicateurs opérationnels]
+        OBS[Observations]
+        RUN[Exécutions et qualité]
+    end
+
+    subgraph REF[Référentiels]
+        GEO[Régions et départements]
+        TIME[Périodes]
+        IANA[Indicateurs analytiques]
+    end
+
+    subgraph WH[Entrepôt analytique]
+        FBDF[Faits BDF]
+        FINSEE[Faits INSEE]
+        OVR[Corrections macro]
+    end
+
+    subgraph SCORE[Scoring territorial]
+        MODEL[Modèles et configurations]
+        SCORES[Scores]
+        DETAILS[Détails et contributions]
+    end
+
+    subgraph PUB[Publication]
+        VIEWS[Vues analytics_*]
+        API[API et tableaux de bord]
+    end
+
+    subgraph APP[Application et assistant]
+        USERS[Utilisateurs et rôles]
+        CONV[Conversations et messages]
+        RAGD[RAG Django]
+        RAGA[RAG Assistant API]
+        SQL[Agent SQL et audit]
+    end
+
+    BDF --> SD
+    BDF --> FBDF
+    INSEE --> FINSEE
+    SD --> OBS
+    IND --> OBS
+    RUN -. orchestre .-> SD
+    RUN -. contrôle .-> OBS
+
+    GEO --> FBDF
+    GEO --> FINSEE
+    TIME --> OVR
+    IANA --> FBDF
+    IANA --> FINSEE
+    IANA --> OVR
+
+    OBS --> MODEL
+    FBDF --> MODEL
+    FINSEE --> MODEL
+    MODEL --> SCORES
+    SCORES --> DETAILS
+    OBS --> DETAILS
+
+    SCORES --> VIEWS
+    DETAILS --> VIEWS
+    OBS --> VIEWS
+    FINSEE --> VIEWS
+    VIEWS --> API
+    VIEWS --> SQL
+
+    USERS --> CONV
+    DOCS --> RAGD
+    DOCS --> RAGA
+    RAGD --> CONV
+    RAGA --> CONV
+    USERS -. acteur non contraint .-> SQL
+
+    classDef external fill:#f7f7f7,stroke:#666
+    classDef operational fill:#e8f4ff,stroke:#2176ae
+    classDef analytical fill:#eef8e8,stroke:#4c8c2b
+    classDef personal fill:#fff0f0,stroke:#b33
+    class BDF,INSEE,DOCS external
+    class SD,IND,OBS,RUN operational
+    class FBDF,FINSEE,OVR,MODEL,SCORES,DETAILS,VIEWS analytical
+    class USERS,CONV personal

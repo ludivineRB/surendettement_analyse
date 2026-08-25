@@ -1,0 +1,118 @@
+flowchart LR
+    subgraph EXT[Sources externes]
+        BDFPDF[PDF Banque de France]
+        BDFDATA[Données structurées BDF / Stat Info]
+        INSEE[Dossier complet, Filosofi, inflation INSEE]
+        MANIFEST[Manifest documentaire approuvé]
+    end
+
+    subgraph ING[Acquisition et préparation]
+        DOWNLOAD[Découverte et téléchargement]
+        HASH[Empreintes et idempotence]
+        NORMALIZE[Normalisation codes, noms et périodes]
+        QUALITY[Contrôles qualité]
+    end
+
+    subgraph OP[Stockage opérationnel]
+        DOCS[source_documents]
+        IND[indicators]
+        OBS[observations]
+        RUN[pipeline_runs]
+    end
+
+    subgraph LEGACY[Construction historique]
+        SQLITEOP[(SQLite opérationnel)]
+        SQLITEMART[(Mart SQLite analytique)]
+    end
+
+    subgraph WH[Entrepôt PostgreSQL]
+        DIMS[Dimensions conformes]
+        FACTBDF[Faits BDF]
+        FACTINSEE[Faits INSEE]
+        OVERRIDE[Corrections macro]
+    end
+
+    subgraph RISK[Scoring]
+        CONFIG[Modèles et configurations]
+        CALC[Normalisation, poids et couverture]
+        SCORES[Scores territoriaux]
+        DETAILS[Détails de score]
+    end
+
+    subgraph PUBLISH[Publication et consommation]
+        VIEWS[Vues analytics_*]
+        API[FastAPI / Streamlit / Django]
+        SQLAGENT[Agent SQL readonly]
+    end
+
+    subgraph RAG[Assistant documentaire]
+        RAGDJANGO[RAG Django : source, document, version, fragment]
+        RAGAPI[RAG Assistant API : corpus_chunks]
+        CONV[Conversations et messages]
+    end
+
+    subgraph OPS[Exploitation]
+        BACKUP[Sauvegarde]
+        RESTORE[Restauration et test]
+        MONITOR[Monitoring et audit SQL]
+        RETENTION[Purge et confidentialité]
+    end
+
+    BDFPDF --> DOWNLOAD
+    BDFDATA --> DOWNLOAD
+    INSEE --> DOWNLOAD
+    DOWNLOAD --> HASH --> NORMALIZE --> QUALITY
+    HASH --> DOCS
+    NORMALIZE --> IND
+    NORMALIZE --> OBS
+    QUALITY --> RUN
+
+    NORMALIZE --> SQLITEOP
+    NORMALIZE --> SQLITEMART
+    SQLITEOP -->|migration idempotente| OP
+    SQLITEMART -->|migration analytique| WH
+
+    BDFDATA --> FACTBDF
+    INSEE --> FACTINSEE
+    NORMALIZE --> DIMS
+    DIMS --> FACTBDF
+    DIMS --> FACTINSEE
+    DIMS --> OVERRIDE
+
+    OBS --> CALC
+    FACTBDF --> CALC
+    FACTINSEE --> CALC
+    CONFIG --> CALC
+    CALC --> SCORES
+    CALC --> DETAILS
+
+    OBS --> VIEWS
+    RUN --> VIEWS
+    FACTINSEE --> VIEWS
+    SCORES --> VIEWS
+    DETAILS --> VIEWS
+    VIEWS --> API
+    VIEWS --> SQLAGENT
+
+    MANIFEST --> RAGDJANGO
+    MANIFEST --> RAGAPI
+    RAGDJANGO --> CONV
+    RAGAPI --> CONV
+    API --> CONV
+
+    OP --> BACKUP
+    WH --> BACKUP
+    RAG --> BACKUP
+    BACKUP --> RESTORE
+    SQLAGENT --> MONITOR
+    RUN --> MONITOR
+    CONV --> RETENTION
+
+    classDef source fill:#f7f7f7,stroke:#666
+    classDef operational fill:#e8f4ff,stroke:#2176ae
+    classDef analytical fill:#eef8e8,stroke:#4c8c2b
+    classDef sensitive fill:#fff0f0,stroke:#b33
+    class BDFPDF,BDFDATA,INSEE,MANIFEST source
+    class DOCS,IND,OBS,RUN operational
+    class DIMS,FACTBDF,FACTINSEE,OVERRIDE,CONFIG,CALC,SCORES,DETAILS,VIEWS analytical
+    class CONV,RETENTION sensitive

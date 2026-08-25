@@ -1,0 +1,300 @@
+// MLD simplifié dérivé du MPD PostgreSQL du 25 août 2026.
+// Les références ci-dessous correspondent à des FK physiques, sauf notes explicites.
+
+Project surendettement_mld {
+  database_type: "Relationnel logique"
+  Note: "Les objets techniques, vues et attributs d'exploitation sont documentés dans le MPD."
+}
+
+Table region {
+  code string [pk]
+  nom string [unique, not null]
+  metropolitaine boolean [not null]
+}
+
+Table departement {
+  code string [pk]
+  nom string
+  code_region string [note: "Lien logique vers region.code, non contraint par FK dans PostgreSQL"]
+}
+
+Table periode {
+  cle string [pk]
+  annee integer [not null]
+  mois integer
+  granularite string [not null]
+}
+
+Table indicateur_analytique {
+  cle string [pk]
+  systeme_source string [not null]
+  code string [not null]
+  nom string
+  groupe string
+  unite string
+  regle_agregation string
+}
+
+Table fait_bdf {
+  periode_reference string [not null]
+  annee integer [not null]
+  mois integer [not null]
+  code_departement string [not null]
+  cle_indicateur string [not null]
+  valeur decimal [not null]
+  source string
+  indexes { (periode_reference, code_departement, cle_indicateur) [unique] }
+}
+
+Table fait_insee {
+  annee integer [not null]
+  code_departement string [not null]
+  cle_indicateur string [not null]
+  valeur decimal [not null]
+  source string
+  indexes { (annee, code_departement, cle_indicateur) [unique] }
+}
+
+Table correction_macro {
+  id integer [pk]
+  cle_periode string [not null]
+  code_departement string [not null]
+  cle_indicateur string [not null]
+  valeur decimal [not null]
+  justification string
+}
+
+Table document_source {
+  id integer [pk]
+  source string [not null]
+  type_publication string [not null]
+  code_region string [not null]
+  periode_reference string [not null]
+  empreinte string [unique, not null]
+  statut_extraction string [not null]
+  emplacement string [not null]
+}
+
+Table indicateur_operationnel {
+  id integer [pk]
+  code string [unique, not null]
+  libelle string [not null]
+  categorie string
+  unite string
+}
+
+Table observation {
+  id integer [pk]
+  document_id integer [not null]
+  indicateur_id integer [not null]
+  cle_idempotence string [unique, not null]
+  niveau_geographique string [not null]
+  code_geographique string
+  periode_reference string [not null]
+  valeur_numerique decimal
+  valeur_texte string
+  unite string
+  confiance decimal
+}
+
+Table execution_pipeline {
+  id integer [pk]
+  nom_pipeline string [not null]
+  statut string [not null]
+  debut datetime [not null]
+  fin datetime
+  configuration json [not null]
+  rapport_qualite json [not null]
+  erreur string
+}
+
+Table modele_risque {
+  id integer [pk]
+  code string [not null]
+  version string [not null]
+  nom string [not null]
+  couverture_minimale decimal [not null]
+  actif boolean [not null]
+  configuration json [not null]
+  indexes { (code, version) [unique] }
+}
+
+Table configuration_indicateur {
+  id integer [pk]
+  modele_id integer [not null]
+  indicateur_id integer
+  code_indicateur string [not null]
+  poids decimal [not null]
+  direction string [not null]
+  obligatoire boolean [not null]
+  actif boolean [not null]
+  indexes { (modele_id, code_indicateur) [unique] }
+}
+
+Table score_territorial {
+  id integer [pk]
+  modele_id integer [not null]
+  niveau_geographique string [not null]
+  code_geographique string [not null]
+  periode_reference string [not null]
+  score decimal
+  niveau_risque string
+  couverture decimal [not null]
+  statut string [not null]
+  indexes { (modele_id, niveau_geographique, code_geographique, periode_reference) [unique] }
+}
+
+Table detail_score {
+  id integer [pk]
+  score_id integer [not null]
+  indicateur_id integer
+  observation_source_id integer
+  code_indicateur string [not null]
+  valeur_brute decimal [not null]
+  valeur_normalisee decimal [not null]
+  poids_effectif decimal [not null]
+  contribution decimal [not null]
+  indexes { (score_id, code_indicateur) [unique] }
+}
+
+Table utilisateur {
+  id integer [pk]
+  identifiant string [unique, not null]
+  email string
+  actif boolean [not null]
+  Note: "Nom, prénom, courriel, mot de passe haché et connexions sont des données personnelles."
+}
+
+Table role {
+  id integer [pk]
+  nom string [unique, not null]
+}
+
+Table permission {
+  id integer [pk]
+  code string [not null]
+}
+
+Table utilisateur_role {
+  utilisateur_id integer [not null]
+  role_id integer [not null]
+  indexes { (utilisateur_id, role_id) [unique] }
+}
+
+Table role_permission {
+  role_id integer [not null]
+  permission_id integer [not null]
+  indexes { (role_id, permission_id) [unique] }
+}
+
+Table utilisateur_permission {
+  utilisateur_id integer [not null]
+  permission_id integer [not null]
+  indexes { (utilisateur_id, permission_id) [unique] }
+}
+
+Table conversation {
+  id integer [pk]
+  utilisateur_id integer [not null]
+  titre string [not null]
+  type string [not null]
+  cree_le datetime [not null]
+  modifie_le datetime [not null]
+}
+
+Table message_conversation {
+  id integer [pk]
+  conversation_id integer [not null]
+  role string [not null]
+  contenu string [not null]
+  sql_genere string
+  citations json [not null]
+  metadonnees_reponse json [not null]
+  feedback string
+  cree_le datetime [not null]
+  Note: "Le contenu et le SQL peuvent contenir des informations personnelles ou sensibles."
+}
+
+Table source_rag {
+  id integer [pk]
+  nom string [unique, not null]
+  editeur string
+  url string
+}
+
+Table document_rag {
+  id integer [pk]
+  source_id integer [not null]
+  identifiant string [unique, not null]
+  titre string [not null]
+  type string [not null]
+  actif boolean [not null]
+  metadonnees json [not null]
+}
+
+Table version_document_rag {
+  id integer [pk]
+  document_id integer [not null]
+  version string [not null]
+  empreinte string [not null]
+  approuve_le datetime [not null]
+  indexes { (document_id, empreinte) [unique] }
+}
+
+Table fragment_rag {
+  id integer [pk]
+  version_document_id integer [not null]
+  ordre integer [not null]
+  contenu string [not null]
+  empreinte string [not null]
+  indexes { (version_document_id, ordre) [unique] }
+}
+
+Table fragment_corpus_assistant {
+  id string [pk]
+  source_id string [not null]
+  ordre integer [not null]
+  contenu string [not null]
+  empreinte_source string [not null]
+  actif boolean [not null]
+  Note: "Deuxième implémentation RAG dans le schéma PostgreSQL assistant ; rapprochement à valider."
+}
+
+Table execution_sql {
+  id uuid [pk]
+  requete_id uuid [not null]
+  acteur_id string
+  question string [not null]
+  sql_genere string [not null]
+  statut_validation string [not null]
+  duree_ms integer
+  nombre_lignes integer
+  cree_le datetime [not null]
+}
+
+Ref: fait_bdf.code_departement > departement.code
+Ref: fait_bdf.cle_indicateur > indicateur_analytique.cle
+Ref: fait_insee.code_departement > departement.code
+Ref: fait_insee.cle_indicateur > indicateur_analytique.cle
+Ref: correction_macro.cle_periode > periode.cle
+Ref: correction_macro.code_departement > departement.code
+Ref: correction_macro.cle_indicateur > indicateur_analytique.cle
+Ref: observation.document_id > document_source.id
+Ref: observation.indicateur_id > indicateur_operationnel.id
+Ref: configuration_indicateur.modele_id > modele_risque.id
+Ref: configuration_indicateur.indicateur_id > indicateur_operationnel.id
+Ref: score_territorial.modele_id > modele_risque.id
+Ref: detail_score.score_id > score_territorial.id
+Ref: detail_score.indicateur_id > indicateur_operationnel.id
+Ref: detail_score.observation_source_id > observation.id
+Ref: utilisateur_role.utilisateur_id > utilisateur.id
+Ref: utilisateur_role.role_id > role.id
+Ref: role_permission.role_id > role.id
+Ref: role_permission.permission_id > permission.id
+Ref: utilisateur_permission.utilisateur_id > utilisateur.id
+Ref: utilisateur_permission.permission_id > permission.id
+Ref: conversation.utilisateur_id > utilisateur.id
+Ref: message_conversation.conversation_id > conversation.id
+Ref: document_rag.source_id > source_rag.id
+Ref: version_document_rag.document_id > document_rag.id
+Ref: fragment_rag.version_document_id > version_document_rag.id

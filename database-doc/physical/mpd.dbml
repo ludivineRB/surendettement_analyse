@@ -1,0 +1,808 @@
+// Generated from PostgreSQL catalogs; do not edit manually.
+// Source schemas: assistant, public. Temporary schemas are inventoried separately.
+
+Table "assistant"."corpus_chunks" {
+  "chunk_id" character(64) [pk, not null]
+  "source_id" character varying(200) [unique, not null]
+  "source_url" text [not null]
+  "source_title" text [not null]
+  "publisher" character varying(100) [not null]
+  "reference_period" character varying(100) [not null]
+  "geographic_scope" character varying(200) [not null]
+  "section" text [not null]
+  "ordinal" integer [unique, not null]
+  "content" text [not null]
+  "content_sha256" character(64) [not null]
+  "source_sha256" character(64) [unique, not null]
+  "is_active" boolean [not null, note: "default: true"]
+  "indexed_at" timestamp_with_time_zone [not null, note: "default: CURRENT_TIMESTAMP"]
+  "search_vector" tsvector [note: "default: ((setweight(to_tsvector('french'::regconfig, COALESCE(source_title, ''::text)), 'A'::\"char\") || setweight(to_tsvector('french'::regconfig, COALESCE(section, ''::text)), 'A'::\"char\")) || setweight(to_tsvector('french'::regconfig, COALESCE(content, ''::text)), 'B'::\"char\"))"]
+  Note: "PostgreSQL table; corpus_chunks_ordinal_check: CHECK (ordinal >= 0)"
+  indexes {
+    (search_vector) [name: "ix_assistant_chunks_search", note: "using gin"]
+    (source_id, is_active) [name: "ix_assistant_chunks_source_active", note: "using btree"]
+  }
+}
+
+Table "assistant"."schema_migrations" {
+  "version" character varying(64) [pk, not null]
+  "applied_at" timestamp_with_time_zone [not null, note: "default: CURRENT_TIMESTAMP"]
+  Note: "PostgreSQL table"
+}
+
+Table "assistant"."sql_executions" {
+  "execution_id" uuid [pk, not null]
+  "request_id" uuid [not null]
+  "actor_id" character varying(128)
+  "question" text [not null]
+  "interpretation_json" text [not null, note: "default: '{}'::text"]
+  "schema_version" character varying(64) [not null]
+  "generated_sql" text [not null]
+  "validation_status" character varying(32) [not null]
+  "validation_error" character varying(512)
+  "duration_ms" integer
+  "row_count" integer
+  "plan_cost" double_precision
+  "prompt_version" character varying(64) [not null]
+  "model_version" character varying(128) [not null]
+  "created_at" timestamp_with_time_zone [not null, note: "default: CURRENT_TIMESTAMP"]
+  Note: "PostgreSQL table"
+  indexes {
+    (actor_id, created_at) [name: "ix_assistant_sql_executions_actor", note: "using btree"]
+    (request_id, created_at) [name: "ix_assistant_sql_executions_request", note: "using btree"]
+  }
+}
+
+Table "public"."analytics_macro_regions" {
+  "reference_year" integer
+  "region_name" character varying(255)
+  "indicator_code" text
+  "indicator_name" text
+  "indicator_group" text
+  "aggregation_rule" text
+  "value_numeric" double_precision
+  Note: "PostgreSQL view"
+}
+
+Table "public"."analytics_model_comparisons" {
+  "geographic_level" character varying(32)
+  "geographic_code" character varying(64)
+  "geographic_name" character varying(255)
+  "reference_period" character varying(16)
+  "model_code" character varying(128)
+  "version_a" character varying(64)
+  "version_b" character varying(64)
+  "score_a" numeric(12,8)
+  "score_b" numeric(12,8)
+  "score_change" numeric
+  Note: "PostgreSQL view"
+}
+
+Table "public"."analytics_observations" {
+  "id" integer
+  "indicator_code" character varying(128)
+  "indicator_label" character varying(512)
+  "geographic_level" character varying(64)
+  "geographic_code" character varying(64)
+  "geographic_name" character varying(255)
+  "region_code" character varying(16)
+  "reference_period" character varying(7)
+  "value_numeric" double_precision
+  "unit" character varying(64)
+  "observation_type" character varying(64)
+  "comparison_period" character varying(32)
+  "variation_numeric" double_precision
+  "variation_unit" character varying(64)
+  "confidence_score" double_precision
+  "updated_at" character varying(32)
+  Note: "PostgreSQL view"
+}
+
+Table "public"."analytics_pipeline_status" {
+  "id" integer
+  "pipeline_name" character varying(128)
+  "status" character varying(32)
+  "started_at" character varying(32)
+  "finished_at" character varying(32)
+  Note: "PostgreSQL view"
+}
+
+Table "public"."analytics_risk_scores" {
+  "id" integer
+  "geographic_level" character varying(32)
+  "geographic_code" character varying(64)
+  "geographic_name" character varying(255)
+  "reference_period" character varying(16)
+  "score" numeric(12,8)
+  "risk_level" character varying(32)
+  "coverage_ratio" numeric(8,6)
+  "status" character varying(32)
+  "model_code" character varying(128)
+  "model_version" character varying(64)
+  "model_is_active" boolean
+  "calculated_at" character varying(32)
+  Note: "PostgreSQL view"
+}
+
+Table "public"."analytics_score_factors" {
+  "id" integer
+  "geographic_level" character varying(32)
+  "geographic_code" character varying(64)
+  "geographic_name" character varying(255)
+  "reference_period" character varying(16)
+  "model_code" character varying(128)
+  "model_version" character varying(64)
+  "indicator_code" character varying(128)
+  "raw_value" numeric(20,8)
+  "unit" character varying(64)
+  "normalized_value" numeric(12,8)
+  "configured_weight" numeric(12,8)
+  "effective_weight" numeric(12,8)
+  "contribution" numeric(12,8)
+  "direction" character varying(16)
+  Note: "PostgreSQL view"
+}
+
+Table "public"."assistant_conversation" {
+  "id" bigint [pk, not null]
+  "title" character varying(200) [not null]
+  "created_at" timestamp_with_time_zone [not null]
+  "updated_at" timestamp_with_time_zone [not null]
+  "user_id" integer [not null]
+  "kind" character varying(16) [not null]
+  Note: "PostgreSQL table"
+  indexes {
+    (user_id) [name: "assistant_conversation_user_id_d68b3caa", note: "using btree"]
+  }
+}
+
+Table "public"."assistant_conversationmessage" {
+  "id" bigint [pk, not null]
+  "role" character varying(16) [not null]
+  "content" text [not null]
+  "method" character varying(16) [not null]
+  "request_id" uuid
+  "citations" jsonb [not null]
+  "created_at" timestamp_with_time_zone [not null]
+  "conversation_id" bigint [not null]
+  "category" character varying(48) [not null]
+  "response_metadata" jsonb [not null]
+  "generated_sql" text [not null]
+  "feedback" character varying(16) [not null]
+  Note: "PostgreSQL table"
+  indexes {
+    (conversation_id) [name: "assistant_conversationmessage_conversation_id_e3ed1e9d", note: "using btree"]
+  }
+}
+
+Table "public"."assistant_ragchunk" {
+  "id" bigint [pk, not null]
+  "ordinal" integer [unique, not null]
+  "title" character varying(300) [not null]
+  "section" character varying(500) [not null]
+  "content" text [not null]
+  "content_sha256" character varying(64) [not null]
+  "page_number" integer
+  "territory" character varying(200) [not null]
+  "reference_period" character varying(32) [not null]
+  "indicator_code" character varying(120) [not null]
+  "source_url" character varying(200) [not null]
+  "search_vector" tsvector
+  "created_at" timestamp_with_time_zone [not null]
+  "document_version_id" bigint [unique, not null]
+  Note: "PostgreSQL table; assistant_ragchunk_ordinal_check: CHECK (ordinal >= 0); assistant_ragchunk_page_number_check: CHECK (page_number >= 0)"
+  indexes {
+    (document_version_id) [name: "assistant_ragchunk_document_version_id_fa53b364", note: "using btree"]
+    (search_vector) [name: "ix_rag_chunk_search", note: "using gin"]
+  }
+}
+
+Table "public"."assistant_ragdocument" {
+  "id" bigint [pk, not null]
+  "slug" character varying(200) [unique, not null]
+  "title" character varying(300) [not null]
+  "document_type" character varying(32) [not null]
+  "source_url" character varying(200) [not null]
+  "is_active" boolean [not null]
+  "metadata" jsonb [not null]
+  "created_at" timestamp_with_time_zone [not null]
+  "updated_at" timestamp_with_time_zone [not null]
+  "source_id" bigint [not null]
+  Note: "PostgreSQL table"
+  indexes {
+    (slug varchar_pattern_ops) [name: "assistant_ragdocument_slug_b1b2c563_like", note: "using btree"]
+    (source_id) [name: "assistant_ragdocument_source_id_7cb0f5f5", note: "using btree"]
+  }
+}
+
+Table "public"."assistant_ragdocumentversion" {
+  "id" bigint [pk, not null]
+  "version_label" character varying(100) [not null]
+  "source_path" character varying(500) [not null]
+  "sha256" character varying(64) [unique, not null]
+  "approved_at" timestamp_with_time_zone [not null]
+  "chunking_algorithm_version" character varying(100) [not null]
+  "indexed_at" timestamp_with_time_zone [not null]
+  "document_id" bigint [unique, not null]
+  Note: "PostgreSQL table"
+  indexes {
+    (document_id) [name: "assistant_ragdocumentversion_document_id_1ab70475", note: "using btree"]
+  }
+}
+
+Table "public"."assistant_ragindexrun" {
+  "id" bigint [pk, not null]
+  "status" character varying(16) [not null]
+  "manifest_path" character varying(500) [not null]
+  "chunking_algorithm_version" character varying(100) [not null]
+  "started_at" timestamp_with_time_zone [not null]
+  "finished_at" timestamp_with_time_zone
+  "documents_created" integer [not null]
+  "versions_created" integer [not null]
+  "documents_skipped" integer [not null]
+  "chunks_created" integer [not null]
+  "error_message" text [not null]
+  Note: "PostgreSQL table; assistant_ragindexrun_chunks_created_check: CHECK (chunks_created >= 0); assistant_ragindexrun_documents_created_check: CHECK (documents_created >= 0); assistant_ragindexrun_documents_skipped_check: CHECK (documents_skipped >= 0); assistant_ragindexrun_versions_created_check: CHECK (versions_created >= 0)"
+}
+
+Table "public"."assistant_ragsource" {
+  "id" bigint [pk, not null]
+  "name" character varying(200) [unique, not null]
+  "publisher" character varying(200) [not null]
+  "base_url" character varying(200) [not null]
+  "created_at" timestamp_with_time_zone [not null]
+  Note: "PostgreSQL table"
+  indexes {
+    (name varchar_pattern_ops) [name: "assistant_ragsource_name_de4536d1_like", note: "using btree"]
+  }
+}
+
+Table "public"."auth_group" {
+  "id" integer [pk, not null]
+  "name" character varying(150) [unique, not null]
+  Note: "PostgreSQL table"
+  indexes {
+    (name varchar_pattern_ops) [name: "auth_group_name_a6ea08ec_like", note: "using btree"]
+  }
+}
+
+Table "public"."auth_group_permissions" {
+  "id" bigint [pk, not null]
+  "group_id" integer [unique, not null]
+  "permission_id" integer [unique, not null]
+  Note: "PostgreSQL table"
+  indexes {
+    (group_id) [name: "auth_group_permissions_group_id_b120cbf9", note: "using btree"]
+    (permission_id) [name: "auth_group_permissions_permission_id_84c5c92e", note: "using btree"]
+  }
+}
+
+Table "public"."auth_permission" {
+  "id" integer [pk, not null]
+  "name" character varying(255) [not null]
+  "content_type_id" integer [unique, not null]
+  "codename" character varying(100) [unique, not null]
+  Note: "PostgreSQL table"
+  indexes {
+    (content_type_id) [name: "auth_permission_content_type_id_2f476e4b", note: "using btree"]
+  }
+}
+
+Table "public"."auth_user" {
+  "id" integer [pk, not null]
+  "password" character varying(128) [not null]
+  "last_login" timestamp_with_time_zone
+  "is_superuser" boolean [not null]
+  "username" character varying(150) [unique, not null]
+  "first_name" character varying(150) [not null]
+  "last_name" character varying(150) [not null]
+  "email" character varying(254) [not null]
+  "is_staff" boolean [not null]
+  "is_active" boolean [not null]
+  "date_joined" timestamp_with_time_zone [not null]
+  Note: "PostgreSQL table"
+  indexes {
+    (username varchar_pattern_ops) [name: "auth_user_username_6821ab7c_like", note: "using btree"]
+  }
+}
+
+Table "public"."auth_user_groups" {
+  "id" bigint [pk, not null]
+  "user_id" integer [unique, not null]
+  "group_id" integer [unique, not null]
+  Note: "PostgreSQL table"
+  indexes {
+    (group_id) [name: "auth_user_groups_group_id_97559544", note: "using btree"]
+    (user_id) [name: "auth_user_groups_user_id_6a12ed8b", note: "using btree"]
+  }
+}
+
+Table "public"."auth_user_user_permissions" {
+  "id" bigint [pk, not null]
+  "user_id" integer [unique, not null]
+  "permission_id" integer [unique, not null]
+  Note: "PostgreSQL table"
+  indexes {
+    (permission_id) [name: "auth_user_user_permissions_permission_id_1fbb5f2c", note: "using btree"]
+    (user_id) [name: "auth_user_user_permissions_user_id_a95ead1b", note: "using btree"]
+  }
+}
+
+Table "public"."dim_department" {
+  "departement_code" text [pk, not null]
+  "departement_name" text
+  "region_name" text
+  "is_metropolitan_scope" integer [not null]
+  "region_code" text
+  Note: "PostgreSQL table"
+  indexes {
+    (region_code) [name: "idx_department_region_code", note: "using btree"]
+  }
+}
+
+Table "public"."dim_indicator" {
+  "indicator_key" text [pk, not null]
+  "source_system" text [not null]
+  "indicator_code" text [not null]
+  "indicator_name" text
+  "indicator_group" text
+  "unit" text
+  "aggregation_rule" text
+  Note: "PostgreSQL table"
+}
+
+Table "public"."dim_period" {
+  "period_key" character varying(16) [pk, not null]
+  "reference_year" integer [not null]
+  "reference_month_number" integer
+  "granularity" character varying(16) [not null]
+  Note: "PostgreSQL table; ck_dim_period_granularity: CHECK (granularity::text = ANY (ARRAY['month'::character varying, 'year'::character varying]::text[]))"
+}
+
+Table "public"."dim_region" {
+  "region_code" character varying(16) [pk, not null]
+  "region_name" character varying(255) [unique, not null]
+  "is_metropolitan_scope" boolean [not null]
+  Note: "PostgreSQL table"
+}
+
+Table "public"."django_admin_log" {
+  "id" integer [pk, not null]
+  "action_time" timestamp_with_time_zone [not null]
+  "object_id" text
+  "object_repr" character varying(200) [not null]
+  "action_flag" smallint [not null]
+  "change_message" text [not null]
+  "content_type_id" integer
+  "user_id" integer [not null]
+  Note: "PostgreSQL table; django_admin_log_action_flag_check: CHECK (action_flag >= 0)"
+  indexes {
+    (content_type_id) [name: "django_admin_log_content_type_id_c4bce8eb", note: "using btree"]
+    (user_id) [name: "django_admin_log_user_id_c564eba6", note: "using btree"]
+  }
+}
+
+Table "public"."django_content_type" {
+  "id" integer [pk, not null]
+  "app_label" character varying(100) [unique, not null]
+  "model" character varying(100) [unique, not null]
+  Note: "PostgreSQL table"
+}
+
+Table "public"."django_migrations" {
+  "id" bigint [pk, not null]
+  "app" character varying(255) [not null]
+  "name" character varying(255) [not null]
+  "applied" timestamp_with_time_zone [not null]
+  Note: "PostgreSQL table"
+}
+
+Table "public"."django_session" {
+  "session_key" character varying(40) [pk, not null]
+  "session_data" text [not null]
+  "expire_date" timestamp_with_time_zone [not null]
+  Note: "PostgreSQL table"
+  indexes {
+    (expire_date) [name: "django_session_expire_date_a5c62663", note: "using btree"]
+    (session_key varchar_pattern_ops) [name: "django_session_session_key_c0390e0f_like", note: "using btree"]
+  }
+}
+
+Table "public"."fact_bdf_statinfo" {
+  "reference_period" text [not null]
+  "reference_year" integer [not null]
+  "reference_month_number" integer [not null]
+  "departement_code" text [not null]
+  "indicator_key" text [not null]
+  "value" real [not null]
+  "source_file" text
+  "pipeline_version" text
+  Note: "PostgreSQL table"
+  indexes {
+    (departement_code, reference_period) [name: "idx_bdf_department_period", note: "using btree"]
+    (indicator_key) [name: "idx_bdf_indicator", note: "using btree"]
+  }
+}
+
+Table "public"."fact_insee_macro" {
+  "reference_year" integer [not null]
+  "departement_code" text [not null]
+  "indicator_key" text [not null]
+  "value" real [not null]
+  "source_dataset" text
+  "pipeline_version" text
+  Note: "PostgreSQL table"
+  indexes {
+    (departement_code, reference_year) [name: "idx_insee_department_year", note: "using btree"]
+    (indicator_key) [name: "idx_insee_indicator", note: "using btree"]
+  }
+}
+
+Table "public"."fact_macro_override" {
+  "id" integer [pk, not null]
+  "period_key" text [not null]
+  "reference_year" integer [not null]
+  "departement_code" text [not null]
+  "indicator_key" text [not null]
+  "indicator_code" text [not null]
+  "indicator_name" text
+  "indicator_group" text
+  "value" real [not null]
+  "source_note" text
+  "created_at" text [not null]
+  "updated_at" text [not null]
+  Note: "PostgreSQL table"
+  indexes {
+    (period_key, departement_code, indicator_key) [name: "idx_macro_override_lookup", note: "using btree"]
+  }
+}
+
+Table "public"."fact_surendettement" {
+  "reference_year" integer [not null]
+  "departement_code" text [not null]
+  "indicator_key" text [not null]
+  "value" real [not null]
+  "source_file" text
+  Note: "PostgreSQL table"
+  indexes {
+    (departement_code, reference_year) [name: "idx_surendettement_department_year", note: "using btree"]
+    (indicator_key) [name: "idx_surendettement_indicator", note: "using btree"]
+  }
+}
+
+Table "public"."indicators" {
+  "id" integer [pk, not null]
+  "code" character varying(128) [unique, not null]
+  "label" character varying(512) [not null]
+  "category" character varying(255)
+  "description" text
+  "default_unit" character varying(64)
+  "created_at" character varying(32) [not null]
+  "updated_at" character varying(32) [not null]
+  Note: "PostgreSQL table"
+  indexes {
+    (code) [name: "ix_indicators_code", note: "using btree"]
+  }
+}
+
+Table "public"."observations" {
+  "id" integer [pk, not null]
+  "source_document_id" integer [not null]
+  "indicator_id" integer [not null]
+  "idempotence_key" character varying(64) [unique, not null]
+  "indicator_code" character varying(128) [not null]
+  "region_code" character varying(16) [not null]
+  "reference_period" character varying(7) [not null]
+  "geographic_level" character varying(64) [not null]
+  "geographic_code" character varying(64)
+  "geographic_name" character varying(255)
+  "value_numeric" double_precision
+  "value_text" text
+  "unit" character varying(64)
+  "observation_type" character varying(64)
+  "comparison_period" character varying(32)
+  "variation_numeric" double_precision
+  "variation_unit" character varying(64)
+  "page_number" integer
+  "source_label" character varying(512)
+  "source_fragment" text
+  "extraction_method" character varying(64) [not null]
+  "confidence_score" double_precision
+  "created_at" character varying(32) [not null]
+  "updated_at" character varying(32) [not null]
+  Note: "PostgreSQL table"
+  indexes {
+    (indicator_code, geographic_level, reference_period) [name: "ix_observations_code_level_period", note: "using btree"]
+    (geographic_level, reference_period, indicator_id, geographic_code) [name: "ix_observations_geo_period_indicator", note: "using btree"]
+    (idempotence_key) [name: "ix_observations_idempotence_key", note: "using btree"]
+    (indicator_code) [name: "ix_observations_indicator_code", note: "using btree"]
+    (indicator_id) [name: "ix_observations_indicator_id", note: "using btree"]
+    (reference_period, geographic_level, geographic_code) [name: "ix_observations_period_level_code", note: "using btree"]
+    (reference_period) [name: "ix_observations_reference_period", note: "using btree"]
+    (region_code) [name: "ix_observations_region_code", note: "using btree"]
+    (source_document_id) [name: "ix_observations_source_document_id", note: "using btree"]
+  }
+}
+
+Table "public"."pipeline_metadata" {
+  "database_version" text [not null]
+  "source_system" text [not null]
+  "source_path" text [not null]
+  "built_at" text [not null]
+  Note: "PostgreSQL table"
+}
+
+Table "public"."pipeline_runs" {
+  "id" integer [pk, not null]
+  "pipeline_name" character varying(128) [not null]
+  "status" character varying(32) [not null]
+  "started_at" character varying(32) [not null]
+  "finished_at" character varying(32)
+  "configuration_json" text [not null]
+  "step_results_json" text [not null]
+  "quality_report_json" text [not null]
+  "error_message" text
+  Note: "PostgreSQL table; ck_pipeline_runs_status: CHECK (status::text = ANY (ARRAY['running'::character varying, 'success'::character varying, 'failed'::character varying, 'quality_failed'::character varying]::text[]))"
+  indexes {
+    (pipeline_name, started_at) [name: "ix_pipeline_runs_name_started", note: "using btree"]
+    (pipeline_name) [name: "ix_pipeline_runs_pipeline_name", note: "using btree"]
+    (status) [name: "ix_pipeline_runs_status", note: "using btree"]
+  }
+}
+
+Table "public"."risk_score_details" {
+  "id" integer [pk, not null]
+  "risk_score_id" integer [unique, not null]
+  "indicator_id" integer
+  "indicator_code" character varying(128) [unique, not null]
+  "raw_value" numeric(20,8) [not null]
+  "unit" character varying(64)
+  "population_min" numeric(20,8) [not null]
+  "population_max" numeric(20,8) [not null]
+  "normalized_value" numeric(12,8) [not null]
+  "configured_weight" numeric(12,8) [not null]
+  "effective_weight" numeric(12,8) [not null]
+  "contribution" numeric(12,8) [not null]
+  "direction" character varying(16) [not null]
+  "source_observation_id" integer
+  "created_at" character varying(32) [not null]
+  "updated_at" character varying(32) [not null]
+  Note: "PostgreSQL table; ck_risk_score_details_configured_weight: CHECK (configured_weight > 0::numeric); ck_risk_score_details_effective_weight: CHECK (effective_weight > 0::numeric); ck_risk_score_details_normalized: CHECK (normalized_value >= 0::numeric AND normalized_value <= 1::numeric)"
+  indexes {
+    (risk_score_id) [name: "ix_risk_score_details_risk_score_id", note: "using btree"]
+  }
+}
+
+Table "public"."risk_score_indicator_configs" {
+  "id" integer [pk, not null]
+  "risk_score_model_id" integer [unique, not null]
+  "indicator_id" integer
+  "indicator_code" character varying(128) [unique, not null]
+  "logical_code" character varying(128) [not null]
+  "weight" numeric(12,8) [not null]
+  "direction" character varying(16) [not null]
+  "normalization_method" character varying(64) [not null]
+  "fixed_min" numeric(20,8)
+  "fixed_max" numeric(20,8)
+  "expected_unit" character varying(64)
+  "is_required" boolean [not null]
+  "is_active" boolean [not null]
+  "created_at" character varying(32) [not null]
+  "updated_at" character varying(32) [not null]
+  Note: "PostgreSQL table; ck_risk_score_indicator_direction: CHECK (direction::text = ANY (ARRAY['positive'::character varying, 'negative'::character varying]::text[])); ck_risk_score_indicator_weight: CHECK (weight > 0::numeric)"
+  indexes {
+    (indicator_id) [name: "ix_risk_score_indicator_configs_indicator_id", note: "using btree"]
+    (risk_score_model_id) [name: "ix_risk_score_indicator_configs_risk_score_model_id", note: "using btree"]
+  }
+}
+
+Table "public"."risk_score_models" {
+  "id" integer [pk, not null]
+  "code" character varying(128) [unique, not null]
+  "name" character varying(255) [not null]
+  "version" character varying(64) [unique, not null]
+  "description" text
+  "normalization_method" character varying(64) [not null]
+  "minimum_coverage_ratio" numeric(8,6) [not null]
+  "is_active" boolean [not null]
+  "configuration_json" text [not null]
+  "created_at" character varying(32) [not null]
+  "updated_at" character varying(32) [not null]
+  Note: "PostgreSQL table; ck_risk_score_models_coverage: CHECK (minimum_coverage_ratio >= 0::numeric AND minimum_coverage_ratio <= 1::numeric)"
+  indexes {
+    (code) [name: "ix_risk_score_models_code", note: "using btree"]
+    (is_active) [name: "ix_risk_score_models_is_active", note: "using btree"]
+  }
+}
+
+Table "public"."risk_scores" {
+  "id" integer [pk, not null]
+  "risk_score_model_id" integer [unique, not null]
+  "geographic_level" character varying(32) [unique, not null]
+  "geographic_code" character varying(64) [unique, not null]
+  "geographic_name" character varying(255)
+  "reference_period" character varying(16) [unique, not null]
+  "score" numeric(12,8)
+  "risk_level" character varying(32)
+  "coverage_ratio" numeric(8,6) [not null]
+  "status" character varying(32) [not null]
+  "missing_indicators_json" text [not null]
+  "warnings_json" text [not null]
+  "calculated_at" character varying(32) [not null]
+  "created_at" character varying(32) [not null]
+  "updated_at" character varying(32) [not null]
+  Note: "PostgreSQL table; ck_risk_scores_coverage: CHECK (coverage_ratio >= 0::numeric AND coverage_ratio <= 1::numeric); ck_risk_scores_score: CHECK (score IS NULL OR score >= 0::numeric AND score <= 100::numeric); ck_risk_scores_status: CHECK (status::text = ANY (ARRAY['valid'::character varying, 'partial'::character varying, 'insufficient_data'::character varying, 'error'::character varying]::text[]))"
+  indexes {
+    (geographic_level, geographic_code, reference_period) [name: "ix_risk_scores_geo_period", note: "using btree"]
+    (risk_score_model_id, geographic_level, reference_period, score) [name: "ix_risk_scores_model_level_period_score", note: "using btree"]
+    (risk_score_model_id) [name: "ix_risk_scores_risk_score_model_id", note: "using btree"]
+  }
+}
+
+Table "public"."schema_deprecations" {
+  "object_name" text [pk, not null]
+  "object_type" text [not null]
+  "deprecated_since" text [not null]
+  "replacement" text
+  "reason" text [not null]
+  Note: "PostgreSQL table"
+}
+
+Table "public"."schema_migrations" {
+  "version" character varying(64) [pk, not null]
+  "description" character varying(512) [not null]
+  "applied_at" character varying(32) [not null]
+  Note: "PostgreSQL table"
+}
+
+Table "public"."source_documents" {
+  "id" integer [pk, not null]
+  "source_name" character varying(255) [not null]
+  "publication_type" character varying(255) [unique, not null]
+  "region_code" character varying(16) [unique, not null]
+  "region_name" character varying(255) [not null]
+  "reference_period" character varying(7) [unique, not null]
+  "publication_date" character varying(32)
+  "updated_date" character varying(32)
+  "page_url" text [not null]
+  "pdf_url" text [not null]
+  "pdf_filename" character varying(512) [not null]
+  "pdf_sha256" character varying(64) [unique, not null]
+  "pdf_size_bytes" integer
+  "storage_path" text [not null]
+  "http_etag" character varying(255)
+  "http_last_modified" character varying(255)
+  "downloaded_at" character varying(32)
+  "extraction_status" character varying(64) [not null]
+  "extractor_version" character varying(64) [not null]
+  "created_at" character varying(32) [not null]
+  "updated_at" character varying(32) [not null]
+  Note: "PostgreSQL table"
+  indexes {
+    (pdf_sha256) [name: "ix_source_documents_pdf_sha256", note: "using btree"]
+    (reference_period, extraction_status) [name: "ix_source_documents_period_status", note: "using btree"]
+    (publication_type) [name: "ix_source_documents_publication_type", note: "using btree"]
+    (reference_period) [name: "ix_source_documents_reference_period", note: "using btree"]
+    (region_code) [name: "ix_source_documents_region_code", note: "using btree"]
+  }
+}
+
+Table "public"."surendettement_data" {
+  "id" integer [pk, not null]
+  "year" integer
+  "region" character varying(255)
+  "indicator" character varying(255) [not null]
+  "value" double_precision
+  "source_file" character varying(255) [not null]
+  Note: "PostgreSQL table"
+  indexes {
+    (region) [name: "ix_surendettement_data_region", note: "using btree"]
+    (year) [name: "ix_surendettement_data_year", note: "using btree"]
+  }
+}
+
+Table "public"."v_bdf_total_deposits" {
+  "reference_period" text
+  "reference_year" integer
+  "reference_month_number" integer
+  "departement_code" text
+  "departement_name" text
+  "region_name" text
+  "bdf_total_deposits_value" real
+  Note: "PostgreSQL view"
+}
+
+Table "public"."v_bdf_total_deposits_with_insee_macro" {
+  "bdf_reference_period" text
+  "bdf_reference_year" integer
+  "bdf_reference_month_number" integer
+  "departement_code" text
+  "departement_name" text
+  "region_name" text
+  "bdf_total_deposits_value" real
+  "macro_reference_year" integer
+  "macro_indicator_code" text
+  "macro_indicator_name" text
+  "macro_indicator_group" text
+  "macro_value" real
+  Note: "PostgreSQL view"
+}
+
+Table "public"."v_insee_macro_region" {
+  "reference_year" integer
+  "region_code" character varying(16)
+  "region_name" character varying(255)
+  "indicator_code" text
+  "indicator_name" text
+  "indicator_group" text
+  "aggregation_rule" text
+  "value" real
+  Note: "PostgreSQL view"
+}
+
+Table "public"."v_insee_macro_region_selected" {
+  "reference_year" integer
+  "region_code" character varying(16)
+  "region_name" character varying(255)
+  "indicator_code" text
+  "indicator_name" text
+  "indicator_group" text
+  "aggregation_rule" text
+  "value" double_precision
+  Note: "PostgreSQL view"
+}
+
+Table "public"."v_surendettement_annual" {
+  "reference_year" integer
+  "departement_code" text
+  "departement_name" text
+  "region_name" text
+  "surendettement_value" real
+  Note: "PostgreSQL view"
+}
+
+Table "public"."v_surendettement_with_insee_macro" {
+  "reference_year" integer
+  "departement_code" text
+  "departement_name" text
+  "region_name" text
+  "surendettement_value" real
+  "macro_reference_year" integer
+  "macro_indicator_code" text
+  "macro_indicator_name" text
+  "macro_indicator_group" text
+  "macro_value" real
+  Note: "PostgreSQL view"
+}
+
+Ref "assistant_conversati_conversation_id_e3ed1e9d_fk_assistant": "public"."assistant_conversationmessage".("conversation_id") > "public"."assistant_conversation".("id")
+Ref "assistant_conversation_user_id_d68b3caa_fk_auth_user_id": "public"."assistant_conversation".("user_id") > "public"."auth_user".("id")
+Ref "assistant_ragchunk_document_version_id_fa53b364_fk_assistant": "public"."assistant_ragchunk".("document_version_id") > "public"."assistant_ragdocumentversion".("id")
+Ref "assistant_ragdocumen_document_id_1ab70475_fk_assistant": "public"."assistant_ragdocumentversion".("document_id") > "public"."assistant_ragdocument".("id")
+Ref "assistant_ragdocumen_source_id_7cb0f5f5_fk_assistant": "public"."assistant_ragdocument".("source_id") > "public"."assistant_ragsource".("id")
+Ref "auth_group_permissio_permission_id_84c5c92e_fk_auth_perm": "public"."auth_group_permissions".("permission_id") > "public"."auth_permission".("id")
+Ref "auth_group_permissions_group_id_b120cbf9_fk_auth_group_id": "public"."auth_group_permissions".("group_id") > "public"."auth_group".("id")
+Ref "auth_permission_content_type_id_2f476e4b_fk_django_co": "public"."auth_permission".("content_type_id") > "public"."django_content_type".("id")
+Ref "auth_user_groups_group_id_97559544_fk_auth_group_id": "public"."auth_user_groups".("group_id") > "public"."auth_group".("id")
+Ref "auth_user_groups_user_id_6a12ed8b_fk_auth_user_id": "public"."auth_user_groups".("user_id") > "public"."auth_user".("id")
+Ref "auth_user_user_permi_permission_id_1fbb5f2c_fk_auth_perm": "public"."auth_user_user_permissions".("permission_id") > "public"."auth_permission".("id")
+Ref "auth_user_user_permissions_user_id_a95ead1b_fk_auth_user_id": "public"."auth_user_user_permissions".("user_id") > "public"."auth_user".("id")
+Ref "django_admin_log_content_type_id_c4bce8eb_fk_django_co": "public"."django_admin_log".("content_type_id") > "public"."django_content_type".("id")
+Ref "django_admin_log_user_id_c564eba6_fk_auth_user_id": "public"."django_admin_log".("user_id") > "public"."auth_user".("id")
+Ref "fact_bdf_statinfo_departement_code_fkey": "public"."fact_bdf_statinfo".("departement_code") > "public"."dim_department".("departement_code")
+Ref "fact_bdf_statinfo_indicator_key_fkey": "public"."fact_bdf_statinfo".("indicator_key") > "public"."dim_indicator".("indicator_key")
+Ref "fact_insee_macro_departement_code_fkey": "public"."fact_insee_macro".("departement_code") > "public"."dim_department".("departement_code")
+Ref "fact_insee_macro_indicator_key_fkey": "public"."fact_insee_macro".("indicator_key") > "public"."dim_indicator".("indicator_key")
+Ref "fact_macro_override_departement_code_fkey": "public"."fact_macro_override".("departement_code") > "public"."dim_department".("departement_code")
+Ref "fact_macro_override_indicator_key_fkey": "public"."fact_macro_override".("indicator_key") > "public"."dim_indicator".("indicator_key")
+Ref "fact_macro_override_period_key_fkey": "public"."fact_macro_override".("period_key") > "public"."dim_period".("period_key")
+Ref "fact_surendettement_departement_code_fkey": "public"."fact_surendettement".("departement_code") > "public"."dim_department".("departement_code")
+Ref "fact_surendettement_indicator_key_fkey": "public"."fact_surendettement".("indicator_key") > "public"."dim_indicator".("indicator_key")
+Ref "observations_indicator_id_fkey": "public"."observations".("indicator_id") > "public"."indicators".("id")
+Ref "observations_source_document_id_fkey": "public"."observations".("source_document_id") > "public"."source_documents".("id")
+Ref "risk_score_details_indicator_id_fkey": "public"."risk_score_details".("indicator_id") > "public"."indicators".("id")
+Ref "risk_score_details_risk_score_id_fkey": "public"."risk_score_details".("risk_score_id") > "public"."risk_scores".("id")
+Ref "risk_score_details_source_observation_id_fkey": "public"."risk_score_details".("source_observation_id") > "public"."observations".("id")
+Ref "risk_score_indicator_configs_indicator_id_fkey": "public"."risk_score_indicator_configs".("indicator_id") > "public"."indicators".("id")
+Ref "risk_score_indicator_configs_risk_score_model_id_fkey": "public"."risk_score_indicator_configs".("risk_score_model_id") > "public"."risk_score_models".("id")
+Ref "risk_scores_risk_score_model_id_fkey": "public"."risk_scores".("risk_score_model_id") > "public"."risk_score_models".("id")
