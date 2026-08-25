@@ -294,7 +294,7 @@ def build_dbml(metadata: dict) -> str:
         kind = {"v": "view", "m": "materialized view", "p": "partitioned table"}.get(
             relation["relation_kind"], "table"
         )
-        output.append(f'Table "{schema}"."{table}" {{')
+        output.append(f"Table {schema}.{table} {{")
         for column in columns[key]:
             flags = []
             name = column["column_name"]
@@ -309,7 +309,7 @@ def build_dbml(metadata: dict) -> str:
                 escaped = default.replace('"', '\\"')
                 flags.append(f'note: "default: {escaped}"')
             suffix = f" [{', '.join(flags)}]" if flags else ""
-            output.append(f'  "{name}" {_dbml_type(column["data_type"])}{suffix}')
+            output.append(f'  {name} {_dbml_type(column["data_type"])}{suffix}')
         notes = [f"PostgreSQL {kind}"]
         notes.extend(
             f'{item["constraint_name"]}: {item["definition"]}'
@@ -338,20 +338,24 @@ def build_dbml(metadata: dict) -> str:
             match = FK_RE.search(item["definition"])
             if not match:
                 continue
-            source_columns = ", ".join(
-                f'"{value.strip().strip(chr(34))}"'
+            source_columns = [
+                value.strip().strip(chr(34))
                 for value in match.group("columns").split(",")
-            )
-            target_columns = ", ".join(
-                f'"{value.strip().strip(chr(34))}"'
+            ]
+            target_columns = [
+                value.strip().strip(chr(34))
                 for value in match.group("targets").split(",")
-            )
+            ]
             target_schema = match.group("schema") or schema
-            references.append(
-                f'Ref "{item["constraint_name"]}": '
-                f'"{schema}"."{table}".({source_columns}) > '
-                f'"{target_schema}"."{match.group("table")}".({target_columns})'
-            )
+            for position, (source_column, target_column) in enumerate(
+                zip(source_columns, target_columns, strict=True), start=1
+            ):
+                suffix = f"_{position}" if len(source_columns) > 1 else ""
+                references.append(
+                    f'Ref {item["constraint_name"]}{suffix}: '
+                    f'{schema}.{table}.{source_column} > '
+                    f'{target_schema}.{match.group("table")}.{target_column}'
+                )
     output.extend(sorted(references))
     return "\n".join(output).rstrip() + "\n"
 
