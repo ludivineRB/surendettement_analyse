@@ -1,0 +1,60 @@
+flowchart LR
+    subgraph REF[Référentiels logiques]
+        TERR[Territoire]
+        PERIOD[Période]
+        IND[Indicateur]
+    end
+    subgraph ACQ[Acquisition]
+        DOC[Document source]
+        OBS[Observation]
+        RUN[Exécution pipeline]
+    end
+    subgraph WH[Analyse]
+        FACT[Fait analytique]
+    end
+    subgraph SCORE[Scoring territorial]
+        MODEL[Modèle de risque]
+        CONFIG[Configuration indicateur]
+        SC[Score territorial]
+        DETAIL[Détail de score]
+    end
+    subgraph APP[Application]
+        USER[Utilisateur]
+        AUTH[Habilitation]
+        CONV[Conversation]
+        MSG[Message]
+    end
+    subgraph ASSIST[Assistant]
+        RDOC[Document RAG]
+        CHUNK[Fragment RAG]
+        SQLEXEC[Exécution SQL]
+    end
+
+    DOC --> OBS
+    IND --> OBS
+    TERR -. lien logique .-> OBS
+    PERIOD -. lien logique .-> OBS
+    RUN -. produit et contrôle .-> OBS
+    IND --> FACT
+    TERR -. lien logique .-> FACT
+    PERIOD -. lien logique .-> FACT
+    MODEL --> CONFIG
+    IND --> CONFIG
+    MODEL --> SC
+    TERR -. lien logique .-> SC
+    PERIOD -. lien logique .-> SC
+    SC --> DETAIL
+    IND --> DETAIL
+    OBS --> DETAIL
+    USER --> AUTH
+    USER --> CONV
+    CONV --> MSG
+    RDOC --> CHUNK
+    USER -. acteur non contraint .-> SQLEXEC
+
+    classDef logical fill:#eef8e8,stroke:#4c8c2b
+    classDef app fill:#e8f4ff,stroke:#2176ae
+    classDef sensitive fill:#fff0f0,stroke:#b33
+    class TERR,PERIOD,IND,FACT,MODEL,CONFIG,SC,DETAIL logical
+    class DOC,OBS,RUN,RDOC,CHUNK,SQLEXEC app
+    class USER,AUTH,CONV,MSG sensitive

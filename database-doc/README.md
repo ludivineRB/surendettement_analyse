@@ -8,6 +8,7 @@ aucune ligne métier, aucun mot de passe et aucune chaîne de connexion ne sont
 ## Schémas directement consultables
 
 - [MCD métier](diagrams/mcd.svg)
+- [MLD global simplifié](diagrams/mld.svg)
 - [Architecture globale et domaines](diagrams/global.svg)
 - [Flux de données et traitements](diagrams/data-flow.svg)
 
