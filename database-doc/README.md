@@ -66,5 +66,7 @@ nettoyage de ces volumes.
   `public.assistant_rag*` sont dépréciées depuis le 25/08/2026 et conservées
   pour audit.
 
-Les inventaires détaillés, MLD, MCD, dictionnaire, flux et règles de maintenance
-seront ajoutés par lots courts après validation du MPD initial.
+Les inventaires détaillés, MLD, MCD, dictionnaire, flux, correspondances avec
+les modèles applicatifs et écarts audités sont disponibles dans ce répertoire.
+La [revue technique](review/technical-review.md) consigne leur contrôle final et
+les réserves qui devront être traitées dans des lots séparés.
