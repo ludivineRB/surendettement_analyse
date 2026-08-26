@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import argparse
 import json
+from decimal import Decimal
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from assistant_api.sql_validation import SQLValidationError, validate_analytical_sql
 
@@ -27,7 +28,10 @@ def evaluate_dataset(dataset: dict[str, Any]) -> dict[str, Any]:
     """Validate the dataset contract and exercise every stored adversarial SQL."""
     contract_errors = _contract_errors(dataset)
     results = []
+    reference_results = []
     for case in dataset.get("cases", []):
+        if case.get("expected_action") == "execute":
+            reference_results.append(_validate_reference_sql(case))
         sql = case.get("adversarial_sql")
         if not isinstance(sql, str) or not sql.strip():
             results.append({"id": case.get("id"), "evaluated": False, "passed": None})
@@ -61,7 +65,14 @@ def evaluate_dataset(dataset: dict[str, Any]) -> dict[str, Any]:
         "refusal_reason_accuracy": (
             sum(bool(result["passed"]) for result in evaluated) / total if total else 0.0
         ),
+        "reference_sql_compliance": (
+            sum(bool(result["passed"]) for result in reference_results)
+            / len(reference_results)
+            if reference_results
+            else 0.0
+        ),
         "evaluated_sql_cases": total,
+        "reference_sql_cases": len(reference_results),
         "dataset_cases": len(results),
     }
     thresholds = dataset.get("offline_thresholds", {})
@@ -78,7 +89,59 @@ def evaluate_dataset(dataset: dict[str, Any]) -> dict[str, Any]:
         "thresholds": thresholds,
         "threshold_checks": threshold_checks,
         "results": results,
+        "reference_results": reference_results,
     }
+
+
+def evaluate_reference_results(
+    dataset: dict[str, Any],
+    execute: Callable[[str], list[dict[str, Any]]],
+) -> list[dict[str, Any]]:
+    """Execute reference queries against a disposable fixture and compare rows."""
+    results = []
+    for case in dataset.get("cases", []):
+        if case.get("expected_action") != "execute":
+            continue
+        actual = _canonical_rows(execute(case["reference_sql"]))
+        expected = _canonical_rows(case["expected_rows"])
+        results.append(
+            {
+                "id": case["id"],
+                "passed": actual == expected,
+                "expected_rows": expected,
+                "actual_rows": actual,
+            }
+        )
+    return results
+
+
+def _validate_reference_sql(case: dict[str, Any]) -> dict[str, Any]:
+    sql = case.get("reference_sql")
+    expected_rows = case.get("expected_rows")
+    if not isinstance(sql, str) or not sql.strip() or not isinstance(expected_rows, list):
+        return {"id": case.get("id"), "passed": False, "reason": "oracle_missing"}
+    try:
+        validated = validate_analytical_sql(sql)
+    except SQLValidationError as exc:
+        return {"id": case.get("id"), "passed": False, "reason": exc.code}
+    expected_view = case.get("expected_view")
+    passed = expected_view in validated.tables
+    return {
+        "id": case.get("id"),
+        "passed": passed,
+        "reason": None if passed else "expected_view_missing",
+    }
+
+
+def _canonical_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    def scalar(value: Any) -> Any:
+        if isinstance(value, Decimal):
+            return float(value)
+        if isinstance(value, float):
+            return round(value, 8)
+        return value
+
+    return [{key: scalar(value) for key, value in row.items()} for row in rows]
 
 
 def _contract_errors(dataset: dict[str, Any]) -> list[str]:
@@ -103,6 +166,10 @@ def _contract_errors(dataset: dict[str, Any]) -> list[str]:
             errors.append(f"case_{index}_invalid_expected_action")
         if case.get("adversarial_sql") and not case.get("reason"):
             errors.append(f"case_{index}_adversarial_reason_required")
+        if case.get("expected_action") == "execute" and (
+            not case.get("reference_sql") or not isinstance(case.get("expected_rows"), list)
+        ):
+            errors.append(f"case_{index}_reference_oracle_required")
     if any(not isinstance(case_id, str) or not case_id for case_id in ids):
         errors.append("case_ids_must_be_non_empty_strings")
     if len(ids) != len(set(ids)):
@@ -130,6 +197,7 @@ def write_reports(report: dict[str, Any], output_dir: Path) -> None:
         f"- Contrat conforme : {metrics['schema_compliance']:.0%}",
         f"- SQL adversariaux bloqués : {metrics['adversarial_block_rate']:.0%}",
         f"- Motifs de refus exacts : {metrics['refusal_reason_accuracy']:.0%}",
+        f"- SQL de référence conformes : {metrics['reference_sql_compliance']:.0%}",
         f"- Cas SQL évalués : {metrics['evaluated_sql_cases']}/{metrics['dataset_cases']}",
         "",
         "## Échecs",
