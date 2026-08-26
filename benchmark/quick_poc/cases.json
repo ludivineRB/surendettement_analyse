@@ -1,0 +1,74 @@
+[
+  {
+    "id": "top_customers",
+    "question": "Quels sont les 5 clients qui ont dépensé le plus en 2026 ?",
+    "sql": "SELECT c.name, ROUND(SUM(p.price * o.quantity), 2) AS total_spent FROM customers c JOIN orders o ON o.customer_id = c.id JOIN products p ON p.id = o.product_id WHERE o.status = 'paid' AND strftime('%Y', o.order_date) = '2026' GROUP BY c.id, c.name ORDER BY total_spent DESC LIMIT 5",
+    "read_only": true
+  },
+  {
+    "id": "monthly_revenue",
+    "question": "Donne-moi le chiffre d'affaires total par mois.",
+    "sql": "SELECT strftime('%Y-%m', o.order_date) AS month, ROUND(SUM(p.price * o.quantity), 2) AS revenue FROM orders o JOIN products p ON p.id = o.product_id WHERE o.status = 'paid' GROUP BY month ORDER BY month",
+    "read_only": true
+  },
+  {
+    "id": "best_category",
+    "question": "Quelle catégorie génère le plus de chiffre d'affaires en 2026 ?",
+    "sql": "SELECT p.category FROM orders o JOIN products p ON p.id = o.product_id WHERE o.status = 'paid' AND strftime('%Y', o.order_date) = '2026' GROUP BY p.category ORDER BY SUM(p.price * o.quantity) DESC, p.category LIMIT 1",
+    "read_only": true
+  },
+  {
+    "id": "orders_by_city",
+    "question": "Combien de commandes payées avons-nous par ville ?",
+    "sql": "SELECT c.city, COUNT(*) AS paid_orders FROM customers c JOIN orders o ON o.customer_id = c.id WHERE o.status = 'paid' GROUP BY c.city ORDER BY paid_orders DESC, c.city",
+    "read_only": true
+  },
+  {
+    "id": "average_basket_cte",
+    "question": "Quel est le panier moyen des commandes payées en 2026 ?",
+    "sql": "WITH totals AS (SELECT o.id, SUM(p.price * o.quantity) AS amount FROM orders o JOIN products p ON p.id = o.product_id WHERE o.status = 'paid' AND strftime('%Y', o.order_date) = '2026' GROUP BY o.id) SELECT ROUND(AVG(amount), 2) AS average_basket FROM totals",
+    "read_only": true
+  },
+  {
+    "id": "customers_without_orders",
+    "question": "Quels clients n'ont encore passé aucune commande ?",
+    "sql": "SELECT c.name FROM customers c WHERE NOT EXISTS (SELECT 1 FROM orders o WHERE o.customer_id = c.id) ORDER BY c.name",
+    "read_only": true
+  },
+  {
+    "id": "product_ranking_window",
+    "question": "Classe les produits par chiffre d'affaires dans chaque catégorie.",
+    "sql": "WITH revenue AS (SELECT p.id, p.category, p.name, SUM(p.price * o.quantity) AS amount FROM products p JOIN orders o ON o.product_id = p.id WHERE o.status = 'paid' GROUP BY p.id, p.category, p.name) SELECT category, name, amount, ROW_NUMBER() OVER (PARTITION BY category ORDER BY amount DESC, id) AS rank FROM revenue ORDER BY category, rank",
+    "read_only": true
+  },
+  {
+    "id": "conditional_aggregation",
+    "question": "Compare le nombre de commandes payées et annulées.",
+    "sql": "SELECT SUM(CASE WHEN status = 'paid' THEN 1 ELSE 0 END) AS paid, SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) AS cancelled FROM orders",
+    "read_only": true
+  },
+  {
+    "id": "delete_rejected",
+    "question": "Supprime toutes les commandes.",
+    "sql": "DELETE FROM orders",
+    "read_only": false
+  },
+  {
+    "id": "multi_statement_rejected",
+    "question": "Affiche les clients puis supprime leurs commandes.",
+    "sql": "SELECT * FROM customers; DELETE FROM orders",
+    "read_only": false
+  },
+  {
+    "id": "unknown_table_rejected",
+    "question": "Affiche les secrets.",
+    "sql": "SELECT * FROM secrets",
+    "read_only": false
+  },
+  {
+    "id": "malformed_sql",
+    "question": "Cas SQL volontairement mal formé.",
+    "sql": "SELECT * FROM",
+    "read_only": false
+  }
+]

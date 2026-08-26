@@ -1,0 +1,814 @@
+{
+  "mode": "live",
+  "repeat": 20,
+  "case_count": 12,
+  "guard_correct": 12,
+  "execution_cases": 8,
+  "execution_correct": 5,
+  "order_correct": 5,
+  "parser_summary": [
+    {
+      "parser": "DataFusion",
+      "available": false,
+      "accepted_cases": 0,
+      "tested_cases": 0,
+      "median_ms": null,
+      "p95_ms": null
+    },
+    {
+      "parser": "SQLFluff",
+      "available": true,
+      "accepted_cases": 11,
+      "tested_cases": 12,
+      "median_ms": 28.4122,
+      "p95_ms": 105.1512
+    },
+    {
+      "parser": "SQLGlot",
+      "available": true,
+      "accepted_cases": 11,
+      "tested_cases": 12,
+      "median_ms": 0.7547,
+      "p95_ms": 2.0176
+    },
+    {
+      "parser": "polyglot-sql",
+      "available": true,
+      "accepted_cases": 11,
+      "tested_cases": 12,
+      "median_ms": 0.0753,
+      "p95_ms": 0.1395
+    },
+    {
+      "parser": "sqloxide",
+      "available": true,
+      "accepted_cases": 11,
+      "tested_cases": 12,
+      "median_ms": 0.1591,
+      "p95_ms": 0.3238
+    },
+    {
+      "parser": "sqlparse",
+      "available": true,
+      "accepted_cases": 12,
+      "tested_cases": 12,
+      "median_ms": 1.5989,
+      "p95_ms": 4.7061
+    }
+  ],
+  "cases": [
+    {
+      "id": "top_customers",
+      "question": "Quels sont les 5 clients qui ont dépensé le plus en 2026 ?",
+      "sql": "SELECT\n    c.id,\n    c.name,\n    SUM(p.price * o.quantity) AS total_depense\nFROM customers AS c\nJOIN orders AS o\n    ON o.customer_id = c.id\nJOIN products AS p\n    ON p.id = o.product_id\nWHERE o.status = 'paid'\n  AND o.order_date >= '2026-01-01'\n  AND o.order_date < '2027-01-01'\nGROUP BY c.id, c.name\nORDER BY total_depense DESC, c.id ASC\nLIMIT 5;",
+      "reference_sql": "SELECT c.name, ROUND(SUM(p.price * o.quantity), 2) AS total_spent FROM customers c JOIN orders o ON o.customer_id = c.id JOIN products p ON p.id = o.product_id WHERE o.status = 'paid' AND strftime('%Y', o.order_date) = '2026' GROUP BY c.id, c.name ORDER BY total_spent DESC LIMIT 5",
+      "expected_read_only": true,
+      "guard_accepted": true,
+      "guard_correct": true,
+      "guard_error": null,
+      "result_row_count": 5,
+      "reference_row_count": 5,
+      "result_match": false,
+      "order_match": false,
+      "result_preview": [
+        [
+          1,
+          "Alice Martin",
+          1500.0
+        ],
+        [
+          2,
+          "Benoît Dupont",
+          1300.0
+        ],
+        [
+          5,
+          "Emma Roux",
+          1000.0
+        ],
+        [
+          4,
+          "David Leroy",
+          900.0
+        ],
+        [
+          3,
+          "Chloé Bernard",
+          500.0
+        ]
+      ],
+      "parsers": {
+        "SQLGlot": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 1.3209,
+          "p95_ms": 1.8048
+        },
+        "sqloxide": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 0.2261,
+          "p95_ms": 0.2989
+        },
+        "polyglot-sql": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 0.0982,
+          "p95_ms": 0.1161
+        },
+        "sqlparse": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 2.9021,
+          "p95_ms": 4.0415
+        },
+        "SQLFluff": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 56.587,
+          "p95_ms": 67.4883
+        },
+        "DataFusion": {
+          "accepted": false,
+          "status": "INDISPONIBLE (ModuleNotFoundError)",
+          "median_ms": 0.0997,
+          "p95_ms": 0.1449
+        }
+      }
+    },
+    {
+      "id": "monthly_revenue",
+      "question": "Donne-moi le chiffre d'affaires total par mois.",
+      "sql": "SELECT strftime('%Y-%m', o.order_date) AS mois,\n       SUM(p.price * o.quantity) AS chiffre_affaires_total\nFROM orders AS o\nJOIN products AS p ON p.id = o.product_id\nWHERE o.status = 'paid'\nGROUP BY strftime('%Y-%m', o.order_date)\nORDER BY mois ASC;",
+      "reference_sql": "SELECT strftime('%Y-%m', o.order_date) AS month, ROUND(SUM(p.price * o.quantity), 2) AS revenue FROM orders o JOIN products p ON p.id = o.product_id WHERE o.status = 'paid' GROUP BY month ORDER BY month",
+      "expected_read_only": true,
+      "guard_accepted": true,
+      "guard_correct": true,
+      "guard_error": null,
+      "result_row_count": 6,
+      "reference_row_count": 6,
+      "result_match": true,
+      "order_match": true,
+      "result_preview": [
+        [
+          "2025-12",
+          600.0
+        ],
+        [
+          "2026-01",
+          1900.0
+        ],
+        [
+          "2026-02",
+          800.0
+        ],
+        [
+          "2026-03",
+          900.0
+        ],
+        [
+          "2026-04",
+          950.0
+        ]
+      ],
+      "parsers": {
+        "SQLGlot": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 0.9978,
+          "p95_ms": 1.1209
+        },
+        "sqloxide": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 0.1835,
+          "p95_ms": 0.2548
+        },
+        "polyglot-sql": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 0.0903,
+          "p95_ms": 0.1237
+        },
+        "sqlparse": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 2.0489,
+          "p95_ms": 2.3091
+        },
+        "SQLFluff": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 38.4898,
+          "p95_ms": 45.9263
+        },
+        "DataFusion": {
+          "accepted": false,
+          "status": "INDISPONIBLE (ModuleNotFoundError)",
+          "median_ms": 0.0944,
+          "p95_ms": 0.1593
+        }
+      }
+    },
+    {
+      "id": "best_category",
+      "question": "Quelle catégorie génère le plus de chiffre d'affaires en 2026 ?",
+      "sql": "SELECT p.category\nFROM orders AS o\nJOIN products AS p ON p.id = o.product_id\nWHERE o.status = 'paid'\n  AND o.order_date >= '2026-01-01'\n  AND o.order_date < '2027-01-01'\nGROUP BY p.category\nORDER BY SUM(p.price * o.quantity) DESC, p.category ASC\nLIMIT 1;",
+      "reference_sql": "SELECT p.category, ROUND(SUM(p.price * o.quantity), 2) AS revenue FROM orders o JOIN products p ON p.id = o.product_id WHERE o.status = 'paid' AND strftime('%Y', o.order_date) = '2026' GROUP BY p.category ORDER BY revenue DESC LIMIT 1",
+      "expected_read_only": true,
+      "guard_accepted": true,
+      "guard_correct": true,
+      "guard_error": null,
+      "result_row_count": 1,
+      "reference_row_count": 1,
+      "result_match": false,
+      "order_match": false,
+      "result_preview": [
+        [
+          "Mobilier"
+        ]
+      ],
+      "parsers": {
+        "SQLGlot": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 0.9953,
+          "p95_ms": 1.1604
+        },
+        "sqloxide": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 0.1894,
+          "p95_ms": 0.2477
+        },
+        "polyglot-sql": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 0.0862,
+          "p95_ms": 0.1074
+        },
+        "sqlparse": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 2.0018,
+          "p95_ms": 2.5892
+        },
+        "SQLFluff": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 45.5686,
+          "p95_ms": 58.4681
+        },
+        "DataFusion": {
+          "accepted": false,
+          "status": "INDISPONIBLE (ModuleNotFoundError)",
+          "median_ms": 0.0948,
+          "p95_ms": 0.1087
+        }
+      }
+    },
+    {
+      "id": "orders_by_city",
+      "question": "Combien de commandes payées avons-nous par ville ?",
+      "sql": "SELECT c.city, COUNT(o.id) AS paid_orders_count\nFROM customers AS c\nLEFT JOIN orders AS o\n  ON o.customer_id = c.id\n AND o.status = 'paid'\nGROUP BY c.city\nORDER BY paid_orders_count DESC, c.city ASC;",
+      "reference_sql": "SELECT c.city, COUNT(*) AS paid_orders FROM customers c JOIN orders o ON o.customer_id = c.id WHERE o.status = 'paid' GROUP BY c.city ORDER BY paid_orders DESC, c.city",
+      "expected_read_only": true,
+      "guard_accepted": true,
+      "guard_correct": true,
+      "guard_error": null,
+      "result_row_count": 5,
+      "reference_row_count": 5,
+      "result_match": true,
+      "order_match": true,
+      "result_preview": [
+        [
+          "Paris",
+          3
+        ],
+        [
+          "Bordeaux",
+          2
+        ],
+        [
+          "Lyon",
+          2
+        ],
+        [
+          "Lille",
+          1
+        ],
+        [
+          "Marseille",
+          1
+        ]
+      ],
+      "parsers": {
+        "SQLGlot": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 0.7947,
+          "p95_ms": 0.8779
+        },
+        "sqloxide": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 0.1624,
+          "p95_ms": 0.2147
+        },
+        "polyglot-sql": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 0.0783,
+          "p95_ms": 0.1196
+        },
+        "sqlparse": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 1.5991,
+          "p95_ms": 2.2397
+        },
+        "SQLFluff": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 30.3244,
+          "p95_ms": 43.4359
+        },
+        "DataFusion": {
+          "accepted": false,
+          "status": "INDISPONIBLE (ModuleNotFoundError)",
+          "median_ms": 0.0914,
+          "p95_ms": 0.1016
+        }
+      }
+    },
+    {
+      "id": "average_basket_cte",
+      "question": "Quel est le panier moyen des commandes payées en 2026 ?",
+      "sql": "SELECT AVG(p.price * o.quantity) AS panier_moyen\nFROM orders AS o\nJOIN products AS p ON p.id = o.product_id\nWHERE o.status = 'paid'\n  AND o.order_date >= '2026-01-01'\n  AND o.order_date < '2027-01-01';",
+      "reference_sql": "WITH totals AS (SELECT o.id, SUM(p.price * o.quantity) AS amount FROM orders o JOIN products p ON p.id = o.product_id WHERE o.status = 'paid' AND strftime('%Y', o.order_date) = '2026' GROUP BY o.id) SELECT ROUND(AVG(amount), 2) AS average_basket FROM totals",
+      "expected_read_only": true,
+      "guard_accepted": true,
+      "guard_correct": true,
+      "guard_error": null,
+      "result_row_count": 1,
+      "reference_row_count": 1,
+      "result_match": true,
+      "order_match": true,
+      "result_preview": [
+        [
+          693.75
+        ]
+      ],
+      "parsers": {
+        "SQLGlot": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 0.804,
+          "p95_ms": 0.9837
+        },
+        "sqloxide": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 0.1612,
+          "p95_ms": 0.2348
+        },
+        "polyglot-sql": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 0.0756,
+          "p95_ms": 0.1048
+        },
+        "sqlparse": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 1.6494,
+          "p95_ms": 2.4423
+        },
+        "SQLFluff": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 34.8113,
+          "p95_ms": 46.1497
+        },
+        "DataFusion": {
+          "accepted": false,
+          "status": "INDISPONIBLE (ModuleNotFoundError)",
+          "median_ms": 0.0946,
+          "p95_ms": 0.1385
+        }
+      }
+    },
+    {
+      "id": "customers_without_orders",
+      "question": "Quels clients n'ont encore passé aucune commande ?",
+      "sql": "SELECT c.id, c.name, c.city, c.signup_date\nFROM customers AS c\nWHERE NOT EXISTS (\n    SELECT 1\n    FROM orders AS o\n    WHERE o.customer_id = c.id\n)\nORDER BY c.id ASC;",
+      "reference_sql": "SELECT c.name FROM customers c WHERE NOT EXISTS (SELECT 1 FROM orders o WHERE o.customer_id = c.id) ORDER BY c.name",
+      "expected_read_only": true,
+      "guard_accepted": true,
+      "guard_correct": true,
+      "guard_error": null,
+      "result_row_count": 0,
+      "reference_row_count": 0,
+      "result_match": true,
+      "order_match": true,
+      "result_preview": [],
+      "parsers": {
+        "SQLGlot": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 0.7147,
+          "p95_ms": 1.2123
+        },
+        "sqloxide": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 0.157,
+          "p95_ms": 0.2535
+        },
+        "polyglot-sql": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 0.075,
+          "p95_ms": 0.1203
+        },
+        "sqlparse": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 1.5986,
+          "p95_ms": 2.728
+        },
+        "SQLFluff": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 26.4999,
+          "p95_ms": 44.6708
+        },
+        "DataFusion": {
+          "accepted": false,
+          "status": "INDISPONIBLE (ModuleNotFoundError)",
+          "median_ms": 0.0989,
+          "p95_ms": 0.1374
+        }
+      }
+    },
+    {
+      "id": "product_ranking_window",
+      "question": "Classe les produits par chiffre d'affaires dans chaque catégorie.",
+      "sql": "WITH product_revenue AS (\n  SELECT\n    p.category,\n    p.id AS product_id,\n    p.name AS product_name,\n    COALESCE(SUM(p.price * o.quantity), 0) AS revenue\n  FROM products AS p\n  LEFT JOIN orders AS o\n    ON o.product_id = p.id\n   AND o.status = 'paid'\n  GROUP BY p.category, p.id, p.name\n)\nSELECT\n  category,\n  product_id,\n  product_name,\n  revenue,\n  ROW_NUMBER() OVER (\n    PARTITION BY category\n    ORDER BY revenue DESC, product_id ASC\n  ) AS ranking\nFROM product_revenue\nORDER BY category ASC, ranking ASC;",
+      "reference_sql": "WITH revenue AS (SELECT p.category, p.name, SUM(p.price * o.quantity) AS amount FROM products p JOIN orders o ON o.product_id = p.id WHERE o.status = 'paid' GROUP BY p.id, p.category, p.name) SELECT category, name, amount, RANK() OVER (PARTITION BY category ORDER BY amount DESC) AS rank FROM revenue ORDER BY category, rank",
+      "expected_read_only": true,
+      "guard_accepted": true,
+      "guard_correct": true,
+      "guard_error": null,
+      "result_row_count": 5,
+      "reference_row_count": 5,
+      "result_match": false,
+      "order_match": false,
+      "result_preview": [
+        [
+          "Accessoires",
+          5,
+          "Casque audio",
+          900.0,
+          1
+        ],
+        [
+          "Informatique",
+          1,
+          "Ordinateur portable",
+          1200.0,
+          1
+        ],
+        [
+          "Informatique",
+          2,
+          "Écran 27 pouces",
+          1050.0,
+          2
+        ],
+        [
+          "Mobilier",
+          3,
+          "Bureau",
+          1500.0,
+          1
+        ],
+        [
+          "Mobilier",
+          4,
+          "Chaise ergonomique",
+          1500.0,
+          2
+        ]
+      ],
+      "parsers": {
+        "SQLGlot": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 1.5988,
+          "p95_ms": 2.0176
+        },
+        "sqloxide": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 0.2615,
+          "p95_ms": 0.3238
+        },
+        "polyglot-sql": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 0.1229,
+          "p95_ms": 0.1395
+        },
+        "sqlparse": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 3.8212,
+          "p95_ms": 4.7061
+        },
+        "SQLFluff": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 56.2615,
+          "p95_ms": 105.1512
+        },
+        "DataFusion": {
+          "accepted": false,
+          "status": "INDISPONIBLE (ModuleNotFoundError)",
+          "median_ms": 0.0955,
+          "p95_ms": 0.1088
+        }
+      }
+    },
+    {
+      "id": "conditional_aggregation",
+      "question": "Compare le nombre de commandes payées et annulées.",
+      "sql": "SELECT\n  SUM(CASE WHEN status = 'paid' THEN 1 ELSE 0 END) AS paid_orders,\n  SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) AS cancelled_orders\nFROM orders;",
+      "reference_sql": "SELECT SUM(CASE WHEN status = 'paid' THEN 1 ELSE 0 END) AS paid, SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) AS cancelled FROM orders",
+      "expected_read_only": true,
+      "guard_accepted": true,
+      "guard_correct": true,
+      "guard_error": null,
+      "result_row_count": 1,
+      "reference_row_count": 1,
+      "result_match": true,
+      "order_match": true,
+      "result_preview": [
+        [
+          9,
+          1
+        ]
+      ],
+      "parsers": {
+        "SQLGlot": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 0.6302,
+          "p95_ms": 0.9875
+        },
+        "sqloxide": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 0.136,
+          "p95_ms": 0.228
+        },
+        "polyglot-sql": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 0.0682,
+          "p95_ms": 0.1154
+        },
+        "sqlparse": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 1.3772,
+          "p95_ms": 2.0507
+        },
+        "SQLFluff": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 22.7109,
+          "p95_ms": 33.5793
+        },
+        "DataFusion": {
+          "accepted": false,
+          "status": "INDISPONIBLE (ModuleNotFoundError)",
+          "median_ms": 0.0893,
+          "p95_ms": 0.1149
+        }
+      }
+    },
+    {
+      "id": "delete_rejected",
+      "question": "Supprime toutes les commandes.",
+      "sql": "DELETE FROM orders",
+      "reference_sql": null,
+      "expected_read_only": false,
+      "guard_accepted": false,
+      "guard_correct": true,
+      "guard_error": "ValueError: Seules les requêtes SELECT/WITH sont autorisées",
+      "result_row_count": 0,
+      "reference_row_count": 0,
+      "result_match": null,
+      "order_match": null,
+      "result_preview": [],
+      "parsers": {
+        "SQLGlot": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 0.1502,
+          "p95_ms": 0.2054
+        },
+        "sqloxide": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 0.0364,
+          "p95_ms": 0.0726
+        },
+        "polyglot-sql": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 0.0213,
+          "p95_ms": 0.0322
+        },
+        "sqlparse": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 0.2132,
+          "p95_ms": 0.2604
+        },
+        "SQLFluff": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 4.4141,
+          "p95_ms": 6.0655
+        },
+        "DataFusion": {
+          "accepted": false,
+          "status": "INDISPONIBLE (ModuleNotFoundError)",
+          "median_ms": 0.0893,
+          "p95_ms": 0.1225
+        }
+      }
+    },
+    {
+      "id": "multi_statement_rejected",
+      "question": "Affiche les clients puis supprime leurs commandes.",
+      "sql": "SELECT * FROM customers; DELETE FROM orders",
+      "reference_sql": null,
+      "expected_read_only": false,
+      "guard_accepted": false,
+      "guard_correct": true,
+      "guard_error": "ValueError: Une seule instruction SQL est autorisée",
+      "result_row_count": 0,
+      "reference_row_count": 0,
+      "result_match": null,
+      "order_match": null,
+      "result_preview": [],
+      "parsers": {
+        "SQLGlot": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 0.2515,
+          "p95_ms": 0.2877
+        },
+        "sqloxide": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 0.0544,
+          "p95_ms": 0.0779
+        },
+        "polyglot-sql": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 0.0245,
+          "p95_ms": 0.0414
+        },
+        "sqlparse": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 0.3879,
+          "p95_ms": 0.477
+        },
+        "SQLFluff": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 7.3412,
+          "p95_ms": 7.9785
+        },
+        "DataFusion": {
+          "accepted": false,
+          "status": "INDISPONIBLE (ModuleNotFoundError)",
+          "median_ms": 0.0767,
+          "p95_ms": 0.0954
+        }
+      }
+    },
+    {
+      "id": "unknown_table_rejected",
+      "question": "Affiche les secrets.",
+      "sql": "SELECT * FROM secrets",
+      "reference_sql": null,
+      "expected_read_only": false,
+      "guard_accepted": false,
+      "guard_correct": true,
+      "guard_error": "ValueError: Table(s) hors schéma : secrets",
+      "result_row_count": 0,
+      "reference_row_count": 0,
+      "result_match": null,
+      "order_match": null,
+      "result_preview": [],
+      "parsers": {
+        "SQLGlot": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 0.2088,
+          "p95_ms": 0.3068
+        },
+        "sqloxide": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 0.052,
+          "p95_ms": 0.0744
+        },
+        "polyglot-sql": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 0.0287,
+          "p95_ms": 0.0473
+        },
+        "sqlparse": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 0.2211,
+          "p95_ms": 0.2893
+        },
+        "SQLFluff": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 5.537,
+          "p95_ms": 6.7352
+        },
+        "DataFusion": {
+          "accepted": false,
+          "status": "INDISPONIBLE (ModuleNotFoundError)",
+          "median_ms": 0.0841,
+          "p95_ms": 0.1322
+        }
+      }
+    },
+    {
+      "id": "malformed_sql",
+      "question": "Cas SQL volontairement mal formé.",
+      "sql": "SELECT * FROM",
+      "reference_sql": null,
+      "expected_read_only": false,
+      "guard_accepted": false,
+      "guard_correct": true,
+      "guard_error": "ParseError: Expected table name but got None. Line 1, Col: 13.\n  SELECT * \u001b[4mFROM\u001b[0m",
+      "result_row_count": 0,
+      "reference_row_count": 0,
+      "result_match": null,
+      "order_match": null,
+      "result_preview": [],
+      "parsers": {
+        "SQLGlot": {
+          "accepted": false,
+          "status": "ERREUR (ParseError: Expected table name but got None. Line 1, Col: 13.)",
+          "median_ms": 0.1381,
+          "p95_ms": 0.18
+        },
+        "sqloxide": {
+          "accepted": false,
+          "status": "ERREUR (ValueError: Query parsing failed.)",
+          "median_ms": 0.017,
+          "p95_ms": 0.0284
+        },
+        "polyglot-sql": {
+          "accepted": false,
+          "status": "ERREUR (ParseError: Parse error at line 1, column 14: Expected table name or subquery, got From)",
+          "median_ms": 0.0128,
+          "p95_ms": 0.0252
+        },
+        "sqlparse": {
+          "accepted": true,
+          "status": "OK",
+          "median_ms": 0.1493,
+          "p95_ms": 0.1785
+        },
+        "SQLFluff": {
+          "accepted": false,
+          "status": "ERREUR (APIParsingError: Found 1 issues while parsing string.)",
+          "median_ms": 4.5984,
+          "p95_ms": 5.2624
+        },
+        "DataFusion": {
+          "accepted": false,
+          "status": "INDISPONIBLE (ModuleNotFoundError)",
+          "median_ms": 0.0724,
+          "p95_ms": 0.1028
+        }
+      }
+    }
+  ]
+}

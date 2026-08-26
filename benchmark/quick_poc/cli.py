@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+from datetime import date
 import importlib
 import os
 from pathlib import Path
@@ -15,6 +16,24 @@ from sqlglot import exp, parse
 
 DB_PATH = Path(__file__).with_name("shop.db")
 FORBIDDEN = (exp.Insert, exp.Update, exp.Delete, exp.Drop, exp.Alter, exp.Create, exp.Command, exp.Into)
+
+BUSINESS_CONTEXT = """
+RÈGLES MÉTIER :
+- Une vente correspond à une ligne de orders.
+- Le montant d'une commande est products.price * orders.quantity.
+- Le chiffre d'affaires et les dépenses clients incluent uniquement les
+  commandes dont orders.status = 'paid'.
+- Les commandes cancelled sont toujours exclues des indicateurs financiers.
+- Une période est déterminée à partir de orders.order_date, stockée au format ISO.
+- Un classement « meilleur » ou « plus élevé » est décroissant.
+- Un top N utilise LIMIT N et un ordre secondaire déterministe en cas d'égalité.
+- Le panier moyen est la moyenne du montant des commandes payées.
+- orders.product_id référence products.id.
+- orders.customer_id référence customers.id.
+- Sans période explicite, utiliser toutes les données disponibles.
+- Pour un comptage de commandes sans statut explicite, compter tous les statuts.
+- « Sans commande » signifie aucune commande historique, quel que soit son statut.
+""".strip()
 
 
 def schema_text(path: Path) -> str:
@@ -49,8 +68,10 @@ def generate_sql(question: str, schema: str) -> str:
         input=(
             "Transforme la question en une unique requête SQLite en lecture seule. "
             "Utilise exclusivement le schéma fourni. Retourne uniquement le SQL, "
-            "sans Markdown. Les commandes d'écriture sont interdites.\n\n"
-            f"SCHÉMA:\n{schema}\n\nQUESTION:\n{question}"
+            "sans Markdown. Les commandes d'écriture sont interdites. "
+            "Si une année relative est demandée, utilise la date courante fournie.\n\n"
+            f"DATE COURANTE : {date.today().isoformat()}\n\n"
+            f"{BUSINESS_CONTEXT}\n\nSCHÉMA:\n{schema}\n\nQUESTION:\n{question}"
         ),
     )
     return response.output_text.strip().removeprefix("```sql").removesuffix("```").strip()

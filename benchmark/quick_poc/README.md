@@ -23,6 +23,40 @@ python cli.py --sql "SELECT c.name, COUNT(*) FROM customers c JOIN orders o ON o
 python -m pytest -q
 ```
 
+## Rapport multi-cas
+
+Le corpus contient huit demandes analytiques et quatre cas de refus. Par
+défaut, les SQL de référence rendent la campagne gratuite et reproductible :
+
+```bash
+python benchmark.py
+```
+
+La commande effectue un échauffement, mesure chaque parseur 20 fois et produit
+`report.json` (détails exploitables) et `report.md` (synthèse lisible). Le
+rapport compare aussi chaque résultat au SQL de référence : `Résultat` ignore
+l'ordre des lignes, tandis que `Ordre` le vérifie. Les valeurs demandées doivent
+apparaître dans le même ordre au sein de chaque ligne, mais les colonnes
+supplémentaires sont tolérées. Les classements utilisent `ROW_NUMBER()` avec un
+second critère stable pour départager les ex æquo. Le nombre de répétitions est
+configurable :
+
+```bash
+python benchmark.py --repeat 100
+```
+
+Pour régénérer les huit requêtes analytiques depuis leurs questions avant de
+tester les parseurs :
+
+```bash
+export OPENAI_API_KEY="..."
+export OPENAI_MODEL="gpt-5-mini"
+python benchmark.py --live
+```
+
+Le mode `--live` implique huit appels API. Les quatre cas dangereux conservent
+leur SQL de référence afin de mesurer le garde-fou de façon déterministe.
+
 DataFusion est volontairement optionnel (`python -m pip install datafusion`) :
 ses bindings Python installent un moteur Arrow complet et produisent un plan
 logique dépendant du schéma, plutôt qu'un simple AST autonome.
