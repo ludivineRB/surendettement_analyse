@@ -18,7 +18,7 @@ PostgreSQL est implémenté ? ».
 | scoring | quatre tables `risk_score_*` | relations conservées, JSON techniques masqués |
 | `utilisateur`, `habilitation` | `auth_user`, groupes, permissions et jointures | infrastructure Django aplatie |
 | conversation | `assistant_conversation*` | deux entités métier conservées |
-| `document_rag`, `fragment_rag` | `public.assistant_rag*`, `assistant.corpus_chunks` | vue logique commune ; synchronisation à valider |
+| `document_rag`, `fragment_rag` | principalement `assistant.corpus_chunks` | corpus Assistant canonique ; tables `public.assistant_rag*` dépréciées |
 | `execution_sql` | `assistant.sql_executions` | audit conservé, détails de modèle réduits |
 
 ## Éléments volontairement absents
@@ -39,7 +39,11 @@ prétendre qu'une FK PostgreSQL existe :
 - territoire avec observations, faits et scores ;
 - période avec observations, faits et scores ;
 - catalogue unifié d'indicateurs ;
-- document et fragment RAG communs aux deux implémentations.
+- document logique et fragments du corpus canonique Assistant API.
+
+Le regroupement initial des deux implémentations RAG n'est plus retenu comme
+cible : le corpus Django est déprécié depuis le 25/08/2026 et conservé seulement
+pour audit. Le MLD global représente désormais le corpus Assistant API actif.
 
 Les FK certaines restent détaillées dans `physical/mpd.dbml`. Toute migration
 physique éventuelle nécessiterait une demande distincte.

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import warnings
+
 from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.db.models import OuterRef, Subquery
 
@@ -9,6 +11,12 @@ from web.assistant.models import RagChunk, RagDocumentVersion
 
 
 def lexical_search(query: str, *, limit: int = 10) -> list[dict]:
+    warnings.warn(
+        "web.assistant.search.lexical_search utilise le corpus RAG Django "
+        "déprécié ; utiliser l'Assistant API et assistant.corpus_chunks.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     query = query.strip()
     if not query:
         return []

@@ -12,7 +12,7 @@ détaillé (colonnes, types, contraintes et index) est dans
 | `public.indicators` | table | actif | catalogue opérationnel des indicateurs |
 | `public.observations` | table | actif | observations extraites, avec clé d'idempotence |
 | `public.pipeline_runs` | table | actif | exécutions, résultats et contrôles qualité du pipeline |
-| `public.surendettement_data` | table | historique | premier format générique région/année/indicateur |
+| `public.surendettement_data` | table | historique actif / compatibilité | premier format générique, encore lu par l'import legacy et une API |
 | `public.schema_migrations` | table technique | actif | registre des migrations SQLAlchemy |
 
 ## Référentiels et entrepôt analytique
@@ -43,7 +43,7 @@ détaillé (colonnes, types, contraintes et index) est dans
 
 | Objet | Type | Statut | Rôle |
 |---|---|---|---|
-| `assistant.corpus_chunks` | table RAG | actif | fragments indexés et vecteur de recherche plein texte |
+| `assistant.corpus_chunks` | table RAG | actif, corpus d'exécution | fragments consultés par l'Assistant API en production |
 | `assistant.sql_executions` | audit | actif | requêtes générées, validation, durée et acteur |
 | `assistant.schema_migrations` | table technique | actif | registre des migrations de l'Assistant API |
 
@@ -55,12 +55,24 @@ détaillé (colonnes, types, contraintes et index) est dans
 | Jointures d'autorisation | `auth_group_permissions`, `auth_user_groups`, `auth_user_user_permissions` | actif |
 | Infrastructure Django | `django_content_type`, `django_migrations`, `django_session`, `django_admin_log` | actif, technique ; sessions et journal potentiellement personnels |
 | Conversations | `assistant_conversation`, `assistant_conversationmessage` | actif, personnel/sensible selon le contenu |
-| Corpus Django | `assistant_ragsource`, `assistant_ragdocument`, `assistant_ragdocumentversion`, `assistant_ragchunk`, `assistant_ragindexrun` | actif |
+| Corpus Django | `assistant_ragsource`, `assistant_ragdocument`, `assistant_ragdocumentversion`, `assistant_ragchunk`, `assistant_ragindexrun` | **déprécié officiellement le 25/08/2026** |
 
-Le corpus Django `public.assistant_rag*` et le corpus natif
-`assistant.corpus_chunks` coexistent. Ils ne sont pas déclarés dépréciés dans
-PostgreSQL ; leur chevauchement fonctionnel est donc un écart à clarifier, pas
-une suppression à effectuer dans ce lot.
+Le chemin d'exécution courant est démontré : Django appelle l'Assistant API par
+HTTP, puis celle-ci recherche dans `assistant.corpus_chunks`. Le corpus Django a
+été officiellement déprécié par la migration
+`assistant.0005_deprecate_legacy_rag_corpus`. Elle désactive les documents actifs
+et inscrit les cinq tables dans `schema_deprecations` lorsque ce registre est
+présent. Aucune table ni donnée historique n'est supprimée.
+
+La commande `ingest_rag_corpus` refuse désormais toute nouvelle écriture par
+défaut. `--allow-deprecated` constitue une dérogation explicite réservée à une
+reprise historique autorisée. `lexical_search` reste disponible pour lecture
+d'audit et émet un `DeprecationWarning`.
+
+`surendettement_data` est historique mais pas inactif. Le module
+`src/risk_score/legacy_import.py` le convertit de manière idempotente en
+observations et l'API conserve un endpoint de compatibilité. Son absence du
+registre `schema_deprecations` est donc cohérente avec le code actuel.
 
 ## Vues actives
 
@@ -81,6 +93,11 @@ une suppression à effectuer dans ce lot.
 | `fact_surendettement` | 2026-07-29 | `operational.observations` | modèle départemental historique vide |
 | `v_surendettement_annual` | 2026-07-29 | `operational.observations` | vue fondée sur un fait historique vide |
 | `v_surendettement_with_insee_macro` | 2026-07-29 | `risk_score analytics bridge` | rapprochement remplacé par la passerelle versionnée |
+| `assistant_ragsource` | 2026-08-25 | `assistant.corpus_chunks` | corpus RAG Django remplacé par le corpus de l'Assistant API |
+| `assistant_ragdocument` | 2026-08-25 | `assistant.corpus_chunks` | corpus RAG Django remplacé par le corpus de l'Assistant API |
+| `assistant_ragdocumentversion` | 2026-08-25 | `assistant.corpus_chunks` | corpus RAG Django remplacé par le corpus de l'Assistant API |
+| `assistant_ragchunk` | 2026-08-25 | `assistant.corpus_chunks` | corpus RAG Django remplacé par le corpus de l'Assistant API |
+| `assistant_ragindexrun` | 2026-08-25 | `assistant.corpus_chunks` | corpus RAG Django remplacé par le corpus de l'Assistant API |
 
 Écart : le schéma PostgreSQL `operational` n'existe pas dans la base observée ;
 la table physique est `public.observations`. Le remplacement semble employer un

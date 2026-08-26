@@ -18,8 +18,9 @@ demande » plutôt que supposées.
 | Migration opérationnelle | `src/storage/migrate_to_postgres.py` | commande explicite | SQLite | PostgreSQL, séquences réalignées |
 | Migration analytique | `src/storage/migrate_analytics_to_postgres.py` | commande explicite | mart SQLite | tables/vues PostgreSQL |
 | Provisionnement SQL readonly | `src/storage/configure_analytics_readonly.py` | exploitation | URL administrateur | rôle et privilèges minimaux |
-| Ingestion RAG Django | commande `ingest_rag_corpus` | commande explicite | manifest approuvé | sources, versions, fragments |
-| Recherche RAG Django | `web/assistant/search.py` | requête utilisateur | question | fragments classés |
+| Ingestion RAG Django dépréciée | commande `ingest_rag_corpus --allow-deprecated` | dérogation explicite uniquement | manifest historique | sources, versions, fragments historiques |
+| Recherche RAG Django dépréciée | `web/assistant/search.py` | audit/compatibilité | question | fragments historiques et avertissement |
+| Ingestion RAG canonique | `python -m assistant_api.cli index` | commande explicite | registre de sources revues | `assistant.corpus_chunks` actif |
 | Agent SQL | service Assistant API | requête utilisateur | question + schéma autorisé | SQL validé, résultat et audit |
 | Sauvegarde PostgreSQL | `docker/backup_postgres.sh` | exploitation | base PostgreSQL | dump de sauvegarde |
 | Restauration | `docker/restore_postgres.sh` | exploitation contrôlée | dump | base restaurée |
@@ -44,7 +45,7 @@ demande » plutôt que supposées.
 3. approbateur des rapports qualité avant publication ;
 4. durée de conservation des sauvegardes et preuve périodique de restauration ;
 5. durée de conservation des conversations et audits SQL ;
-6. responsabilité de synchronisation des deux corpus RAG ;
+6. calendrier de conservation puis retrait physique du corpus RAG Django ;
 7. politique de suppression des instances Docker temporaires.
 
 Ces éléments ne sont pas déductibles du seul schéma et restent à valider avec

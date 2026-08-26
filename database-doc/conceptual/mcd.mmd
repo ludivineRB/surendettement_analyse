@@ -154,6 +154,7 @@ erDiagram
         identifiant id
         string nom
         string editeur
+        string statut_deprecie
     }
     DOCUMENT_RAG {
         identifiant id
@@ -161,6 +162,7 @@ erDiagram
         string titre
         string type
         boolean actif
+        string statut_deprecie
     }
     VERSION_DOCUMENT_RAG {
         identifiant id
@@ -173,6 +175,7 @@ erDiagram
         integer ordre
         text contenu
         string empreinte
+        string statut_deprecie
     }
     FRAGMENT_CORPUS_ASSISTANT {
         string id
@@ -180,6 +183,7 @@ erDiagram
         integer ordre
         text contenu
         boolean actif
+        string statut_canonique
     }
     EXECUTION_SQL {
         uuid id

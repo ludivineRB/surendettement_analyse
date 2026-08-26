@@ -38,8 +38,8 @@ flowchart TB
     subgraph APP[Application et assistant]
         USERS[Utilisateurs et rôles]
         CONV[Conversations et messages]
-        RAGD[RAG Django]
-        RAGA[RAG Assistant API]
+        RAGD[RAG Django — déprécié]
+        RAGA[RAG Assistant API — canonique]
         SQL[Agent SQL et audit]
     end
 
@@ -73,7 +73,7 @@ flowchart TB
     VIEWS --> SQL
 
     USERS --> CONV
-    DOCS --> RAGD
+    DOCS -. historique .-> RAGD
     DOCS --> RAGA
     RAGD --> CONV
     RAGA --> CONV
@@ -87,3 +87,5 @@ flowchart TB
     class SD,IND,OBS,RUN operational
     class FBDF,FINSEE,OVR,MODEL,SCORES,DETAILS,VIEWS analytical
     class USERS,CONV personal
+    class RAGD external
+    class RAGA operational

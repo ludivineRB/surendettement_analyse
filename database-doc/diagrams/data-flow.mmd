@@ -46,8 +46,8 @@ flowchart LR
     end
 
     subgraph RAG[Assistant documentaire]
-        RAGDJANGO[RAG Django : source, document, version, fragment]
-        RAGAPI[RAG Assistant API : corpus_chunks]
+        RAGDJANGO[RAG Django déprécié : historique en lecture]
+        RAGAPI[RAG Assistant API canonique : corpus_chunks]
         CONV[Conversations et messages]
     end
 
@@ -94,7 +94,7 @@ flowchart LR
     VIEWS --> API
     VIEWS --> SQLAGENT
 
-    MANIFEST --> RAGDJANGO
+    MANIFEST -. ancien flux bloqué par défaut .-> RAGDJANGO
     MANIFEST --> RAGAPI
     RAGDJANGO --> CONV
     RAGAPI --> CONV
@@ -116,3 +116,5 @@ flowchart LR
     class DOCS,IND,OBS,RUN operational
     class DIMS,FACTBDF,FACTINSEE,OVERRIDE,CONFIG,CALC,SCORES,DETAILS,VIEWS analytical
     class CONV,RETENTION sensitive
+    class RAGDJANGO source
+    class RAGAPI operational

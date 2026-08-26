@@ -235,98 +235,98 @@ ils sont indiqués « Non extrait » afin de ne pas créer de donnée fictive.
 **Type :** table  
 **Définition :** Fragments recherchables d'une version de document RAG.  
 **Source :** Application Django / Assistant  
-**Statut :** Actif
+**Statut :** Déprécié
 
 | Colonne | Définition | Type PostgreSQL | Obligatoire | Clé | Source | Exemple | Règle | Sensibilité | Statut |
 |---|---|---|---|---|---|---|---|---|---|
-| `id` | Identifiant technique de l'occurrence. | `bigint` | Oui | FK, PK, Unique (index, composite possible) | Application Django / Assistant | Non extrait | FOREIGN KEY (document_version_id) REFERENCES assistant_ragdocumentversion(id) DEFERRABLE INITIALLY DEFERRED | Interne | Actif |
-| `ordinal` | Champ ordinal de l'objet documenté. | `integer` | Oui | Unique | Application Django / Assistant | Non extrait | CHECK (ordinal >= 0); UNIQUE (document_version_id, ordinal) | Interne | Actif |
-| `title` | Titre lisible. | `character varying(300)` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Actif |
-| `section` | Champ section de l'objet documenté. | `character varying(500)` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Actif |
-| `content` | Contenu textuel enregistré. | `text` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Actif |
-| `content_sha256` | Champ content sha256 de l'objet documenté. | `character varying(64)` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Actif |
-| `page_number` | Champ page number de l'objet documenté. | `integer` | Non | — | Application Django / Assistant | Non extrait | CHECK (page_number >= 0) | Interne | Actif |
-| `territory` | Champ territory de l'objet documenté. | `character varying(200)` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Actif |
-| `reference_period` | Période de référence de la mesure ou du document. | `character varying(32)` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Actif |
-| `indicator_code` | Code de indicator. | `character varying(120)` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Actif |
-| `source_url` | Champ source url de l'objet documenté. | `character varying(200)` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Actif |
-| `search_vector` | Vecteur PostgreSQL utilisé pour la recherche plein texte. | `tsvector` | Non | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Actif |
-| `created_at` | Date et heure de création. | `timestamp with time zone` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Actif |
-| `document_version_id` | Identifiant de référence vers document version. | `bigint` | Oui | FK, Unique | Application Django / Assistant | Non extrait | FOREIGN KEY (document_version_id) REFERENCES assistant_ragdocumentversion(id) DEFERRABLE INITIALLY DEFERRED; UNIQUE (document_version_id, ordinal) | Interne | Actif |
+| `id` | Identifiant technique de l'occurrence. | `bigint` | Oui | FK, PK, Unique (index, composite possible) | Application Django / Assistant | Non extrait | FOREIGN KEY (document_version_id) REFERENCES assistant_ragdocumentversion(id) DEFERRABLE INITIALLY DEFERRED | Interne | Déprécié |
+| `ordinal` | Champ ordinal de l'objet documenté. | `integer` | Oui | Unique | Application Django / Assistant | Non extrait | CHECK (ordinal >= 0); UNIQUE (document_version_id, ordinal) | Interne | Déprécié |
+| `title` | Titre lisible. | `character varying(300)` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Déprécié |
+| `section` | Champ section de l'objet documenté. | `character varying(500)` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Déprécié |
+| `content` | Contenu textuel enregistré. | `text` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Déprécié |
+| `content_sha256` | Champ content sha256 de l'objet documenté. | `character varying(64)` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Déprécié |
+| `page_number` | Champ page number de l'objet documenté. | `integer` | Non | — | Application Django / Assistant | Non extrait | CHECK (page_number >= 0) | Interne | Déprécié |
+| `territory` | Champ territory de l'objet documenté. | `character varying(200)` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Déprécié |
+| `reference_period` | Période de référence de la mesure ou du document. | `character varying(32)` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Déprécié |
+| `indicator_code` | Code de indicator. | `character varying(120)` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Déprécié |
+| `source_url` | Champ source url de l'objet documenté. | `character varying(200)` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Déprécié |
+| `search_vector` | Vecteur PostgreSQL utilisé pour la recherche plein texte. | `tsvector` | Non | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Déprécié |
+| `created_at` | Date et heure de création. | `timestamp with time zone` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Déprécié |
+| `document_version_id` | Identifiant de référence vers document version. | `bigint` | Oui | FK, Unique | Application Django / Assistant | Non extrait | FOREIGN KEY (document_version_id) REFERENCES assistant_ragdocumentversion(id) DEFERRABLE INITIALLY DEFERRED; UNIQUE (document_version_id, ordinal) | Interne | Déprécié |
 
 ## `public.assistant_ragdocument`
 
 **Type :** table  
 **Définition :** Documents logiques du corpus RAG Django.  
 **Source :** Application Django / Assistant  
-**Statut :** Actif
+**Statut :** Déprécié
 
 | Colonne | Définition | Type PostgreSQL | Obligatoire | Clé | Source | Exemple | Règle | Sensibilité | Statut |
 |---|---|---|---|---|---|---|---|---|---|
-| `id` | Identifiant technique de l'occurrence. | `bigint` | Oui | FK, PK, Unique (index, composite possible) | Application Django / Assistant | Non extrait | FOREIGN KEY (source_id) REFERENCES assistant_ragsource(id) DEFERRABLE INITIALLY DEFERRED | Interne | Actif |
-| `slug` | Champ slug de l'objet documenté. | `character varying(200)` | Oui | Unique | Application Django / Assistant | Non extrait | UNIQUE (slug) | Interne | Actif |
-| `title` | Titre lisible. | `character varying(300)` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Actif |
-| `document_type` | Champ document type de l'objet documenté. | `character varying(32)` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Actif |
-| `source_url` | Champ source url de l'objet documenté. | `character varying(200)` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Actif |
-| `is_active` | Indique si l'objet est actif. | `boolean` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Actif |
-| `metadata` | Structure JSON contenant metadata. | `jsonb` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Actif |
-| `created_at` | Date et heure de création. | `timestamp with time zone` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Actif |
-| `updated_at` | Date et heure de dernière mise à jour. | `timestamp with time zone` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Actif |
-| `source_id` | Identifiant de référence vers source. | `bigint` | Oui | FK | Application Django / Assistant | Non extrait | FOREIGN KEY (source_id) REFERENCES assistant_ragsource(id) DEFERRABLE INITIALLY DEFERRED | Interne | Actif |
+| `id` | Identifiant technique de l'occurrence. | `bigint` | Oui | FK, PK, Unique (index, composite possible) | Application Django / Assistant | Non extrait | FOREIGN KEY (source_id) REFERENCES assistant_ragsource(id) DEFERRABLE INITIALLY DEFERRED | Interne | Déprécié |
+| `slug` | Champ slug de l'objet documenté. | `character varying(200)` | Oui | Unique | Application Django / Assistant | Non extrait | UNIQUE (slug) | Interne | Déprécié |
+| `title` | Titre lisible. | `character varying(300)` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Déprécié |
+| `document_type` | Champ document type de l'objet documenté. | `character varying(32)` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Déprécié |
+| `source_url` | Champ source url de l'objet documenté. | `character varying(200)` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Déprécié |
+| `is_active` | Indique si l'objet est actif. | `boolean` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Déprécié |
+| `metadata` | Structure JSON contenant metadata. | `jsonb` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Déprécié |
+| `created_at` | Date et heure de création. | `timestamp with time zone` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Déprécié |
+| `updated_at` | Date et heure de dernière mise à jour. | `timestamp with time zone` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Déprécié |
+| `source_id` | Identifiant de référence vers source. | `bigint` | Oui | FK | Application Django / Assistant | Non extrait | FOREIGN KEY (source_id) REFERENCES assistant_ragsource(id) DEFERRABLE INITIALLY DEFERRED | Interne | Déprécié |
 
 ## `public.assistant_ragdocumentversion`
 
 **Type :** table  
 **Définition :** Versions approuvées des documents RAG Django.  
 **Source :** Application Django / Assistant  
-**Statut :** Actif
+**Statut :** Déprécié
 
 | Colonne | Définition | Type PostgreSQL | Obligatoire | Clé | Source | Exemple | Règle | Sensibilité | Statut |
 |---|---|---|---|---|---|---|---|---|---|
-| `id` | Identifiant technique de l'occurrence. | `bigint` | Oui | FK, PK, Unique (index, composite possible) | Application Django / Assistant | Non extrait | FOREIGN KEY (document_id) REFERENCES assistant_ragdocument(id) DEFERRABLE INITIALLY DEFERRED | Interne | Actif |
-| `version_label` | Champ version label de l'objet documenté. | `character varying(100)` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Actif |
-| `source_path` | Champ source path de l'objet documenté. | `character varying(500)` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Actif |
-| `sha256` | Champ sha256 de l'objet documenté. | `character varying(64)` | Oui | Unique | Application Django / Assistant | Non extrait | UNIQUE (document_id, sha256) | Interne | Actif |
-| `approved_at` | Date et heure de approved. | `timestamp with time zone` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Actif |
-| `chunking_algorithm_version` | Champ chunking algorithm version de l'objet documenté. | `character varying(100)` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Actif |
-| `indexed_at` | Date et heure de indexed. | `timestamp with time zone` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Actif |
-| `document_id` | Identifiant de référence vers document. | `bigint` | Oui | FK, Unique | Application Django / Assistant | Non extrait | FOREIGN KEY (document_id) REFERENCES assistant_ragdocument(id) DEFERRABLE INITIALLY DEFERRED; UNIQUE (document_id, sha256) | Interne | Actif |
+| `id` | Identifiant technique de l'occurrence. | `bigint` | Oui | FK, PK, Unique (index, composite possible) | Application Django / Assistant | Non extrait | FOREIGN KEY (document_id) REFERENCES assistant_ragdocument(id) DEFERRABLE INITIALLY DEFERRED | Interne | Déprécié |
+| `version_label` | Champ version label de l'objet documenté. | `character varying(100)` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Déprécié |
+| `source_path` | Champ source path de l'objet documenté. | `character varying(500)` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Déprécié |
+| `sha256` | Champ sha256 de l'objet documenté. | `character varying(64)` | Oui | Unique | Application Django / Assistant | Non extrait | UNIQUE (document_id, sha256) | Interne | Déprécié |
+| `approved_at` | Date et heure de approved. | `timestamp with time zone` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Déprécié |
+| `chunking_algorithm_version` | Champ chunking algorithm version de l'objet documenté. | `character varying(100)` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Déprécié |
+| `indexed_at` | Date et heure de indexed. | `timestamp with time zone` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Déprécié |
+| `document_id` | Identifiant de référence vers document. | `bigint` | Oui | FK, Unique | Application Django / Assistant | Non extrait | FOREIGN KEY (document_id) REFERENCES assistant_ragdocument(id) DEFERRABLE INITIALLY DEFERRED; UNIQUE (document_id, sha256) | Interne | Déprécié |
 
 ## `public.assistant_ragindexrun`
 
 **Type :** table  
 **Définition :** Exécutions d'indexation du corpus RAG Django.  
 **Source :** Application Django / Assistant  
-**Statut :** Actif
+**Statut :** Déprécié
 
 | Colonne | Définition | Type PostgreSQL | Obligatoire | Clé | Source | Exemple | Règle | Sensibilité | Statut |
 |---|---|---|---|---|---|---|---|---|---|
-| `id` | Identifiant technique de l'occurrence. | `bigint` | Oui | PK, Unique (index, composite possible) | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Actif |
-| `status` | État courant selon le cycle de vie de l'objet. | `character varying(16)` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Actif |
-| `manifest_path` | Champ manifest path de l'objet documenté. | `character varying(500)` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Actif |
-| `chunking_algorithm_version` | Champ chunking algorithm version de l'objet documenté. | `character varying(100)` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Actif |
-| `started_at` | Date et heure de début du traitement. | `timestamp with time zone` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Actif |
-| `finished_at` | Date et heure de fin du traitement. | `timestamp with time zone` | Non | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Actif |
-| `documents_created` | Champ documents created de l'objet documenté. | `integer` | Oui | — | Application Django / Assistant | Non extrait | CHECK (documents_created >= 0) | Interne | Actif |
-| `versions_created` | Champ versions created de l'objet documenté. | `integer` | Oui | — | Application Django / Assistant | Non extrait | CHECK (versions_created >= 0) | Interne | Actif |
-| `documents_skipped` | Champ documents skipped de l'objet documenté. | `integer` | Oui | — | Application Django / Assistant | Non extrait | CHECK (documents_skipped >= 0) | Interne | Actif |
-| `chunks_created` | Champ chunks created de l'objet documenté. | `integer` | Oui | — | Application Django / Assistant | Non extrait | CHECK (chunks_created >= 0) | Interne | Actif |
-| `error_message` | Champ error message de l'objet documenté. | `text` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Actif |
+| `id` | Identifiant technique de l'occurrence. | `bigint` | Oui | PK, Unique (index, composite possible) | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Déprécié |
+| `status` | État courant selon le cycle de vie de l'objet. | `character varying(16)` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Déprécié |
+| `manifest_path` | Champ manifest path de l'objet documenté. | `character varying(500)` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Déprécié |
+| `chunking_algorithm_version` | Champ chunking algorithm version de l'objet documenté. | `character varying(100)` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Déprécié |
+| `started_at` | Date et heure de début du traitement. | `timestamp with time zone` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Déprécié |
+| `finished_at` | Date et heure de fin du traitement. | `timestamp with time zone` | Non | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Déprécié |
+| `documents_created` | Champ documents created de l'objet documenté. | `integer` | Oui | — | Application Django / Assistant | Non extrait | CHECK (documents_created >= 0) | Interne | Déprécié |
+| `versions_created` | Champ versions created de l'objet documenté. | `integer` | Oui | — | Application Django / Assistant | Non extrait | CHECK (versions_created >= 0) | Interne | Déprécié |
+| `documents_skipped` | Champ documents skipped de l'objet documenté. | `integer` | Oui | — | Application Django / Assistant | Non extrait | CHECK (documents_skipped >= 0) | Interne | Déprécié |
+| `chunks_created` | Champ chunks created de l'objet documenté. | `integer` | Oui | — | Application Django / Assistant | Non extrait | CHECK (chunks_created >= 0) | Interne | Déprécié |
+| `error_message` | Champ error message de l'objet documenté. | `text` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Déprécié |
 
 ## `public.assistant_ragsource`
 
 **Type :** table  
 **Définition :** Sources documentaires du corpus RAG Django.  
 **Source :** Application Django / Assistant  
-**Statut :** Actif
+**Statut :** Déprécié
 
 | Colonne | Définition | Type PostgreSQL | Obligatoire | Clé | Source | Exemple | Règle | Sensibilité | Statut |
 |---|---|---|---|---|---|---|---|---|---|
-| `id` | Identifiant technique de l'occurrence. | `bigint` | Oui | PK, Unique (index, composite possible) | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Actif |
-| `name` | Nom de l'occurrence. | `character varying(200)` | Oui | Unique | Application Django / Assistant | Non extrait | UNIQUE (name) | Interne | Actif |
-| `publisher` | Champ publisher de l'objet documenté. | `character varying(200)` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Actif |
-| `base_url` | Champ base url de l'objet documenté. | `character varying(200)` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Actif |
-| `created_at` | Date et heure de création. | `timestamp with time zone` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Actif |
+| `id` | Identifiant technique de l'occurrence. | `bigint` | Oui | PK, Unique (index, composite possible) | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Déprécié |
+| `name` | Nom de l'occurrence. | `character varying(200)` | Oui | Unique | Application Django / Assistant | Non extrait | UNIQUE (name) | Interne | Déprécié |
+| `publisher` | Champ publisher de l'objet documenté. | `character varying(200)` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Déprécié |
+| `base_url` | Champ base url de l'objet documenté. | `character varying(200)` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Déprécié |
+| `created_at` | Date et heure de création. | `timestamp with time zone` | Oui | — | Application Django / Assistant | Non extrait | Aucune contrainte spécifique déclarée | Interne | Déprécié |
 
 ## `public.auth_group`
 

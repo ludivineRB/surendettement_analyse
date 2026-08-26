@@ -2,6 +2,8 @@ import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.test import SimpleTestCase, TestCase
 
 from web.assistant.chunking import (
@@ -80,6 +82,10 @@ class CorpusIngestionTests(TestCase):
             ),
             encoding="utf-8",
         )
+
+    def test_deprecated_ingestion_command_is_blocked_by_default(self):
+        with self.assertRaisesMessage(CommandError, "déprécié"):
+            call_command("ingest_rag_corpus")
 
     def test_ingestion_is_idempotent_and_keeps_provenance(self):
         first = ingest_manifest(self.manifest_path, self.root)

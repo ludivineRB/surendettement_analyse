@@ -64,9 +64,10 @@ valider avant le MCD final.
 
 ## Éléments volontairement séparés
 
-Deux catalogues d'indicateurs (`dim_indicator`, `indicators`) et deux corpus RAG
-(`public.assistant_rag*`, `assistant.corpus_chunks`) coexistent. Le MLD les garde
-distincts : les fusionner inventerait une règle absente du schéma et du code.
+Deux catalogues d'indicateurs (`dim_indicator`, `indicators`) coexistent et
+restent distincts. Pour le RAG, `assistant.corpus_chunks` est le corpus canonique
+actif ; `public.assistant_rag*` reste visible dans ce MLD détaillé uniquement
+comme sous-modèle déprécié conservé pour audit.
 
 Le fait et les deux vues de surendettement historiques sont exclus du diagramme
 MLD principal mais restent recensés dans `inventory/objects.md` et dans le MPD.

@@ -382,6 +382,11 @@ def _table_source(schema: str, table: str) -> str:
 
 def _table_status(table: str) -> str:
     if table in {
+        "assistant_ragsource",
+        "assistant_ragdocument",
+        "assistant_ragdocumentversion",
+        "assistant_ragchunk",
+        "assistant_ragindexrun",
         "fact_surendettement",
         "v_surendettement_annual",
         "v_surendettement_with_insee_macro",

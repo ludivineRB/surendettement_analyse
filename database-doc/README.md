@@ -59,11 +59,12 @@ nettoyage de ces volumes.
 ## État initial audité
 
 - Base active : 40 tables (`public`: 37, `assistant`: 3), 12 vues et 26 séquences.
-- Migrations : 4 opérationnelles, 2 assistant SQL et 23 Django appliquées.
+- Migrations : 4 opérationnelles, 2 assistant SQL et 24 Django appliquées.
 - Dépréciés : `fact_surendettement`, `v_surendettement_annual` et
   `v_surendettement_with_insee_macro`.
-- Écart à suivre : deux stockages RAG coexistent (`public.assistant_rag*` et
-  `assistant.corpus_chunks`).
+- RAG : `assistant.corpus_chunks` est canonique ; les cinq tables
+  `public.assistant_rag*` sont dépréciées depuis le 25/08/2026 et conservées
+  pour audit.
 
 Les inventaires détaillés, MLD, MCD, dictionnaire, flux et règles de maintenance
 seront ajoutés par lots courts après validation du MPD initial.

@@ -111,7 +111,7 @@ Le titre, le contenu, les citations, le SQL généré et les métadonnées de r�
 peuvent contenir des informations personnelles ou sensibles. `auth_user`
 contient également identifiant, courriel, nom, prénom et mot de passe haché.
 
-## Corpus RAG Django
+## Corpus RAG Django — déprécié
 
 ```text
 SOURCE_RAG (0,N) ── PUBLIE ── (1,1) DOCUMENT_RAG
@@ -121,16 +121,20 @@ VERSION_DOCUMENT_RAG (0,N) ── DECOUPE ── (1,1) FRAGMENT_RAG
 
 La base autorise une source sans document, un document sans version et une
 version sans fragment. Une version est unique par document et empreinte ; un
-fragment est unique par version et ordinal.
+fragment est unique par version et ordinal. Ce sous-modèle est conservé pour
+audit mais officiellement déprécié depuis le 25/08/2026. Aucune nouvelle
+indexation ne doit l'alimenter hors dérogation explicite.
 
 ## Assistant SQL et second corpus
 
-`FRAGMENT_CORPUS_ASSISTANT` et `EXECUTION_SQL` sont autonomes dans le schéma
-`assistant`. `actor_id` est facultatif et textuel : aucune association physique
-avec UTILISATEUR ne peut être affirmée.
+`FRAGMENT_CORPUS_ASSISTANT` est désormais le concept RAG canonique et
+`EXECUTION_SQL` porte l'audit autonome du schéma `assistant`. `actor_id` est
+facultatif et textuel : aucune association physique avec UTILISATEUR ne peut
+être affirmée.
 
-La correspondance entre `FRAGMENT_CORPUS_ASSISTANT` et `FRAGMENT_RAG` est une
-**Hypothèse à valider**. Les deux concepts restent séparés dans le MCD.
+Il n'existe aucune synchronisation démontrée entre `FRAGMENT_CORPUS_ASSISTANT`
+et le `FRAGMENT_RAG` Django déprécié. Les deux concepts restent séparés afin de
+ne pas inventer un lignage absent.
 
 ## Exécution des traitements
 
@@ -149,6 +153,4 @@ au MCD comme règles démontrées.
 3. Les codes géographiques des observations et scores correspondent aux
    référentiels région/département.
 4. `execution_sql.actor_id` identifie un utilisateur Django.
-5. Les corpus RAG Django et Assistant API représentent deux étapes d'un même
-   corpus plutôt que deux implémentations concurrentes.
-6. Une exécution de pipeline peut être reliée aux objets qu'elle produit.
+5. Une exécution de pipeline peut être reliée aux objets qu'elle produit.

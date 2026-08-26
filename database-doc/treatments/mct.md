@@ -92,13 +92,15 @@ pas des effets implicites du générateur documentaire.
 
 ## RAG et conversations
 
-### RAG Django
+### RAG Django — traitement déprécié
 
-Manifest approuvé → source → document → version par empreinte → fragments →
-vecteur de recherche plein texte. Une migration de données a désactivé deux
-documents techniques sans supprimer leur historique.
+L'ancien flux était : manifest approuvé → source → document → version par
+empreinte → fragments → vecteur de recherche plein texte. La migration
+`assistant.0005` désactive les documents actifs et officialise le remplacement
+par `assistant.corpus_chunks`. La commande d'ingestion bloque désormais les
+nouvelles écritures par défaut ; aucune donnée historique n'est supprimée.
 
-### RAG Assistant API
+### RAG Assistant API — traitement canonique
 
 Un second flux alimente `assistant.corpus_chunks`, avec empreintes source et
 contenu, statut actif et index `tsvector`. Le raccord fonctionnel aux tables RAG

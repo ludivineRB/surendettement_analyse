@@ -39,6 +39,7 @@ Registre physique : `public.django_migrations`.
 | `assistant` | `0002_retire_technical_corpus` | désactivation réversible de deux documents techniques | 2026-07-30 13:06:08 |
 | `assistant` | `0003_conversations` | conversations et messages rattachés à l'utilisateur | 2026-08-18 21:41:16 |
 | `assistant` | `0004_conversation_kind_and_response_metadata` | type de conversation, SQL, feedback et métadonnées JSON | 2026-08-19 12:50:08 |
+| `assistant` | `0005_deprecate_legacy_rag_corpus` | désactivation du corpus Django et inscription de ses cinq tables au registre de dépréciation | 2026-08-26 07:23:48 |
 
 Migrations Django standard également appliquées :
 
@@ -69,7 +70,7 @@ systèmes de migrations précédents.
    Assistant et migrations Django.
 2. Les tables analytiques physiques sont principalement créées par SQL dans
    `analytics_db.py`/`conformed_dimensions.py`, pas par les modèles SQLAlchemy.
-3. La migration Django `0002` modifie des lignes de corpus mais ne déprécie pas
-   les tables RAG Django elles-mêmes.
+3. La migration Django `0002` retire seulement deux documents techniques ; la
+   dépréciation officielle des tables est portée séparément par `0005`.
 4. Les dates PostgreSQL confirment l'application des migrations, mais pas le
    code exact du commit utilisé lors de chaque exécution.

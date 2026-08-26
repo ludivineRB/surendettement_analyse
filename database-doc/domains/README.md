@@ -12,8 +12,8 @@ des objets. Il ne repose pas uniquement sur les préfixes de tables.
 | Orchestration et qualité | `pipeline_runs`, `pipeline_metadata`, registres de migration/dépréciation | technique et exploitation |
 | Comptes et autorisations | tables Django `auth_*`, `django_session`, `django_admin_log` | applicatif et personnel |
 | Conversations | `assistant_conversation`, `assistant_conversationmessage` | applicatif, personnel ou sensible |
-| RAG Django | `assistant_ragsource`, `assistant_ragdocument*`, `assistant_ragchunk`, `assistant_ragindexrun` | applicatif documentaire |
-| Assistant SQL/RAG | schéma `assistant` : `corpus_chunks`, `sql_executions` | applicatif, audit et recherche |
+| RAG Django historique | `assistant_ragsource`, `assistant_ragdocument*`, `assistant_ragchunk`, `assistant_ragindexrun` | déprécié, audit uniquement |
+| Assistant SQL/RAG | schéma `assistant` : `corpus_chunks`, `sql_executions` | actif et canonique, audit et recherche |
 | Publication analytique | vues `analytics_*` | interface de lecture stable |
 | Historique | `surendettement_data`, `fact_surendettement` et vues associées | historique/déprécié |
 
@@ -45,7 +45,8 @@ publication `analytics_*` est une interface par vues.
 
 1. `dim_indicator` et `indicators` décrivent deux catalogues sans clé de
    correspondance contrainte.
-2. Les corpus RAG Django et Assistant API se chevauchent sans relation physique.
+2. Le corpus RAG Django déprécié et le corpus canonique Assistant API n'ont
+   aucune relation physique ni synchronisation démontrée.
 3. L'entrepôt et le stockage opérationnel partagent actuellement `public`, bien
    qu'ils aient des cycles de création distincts.
 4. Les codes territoire/période servent de liens transverses mais plusieurs FK
