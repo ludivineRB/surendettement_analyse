@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
-from collections import Counter
+from collections import defaultdict
 from threading import Lock
 
 
 class AssistantMetrics:
     def __init__(self) -> None:
-        self._values: Counter[tuple[str, tuple[tuple[str, str], ...]]] = Counter()
+        self._values: defaultdict[
+            tuple[str, tuple[tuple[str, str], ...]], float
+        ] = defaultdict(float)
         self._lock = Lock()
 
     def increment(self, name: str, **labels: str) -> None:
@@ -33,7 +35,7 @@ class AssistantMetrics:
                     f'{key}="{val.replace(chr(34), chr(92) + chr(34))}"'
                     for key, val in labels
                 ) + "}"
-            lines.append(f"{name}{suffix} {value}")
+            lines.append(f"{name}{suffix} {value:g}")
         return "\n".join(lines) + "\n"
 
 
