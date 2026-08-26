@@ -33,8 +33,7 @@ from assistant_api.schemas import (
     SourceReference,
 )
 from assistant_api.storage import get_engine
-from assistant_api.sql_executor import get_readonly_engine
-from assistant_api.sql_service import run_text_to_sql
+from assistant_api.sql_service import SQLClarificationRequired, run_text_to_sql
 from assistant_api.monitoring import metrics as prometheus
 
 
@@ -170,7 +169,6 @@ def answer_question(
             sql_result = run_text_to_sql(
                 request.question,
                 generator=generator,
-                readonly_engine=get_readonly_engine(),
                 audit_engine=engine,
                 request_id=request_id,
                 actor_id=request.actor_id,
@@ -182,6 +180,15 @@ def answer_question(
                 analytics_dataset=None,
                 analytics_rows=sql_result.sql_execution.rows,
                 analytical_sql=sql_result.sql_execution.validated.sql,
+            )
+        except SQLClarificationRequired as exc:
+            return AnswerResponse(
+                answer=str(exc),
+                sources=[],
+                data_references=[],
+                method="refusal",
+                category=category,
+                request_id=request_id,
             )
         except Exception as exc:
             if isinstance(exc, HTTPException):
