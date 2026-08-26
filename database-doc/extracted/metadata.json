@@ -1,0 +1,6070 @@
+{
+  "columns": [
+    {
+      "column_name": "chunk_id",
+      "data_type": "character(64)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 1,
+      "relation_name": "corpus_chunks",
+      "schema_name": "assistant"
+    },
+    {
+      "column_name": "source_id",
+      "data_type": "character varying(200)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 2,
+      "relation_name": "corpus_chunks",
+      "schema_name": "assistant"
+    },
+    {
+      "column_name": "source_url",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 3,
+      "relation_name": "corpus_chunks",
+      "schema_name": "assistant"
+    },
+    {
+      "column_name": "source_title",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 4,
+      "relation_name": "corpus_chunks",
+      "schema_name": "assistant"
+    },
+    {
+      "column_name": "publisher",
+      "data_type": "character varying(100)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 5,
+      "relation_name": "corpus_chunks",
+      "schema_name": "assistant"
+    },
+    {
+      "column_name": "reference_period",
+      "data_type": "character varying(100)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 6,
+      "relation_name": "corpus_chunks",
+      "schema_name": "assistant"
+    },
+    {
+      "column_name": "geographic_scope",
+      "data_type": "character varying(200)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 7,
+      "relation_name": "corpus_chunks",
+      "schema_name": "assistant"
+    },
+    {
+      "column_name": "section",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 8,
+      "relation_name": "corpus_chunks",
+      "schema_name": "assistant"
+    },
+    {
+      "column_name": "ordinal",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 9,
+      "relation_name": "corpus_chunks",
+      "schema_name": "assistant"
+    },
+    {
+      "column_name": "content",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 10,
+      "relation_name": "corpus_chunks",
+      "schema_name": "assistant"
+    },
+    {
+      "column_name": "content_sha256",
+      "data_type": "character(64)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 11,
+      "relation_name": "corpus_chunks",
+      "schema_name": "assistant"
+    },
+    {
+      "column_name": "source_sha256",
+      "data_type": "character(64)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 12,
+      "relation_name": "corpus_chunks",
+      "schema_name": "assistant"
+    },
+    {
+      "column_name": "is_active",
+      "data_type": "boolean",
+      "default_value": "true",
+      "not_null": true,
+      "ordinal": 13,
+      "relation_name": "corpus_chunks",
+      "schema_name": "assistant"
+    },
+    {
+      "column_name": "indexed_at",
+      "data_type": "timestamp with time zone",
+      "default_value": "CURRENT_TIMESTAMP",
+      "not_null": true,
+      "ordinal": 14,
+      "relation_name": "corpus_chunks",
+      "schema_name": "assistant"
+    },
+    {
+      "column_name": "search_vector",
+      "data_type": "tsvector",
+      "default_value": "((setweight(to_tsvector('french'::regconfig, COALESCE(source_title, ''::text)), 'A'::\"char\") || setweight(to_tsvector('french'::regconfig, COALESCE(section, ''::text)), 'A'::\"char\")) || setweight(to_tsvector('french'::regconfig, COALESCE(content, ''::text)), 'B'::\"char\"))",
+      "not_null": false,
+      "ordinal": 15,
+      "relation_name": "corpus_chunks",
+      "schema_name": "assistant"
+    },
+    {
+      "column_name": "version",
+      "data_type": "character varying(64)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 1,
+      "relation_name": "schema_migrations",
+      "schema_name": "assistant"
+    },
+    {
+      "column_name": "applied_at",
+      "data_type": "timestamp with time zone",
+      "default_value": "CURRENT_TIMESTAMP",
+      "not_null": true,
+      "ordinal": 2,
+      "relation_name": "schema_migrations",
+      "schema_name": "assistant"
+    },
+    {
+      "column_name": "execution_id",
+      "data_type": "uuid",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 1,
+      "relation_name": "sql_executions",
+      "schema_name": "assistant"
+    },
+    {
+      "column_name": "request_id",
+      "data_type": "uuid",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 2,
+      "relation_name": "sql_executions",
+      "schema_name": "assistant"
+    },
+    {
+      "column_name": "actor_id",
+      "data_type": "character varying(128)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 3,
+      "relation_name": "sql_executions",
+      "schema_name": "assistant"
+    },
+    {
+      "column_name": "question",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 4,
+      "relation_name": "sql_executions",
+      "schema_name": "assistant"
+    },
+    {
+      "column_name": "interpretation_json",
+      "data_type": "text",
+      "default_value": "'{}'::text",
+      "not_null": true,
+      "ordinal": 5,
+      "relation_name": "sql_executions",
+      "schema_name": "assistant"
+    },
+    {
+      "column_name": "schema_version",
+      "data_type": "character varying(64)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 6,
+      "relation_name": "sql_executions",
+      "schema_name": "assistant"
+    },
+    {
+      "column_name": "generated_sql",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 7,
+      "relation_name": "sql_executions",
+      "schema_name": "assistant"
+    },
+    {
+      "column_name": "validation_status",
+      "data_type": "character varying(32)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 8,
+      "relation_name": "sql_executions",
+      "schema_name": "assistant"
+    },
+    {
+      "column_name": "validation_error",
+      "data_type": "character varying(512)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 9,
+      "relation_name": "sql_executions",
+      "schema_name": "assistant"
+    },
+    {
+      "column_name": "duration_ms",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 10,
+      "relation_name": "sql_executions",
+      "schema_name": "assistant"
+    },
+    {
+      "column_name": "row_count",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 11,
+      "relation_name": "sql_executions",
+      "schema_name": "assistant"
+    },
+    {
+      "column_name": "plan_cost",
+      "data_type": "double precision",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 12,
+      "relation_name": "sql_executions",
+      "schema_name": "assistant"
+    },
+    {
+      "column_name": "prompt_version",
+      "data_type": "character varying(64)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 13,
+      "relation_name": "sql_executions",
+      "schema_name": "assistant"
+    },
+    {
+      "column_name": "model_version",
+      "data_type": "character varying(128)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 14,
+      "relation_name": "sql_executions",
+      "schema_name": "assistant"
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "default_value": "CURRENT_TIMESTAMP",
+      "not_null": true,
+      "ordinal": 15,
+      "relation_name": "sql_executions",
+      "schema_name": "assistant"
+    },
+    {
+      "column_name": "reference_year",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 1,
+      "relation_name": "analytics_macro_regions",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "region_name",
+      "data_type": "character varying(255)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 2,
+      "relation_name": "analytics_macro_regions",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "indicator_code",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 3,
+      "relation_name": "analytics_macro_regions",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "indicator_name",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 4,
+      "relation_name": "analytics_macro_regions",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "indicator_group",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 5,
+      "relation_name": "analytics_macro_regions",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "aggregation_rule",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 6,
+      "relation_name": "analytics_macro_regions",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "value_numeric",
+      "data_type": "double precision",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 7,
+      "relation_name": "analytics_macro_regions",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "geographic_level",
+      "data_type": "character varying(32)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 1,
+      "relation_name": "analytics_model_comparisons",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "geographic_code",
+      "data_type": "character varying(64)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 2,
+      "relation_name": "analytics_model_comparisons",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "geographic_name",
+      "data_type": "character varying(255)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 3,
+      "relation_name": "analytics_model_comparisons",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "reference_period",
+      "data_type": "character varying(16)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 4,
+      "relation_name": "analytics_model_comparisons",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "model_code",
+      "data_type": "character varying(128)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 5,
+      "relation_name": "analytics_model_comparisons",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "version_a",
+      "data_type": "character varying(64)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 6,
+      "relation_name": "analytics_model_comparisons",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "version_b",
+      "data_type": "character varying(64)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 7,
+      "relation_name": "analytics_model_comparisons",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "score_a",
+      "data_type": "numeric(12,8)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 8,
+      "relation_name": "analytics_model_comparisons",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "score_b",
+      "data_type": "numeric(12,8)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 9,
+      "relation_name": "analytics_model_comparisons",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "score_change",
+      "data_type": "numeric",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 10,
+      "relation_name": "analytics_model_comparisons",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "id",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 1,
+      "relation_name": "analytics_observations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "indicator_code",
+      "data_type": "character varying(128)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 2,
+      "relation_name": "analytics_observations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "indicator_label",
+      "data_type": "character varying(512)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 3,
+      "relation_name": "analytics_observations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "geographic_level",
+      "data_type": "character varying(64)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 4,
+      "relation_name": "analytics_observations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "geographic_code",
+      "data_type": "character varying(64)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 5,
+      "relation_name": "analytics_observations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "geographic_name",
+      "data_type": "character varying(255)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 6,
+      "relation_name": "analytics_observations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "region_code",
+      "data_type": "character varying(16)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 7,
+      "relation_name": "analytics_observations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "reference_period",
+      "data_type": "character varying(7)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 8,
+      "relation_name": "analytics_observations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "value_numeric",
+      "data_type": "double precision",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 9,
+      "relation_name": "analytics_observations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "unit",
+      "data_type": "character varying(64)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 10,
+      "relation_name": "analytics_observations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "observation_type",
+      "data_type": "character varying(64)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 11,
+      "relation_name": "analytics_observations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "comparison_period",
+      "data_type": "character varying(32)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 12,
+      "relation_name": "analytics_observations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "variation_numeric",
+      "data_type": "double precision",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 13,
+      "relation_name": "analytics_observations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "variation_unit",
+      "data_type": "character varying(64)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 14,
+      "relation_name": "analytics_observations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "confidence_score",
+      "data_type": "double precision",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 15,
+      "relation_name": "analytics_observations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "updated_at",
+      "data_type": "character varying(32)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 16,
+      "relation_name": "analytics_observations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "id",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 1,
+      "relation_name": "analytics_pipeline_status",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "pipeline_name",
+      "data_type": "character varying(128)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 2,
+      "relation_name": "analytics_pipeline_status",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "status",
+      "data_type": "character varying(32)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 3,
+      "relation_name": "analytics_pipeline_status",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "started_at",
+      "data_type": "character varying(32)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 4,
+      "relation_name": "analytics_pipeline_status",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "finished_at",
+      "data_type": "character varying(32)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 5,
+      "relation_name": "analytics_pipeline_status",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "id",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 1,
+      "relation_name": "analytics_risk_scores",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "geographic_level",
+      "data_type": "character varying(32)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 2,
+      "relation_name": "analytics_risk_scores",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "geographic_code",
+      "data_type": "character varying(64)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 3,
+      "relation_name": "analytics_risk_scores",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "geographic_name",
+      "data_type": "character varying(255)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 4,
+      "relation_name": "analytics_risk_scores",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "reference_period",
+      "data_type": "character varying(16)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 5,
+      "relation_name": "analytics_risk_scores",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "score",
+      "data_type": "numeric(12,8)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 6,
+      "relation_name": "analytics_risk_scores",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "risk_level",
+      "data_type": "character varying(32)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 7,
+      "relation_name": "analytics_risk_scores",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "coverage_ratio",
+      "data_type": "numeric(8,6)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 8,
+      "relation_name": "analytics_risk_scores",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "status",
+      "data_type": "character varying(32)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 9,
+      "relation_name": "analytics_risk_scores",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "model_code",
+      "data_type": "character varying(128)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 10,
+      "relation_name": "analytics_risk_scores",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "model_version",
+      "data_type": "character varying(64)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 11,
+      "relation_name": "analytics_risk_scores",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "model_is_active",
+      "data_type": "boolean",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 12,
+      "relation_name": "analytics_risk_scores",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "calculated_at",
+      "data_type": "character varying(32)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 13,
+      "relation_name": "analytics_risk_scores",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "id",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 1,
+      "relation_name": "analytics_score_factors",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "geographic_level",
+      "data_type": "character varying(32)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 2,
+      "relation_name": "analytics_score_factors",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "geographic_code",
+      "data_type": "character varying(64)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 3,
+      "relation_name": "analytics_score_factors",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "geographic_name",
+      "data_type": "character varying(255)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 4,
+      "relation_name": "analytics_score_factors",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "reference_period",
+      "data_type": "character varying(16)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 5,
+      "relation_name": "analytics_score_factors",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "model_code",
+      "data_type": "character varying(128)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 6,
+      "relation_name": "analytics_score_factors",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "model_version",
+      "data_type": "character varying(64)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 7,
+      "relation_name": "analytics_score_factors",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "indicator_code",
+      "data_type": "character varying(128)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 8,
+      "relation_name": "analytics_score_factors",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "raw_value",
+      "data_type": "numeric(20,8)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 9,
+      "relation_name": "analytics_score_factors",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "unit",
+      "data_type": "character varying(64)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 10,
+      "relation_name": "analytics_score_factors",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "normalized_value",
+      "data_type": "numeric(12,8)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 11,
+      "relation_name": "analytics_score_factors",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "configured_weight",
+      "data_type": "numeric(12,8)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 12,
+      "relation_name": "analytics_score_factors",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "effective_weight",
+      "data_type": "numeric(12,8)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 13,
+      "relation_name": "analytics_score_factors",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "contribution",
+      "data_type": "numeric(12,8)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 14,
+      "relation_name": "analytics_score_factors",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "direction",
+      "data_type": "character varying(16)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 15,
+      "relation_name": "analytics_score_factors",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "id",
+      "data_type": "bigint",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 1,
+      "relation_name": "assistant_conversation",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "title",
+      "data_type": "character varying(200)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 2,
+      "relation_name": "assistant_conversation",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 3,
+      "relation_name": "assistant_conversation",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 4,
+      "relation_name": "assistant_conversation",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "user_id",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 5,
+      "relation_name": "assistant_conversation",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "kind",
+      "data_type": "character varying(16)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 6,
+      "relation_name": "assistant_conversation",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "id",
+      "data_type": "bigint",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 1,
+      "relation_name": "assistant_conversationmessage",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "role",
+      "data_type": "character varying(16)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 2,
+      "relation_name": "assistant_conversationmessage",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "content",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 3,
+      "relation_name": "assistant_conversationmessage",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "method",
+      "data_type": "character varying(16)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 4,
+      "relation_name": "assistant_conversationmessage",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "request_id",
+      "data_type": "uuid",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 5,
+      "relation_name": "assistant_conversationmessage",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "citations",
+      "data_type": "jsonb",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 6,
+      "relation_name": "assistant_conversationmessage",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 7,
+      "relation_name": "assistant_conversationmessage",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "conversation_id",
+      "data_type": "bigint",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 8,
+      "relation_name": "assistant_conversationmessage",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "category",
+      "data_type": "character varying(48)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 9,
+      "relation_name": "assistant_conversationmessage",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "response_metadata",
+      "data_type": "jsonb",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 10,
+      "relation_name": "assistant_conversationmessage",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "generated_sql",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 11,
+      "relation_name": "assistant_conversationmessage",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "feedback",
+      "data_type": "character varying(16)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 12,
+      "relation_name": "assistant_conversationmessage",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "id",
+      "data_type": "bigint",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 1,
+      "relation_name": "assistant_ragchunk",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "ordinal",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 2,
+      "relation_name": "assistant_ragchunk",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "title",
+      "data_type": "character varying(300)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 3,
+      "relation_name": "assistant_ragchunk",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "section",
+      "data_type": "character varying(500)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 4,
+      "relation_name": "assistant_ragchunk",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "content",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 5,
+      "relation_name": "assistant_ragchunk",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "content_sha256",
+      "data_type": "character varying(64)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 6,
+      "relation_name": "assistant_ragchunk",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "page_number",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 7,
+      "relation_name": "assistant_ragchunk",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "territory",
+      "data_type": "character varying(200)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 8,
+      "relation_name": "assistant_ragchunk",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "reference_period",
+      "data_type": "character varying(32)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 9,
+      "relation_name": "assistant_ragchunk",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "indicator_code",
+      "data_type": "character varying(120)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 10,
+      "relation_name": "assistant_ragchunk",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "source_url",
+      "data_type": "character varying(200)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 11,
+      "relation_name": "assistant_ragchunk",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "search_vector",
+      "data_type": "tsvector",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 12,
+      "relation_name": "assistant_ragchunk",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 13,
+      "relation_name": "assistant_ragchunk",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "document_version_id",
+      "data_type": "bigint",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 14,
+      "relation_name": "assistant_ragchunk",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "id",
+      "data_type": "bigint",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 1,
+      "relation_name": "assistant_ragdocument",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "slug",
+      "data_type": "character varying(200)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 2,
+      "relation_name": "assistant_ragdocument",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "title",
+      "data_type": "character varying(300)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 3,
+      "relation_name": "assistant_ragdocument",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "document_type",
+      "data_type": "character varying(32)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 4,
+      "relation_name": "assistant_ragdocument",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "source_url",
+      "data_type": "character varying(200)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 5,
+      "relation_name": "assistant_ragdocument",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "is_active",
+      "data_type": "boolean",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 6,
+      "relation_name": "assistant_ragdocument",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "metadata",
+      "data_type": "jsonb",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 7,
+      "relation_name": "assistant_ragdocument",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 8,
+      "relation_name": "assistant_ragdocument",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 9,
+      "relation_name": "assistant_ragdocument",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "source_id",
+      "data_type": "bigint",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 10,
+      "relation_name": "assistant_ragdocument",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "id",
+      "data_type": "bigint",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 1,
+      "relation_name": "assistant_ragdocumentversion",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "version_label",
+      "data_type": "character varying(100)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 2,
+      "relation_name": "assistant_ragdocumentversion",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "source_path",
+      "data_type": "character varying(500)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 3,
+      "relation_name": "assistant_ragdocumentversion",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "sha256",
+      "data_type": "character varying(64)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 4,
+      "relation_name": "assistant_ragdocumentversion",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "approved_at",
+      "data_type": "timestamp with time zone",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 5,
+      "relation_name": "assistant_ragdocumentversion",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "chunking_algorithm_version",
+      "data_type": "character varying(100)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 6,
+      "relation_name": "assistant_ragdocumentversion",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "indexed_at",
+      "data_type": "timestamp with time zone",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 7,
+      "relation_name": "assistant_ragdocumentversion",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "document_id",
+      "data_type": "bigint",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 8,
+      "relation_name": "assistant_ragdocumentversion",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "id",
+      "data_type": "bigint",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 1,
+      "relation_name": "assistant_ragindexrun",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "status",
+      "data_type": "character varying(16)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 2,
+      "relation_name": "assistant_ragindexrun",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "manifest_path",
+      "data_type": "character varying(500)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 3,
+      "relation_name": "assistant_ragindexrun",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "chunking_algorithm_version",
+      "data_type": "character varying(100)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 4,
+      "relation_name": "assistant_ragindexrun",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "started_at",
+      "data_type": "timestamp with time zone",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 5,
+      "relation_name": "assistant_ragindexrun",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "finished_at",
+      "data_type": "timestamp with time zone",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 6,
+      "relation_name": "assistant_ragindexrun",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "documents_created",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 7,
+      "relation_name": "assistant_ragindexrun",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "versions_created",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 8,
+      "relation_name": "assistant_ragindexrun",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "documents_skipped",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 9,
+      "relation_name": "assistant_ragindexrun",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "chunks_created",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 10,
+      "relation_name": "assistant_ragindexrun",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "error_message",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 11,
+      "relation_name": "assistant_ragindexrun",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "id",
+      "data_type": "bigint",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 1,
+      "relation_name": "assistant_ragsource",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "name",
+      "data_type": "character varying(200)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 2,
+      "relation_name": "assistant_ragsource",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "publisher",
+      "data_type": "character varying(200)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 3,
+      "relation_name": "assistant_ragsource",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "base_url",
+      "data_type": "character varying(200)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 4,
+      "relation_name": "assistant_ragsource",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 5,
+      "relation_name": "assistant_ragsource",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "id",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 1,
+      "relation_name": "auth_group",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "name",
+      "data_type": "character varying(150)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 2,
+      "relation_name": "auth_group",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "id",
+      "data_type": "bigint",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 1,
+      "relation_name": "auth_group_permissions",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "group_id",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 2,
+      "relation_name": "auth_group_permissions",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "permission_id",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 3,
+      "relation_name": "auth_group_permissions",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "id",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 1,
+      "relation_name": "auth_permission",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "name",
+      "data_type": "character varying(255)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 2,
+      "relation_name": "auth_permission",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "content_type_id",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 3,
+      "relation_name": "auth_permission",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "codename",
+      "data_type": "character varying(100)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 4,
+      "relation_name": "auth_permission",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "id",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 1,
+      "relation_name": "auth_user",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "password",
+      "data_type": "character varying(128)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 2,
+      "relation_name": "auth_user",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "last_login",
+      "data_type": "timestamp with time zone",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 3,
+      "relation_name": "auth_user",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "is_superuser",
+      "data_type": "boolean",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 4,
+      "relation_name": "auth_user",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "username",
+      "data_type": "character varying(150)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 5,
+      "relation_name": "auth_user",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "first_name",
+      "data_type": "character varying(150)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 6,
+      "relation_name": "auth_user",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "last_name",
+      "data_type": "character varying(150)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 7,
+      "relation_name": "auth_user",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "email",
+      "data_type": "character varying(254)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 8,
+      "relation_name": "auth_user",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "is_staff",
+      "data_type": "boolean",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 9,
+      "relation_name": "auth_user",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "is_active",
+      "data_type": "boolean",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 10,
+      "relation_name": "auth_user",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "date_joined",
+      "data_type": "timestamp with time zone",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 11,
+      "relation_name": "auth_user",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "id",
+      "data_type": "bigint",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 1,
+      "relation_name": "auth_user_groups",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "user_id",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 2,
+      "relation_name": "auth_user_groups",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "group_id",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 3,
+      "relation_name": "auth_user_groups",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "id",
+      "data_type": "bigint",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 1,
+      "relation_name": "auth_user_user_permissions",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "user_id",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 2,
+      "relation_name": "auth_user_user_permissions",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "permission_id",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 3,
+      "relation_name": "auth_user_user_permissions",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "departement_code",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 1,
+      "relation_name": "dim_department",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "departement_name",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 2,
+      "relation_name": "dim_department",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "region_name",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 3,
+      "relation_name": "dim_department",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "is_metropolitan_scope",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 4,
+      "relation_name": "dim_department",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "region_code",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 5,
+      "relation_name": "dim_department",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "indicator_key",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 1,
+      "relation_name": "dim_indicator",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "source_system",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 2,
+      "relation_name": "dim_indicator",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "indicator_code",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 3,
+      "relation_name": "dim_indicator",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "indicator_name",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 4,
+      "relation_name": "dim_indicator",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "indicator_group",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 5,
+      "relation_name": "dim_indicator",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "unit",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 6,
+      "relation_name": "dim_indicator",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "aggregation_rule",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 7,
+      "relation_name": "dim_indicator",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "period_key",
+      "data_type": "character varying(16)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 1,
+      "relation_name": "dim_period",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "reference_year",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 2,
+      "relation_name": "dim_period",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "reference_month_number",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 3,
+      "relation_name": "dim_period",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "granularity",
+      "data_type": "character varying(16)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 4,
+      "relation_name": "dim_period",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "region_code",
+      "data_type": "character varying(16)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 1,
+      "relation_name": "dim_region",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "region_name",
+      "data_type": "character varying(255)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 2,
+      "relation_name": "dim_region",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "is_metropolitan_scope",
+      "data_type": "boolean",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 3,
+      "relation_name": "dim_region",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "id",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 1,
+      "relation_name": "django_admin_log",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "action_time",
+      "data_type": "timestamp with time zone",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 2,
+      "relation_name": "django_admin_log",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "object_id",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 3,
+      "relation_name": "django_admin_log",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "object_repr",
+      "data_type": "character varying(200)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 4,
+      "relation_name": "django_admin_log",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "action_flag",
+      "data_type": "smallint",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 5,
+      "relation_name": "django_admin_log",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "change_message",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 6,
+      "relation_name": "django_admin_log",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "content_type_id",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 7,
+      "relation_name": "django_admin_log",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "user_id",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 8,
+      "relation_name": "django_admin_log",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "id",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 1,
+      "relation_name": "django_content_type",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "app_label",
+      "data_type": "character varying(100)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 3,
+      "relation_name": "django_content_type",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "model",
+      "data_type": "character varying(100)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 4,
+      "relation_name": "django_content_type",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "id",
+      "data_type": "bigint",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 1,
+      "relation_name": "django_migrations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "app",
+      "data_type": "character varying(255)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 2,
+      "relation_name": "django_migrations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "name",
+      "data_type": "character varying(255)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 3,
+      "relation_name": "django_migrations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "applied",
+      "data_type": "timestamp with time zone",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 4,
+      "relation_name": "django_migrations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "session_key",
+      "data_type": "character varying(40)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 1,
+      "relation_name": "django_session",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "session_data",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 2,
+      "relation_name": "django_session",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "expire_date",
+      "data_type": "timestamp with time zone",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 3,
+      "relation_name": "django_session",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "reference_period",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 1,
+      "relation_name": "fact_bdf_statinfo",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "reference_year",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 2,
+      "relation_name": "fact_bdf_statinfo",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "reference_month_number",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 3,
+      "relation_name": "fact_bdf_statinfo",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "departement_code",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 4,
+      "relation_name": "fact_bdf_statinfo",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "indicator_key",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 5,
+      "relation_name": "fact_bdf_statinfo",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "value",
+      "data_type": "real",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 6,
+      "relation_name": "fact_bdf_statinfo",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "source_file",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 7,
+      "relation_name": "fact_bdf_statinfo",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "pipeline_version",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 8,
+      "relation_name": "fact_bdf_statinfo",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "reference_year",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 1,
+      "relation_name": "fact_insee_macro",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "departement_code",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 2,
+      "relation_name": "fact_insee_macro",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "indicator_key",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 3,
+      "relation_name": "fact_insee_macro",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "value",
+      "data_type": "real",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 4,
+      "relation_name": "fact_insee_macro",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "source_dataset",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 5,
+      "relation_name": "fact_insee_macro",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "pipeline_version",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 6,
+      "relation_name": "fact_insee_macro",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "id",
+      "data_type": "integer",
+      "default_value": "nextval('fact_macro_override_id_seq'::regclass)",
+      "not_null": true,
+      "ordinal": 1,
+      "relation_name": "fact_macro_override",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "period_key",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 2,
+      "relation_name": "fact_macro_override",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "reference_year",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 3,
+      "relation_name": "fact_macro_override",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "departement_code",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 4,
+      "relation_name": "fact_macro_override",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "indicator_key",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 5,
+      "relation_name": "fact_macro_override",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "indicator_code",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 6,
+      "relation_name": "fact_macro_override",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "indicator_name",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 7,
+      "relation_name": "fact_macro_override",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "indicator_group",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 8,
+      "relation_name": "fact_macro_override",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "value",
+      "data_type": "real",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 9,
+      "relation_name": "fact_macro_override",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "source_note",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 10,
+      "relation_name": "fact_macro_override",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 11,
+      "relation_name": "fact_macro_override",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "updated_at",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 12,
+      "relation_name": "fact_macro_override",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "reference_year",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 1,
+      "relation_name": "fact_surendettement",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "departement_code",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 2,
+      "relation_name": "fact_surendettement",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "indicator_key",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 3,
+      "relation_name": "fact_surendettement",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "value",
+      "data_type": "real",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 4,
+      "relation_name": "fact_surendettement",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "source_file",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 5,
+      "relation_name": "fact_surendettement",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "id",
+      "data_type": "integer",
+      "default_value": "nextval('indicators_id_seq'::regclass)",
+      "not_null": true,
+      "ordinal": 1,
+      "relation_name": "indicators",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "code",
+      "data_type": "character varying(128)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 2,
+      "relation_name": "indicators",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "label",
+      "data_type": "character varying(512)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 3,
+      "relation_name": "indicators",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "category",
+      "data_type": "character varying(255)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 4,
+      "relation_name": "indicators",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "description",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 5,
+      "relation_name": "indicators",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "default_unit",
+      "data_type": "character varying(64)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 6,
+      "relation_name": "indicators",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "character varying(32)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 7,
+      "relation_name": "indicators",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "updated_at",
+      "data_type": "character varying(32)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 8,
+      "relation_name": "indicators",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "id",
+      "data_type": "integer",
+      "default_value": "nextval('observations_id_seq'::regclass)",
+      "not_null": true,
+      "ordinal": 1,
+      "relation_name": "observations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "source_document_id",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 2,
+      "relation_name": "observations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "indicator_id",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 3,
+      "relation_name": "observations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "idempotence_key",
+      "data_type": "character varying(64)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 4,
+      "relation_name": "observations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "indicator_code",
+      "data_type": "character varying(128)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 5,
+      "relation_name": "observations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "region_code",
+      "data_type": "character varying(16)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 6,
+      "relation_name": "observations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "reference_period",
+      "data_type": "character varying(7)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 7,
+      "relation_name": "observations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "geographic_level",
+      "data_type": "character varying(64)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 8,
+      "relation_name": "observations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "geographic_code",
+      "data_type": "character varying(64)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 9,
+      "relation_name": "observations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "geographic_name",
+      "data_type": "character varying(255)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 10,
+      "relation_name": "observations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "value_numeric",
+      "data_type": "double precision",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 11,
+      "relation_name": "observations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "value_text",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 12,
+      "relation_name": "observations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "unit",
+      "data_type": "character varying(64)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 13,
+      "relation_name": "observations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "observation_type",
+      "data_type": "character varying(64)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 14,
+      "relation_name": "observations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "comparison_period",
+      "data_type": "character varying(32)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 15,
+      "relation_name": "observations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "variation_numeric",
+      "data_type": "double precision",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 16,
+      "relation_name": "observations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "variation_unit",
+      "data_type": "character varying(64)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 17,
+      "relation_name": "observations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "page_number",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 18,
+      "relation_name": "observations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "source_label",
+      "data_type": "character varying(512)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 19,
+      "relation_name": "observations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "source_fragment",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 20,
+      "relation_name": "observations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "extraction_method",
+      "data_type": "character varying(64)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 21,
+      "relation_name": "observations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "confidence_score",
+      "data_type": "double precision",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 22,
+      "relation_name": "observations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "character varying(32)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 23,
+      "relation_name": "observations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "updated_at",
+      "data_type": "character varying(32)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 24,
+      "relation_name": "observations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "database_version",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 1,
+      "relation_name": "pipeline_metadata",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "source_system",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 2,
+      "relation_name": "pipeline_metadata",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "source_path",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 3,
+      "relation_name": "pipeline_metadata",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "built_at",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 4,
+      "relation_name": "pipeline_metadata",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "id",
+      "data_type": "integer",
+      "default_value": "nextval('pipeline_runs_id_seq'::regclass)",
+      "not_null": true,
+      "ordinal": 1,
+      "relation_name": "pipeline_runs",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "pipeline_name",
+      "data_type": "character varying(128)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 2,
+      "relation_name": "pipeline_runs",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "status",
+      "data_type": "character varying(32)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 3,
+      "relation_name": "pipeline_runs",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "started_at",
+      "data_type": "character varying(32)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 4,
+      "relation_name": "pipeline_runs",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "finished_at",
+      "data_type": "character varying(32)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 5,
+      "relation_name": "pipeline_runs",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "configuration_json",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 6,
+      "relation_name": "pipeline_runs",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "step_results_json",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 7,
+      "relation_name": "pipeline_runs",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "quality_report_json",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 8,
+      "relation_name": "pipeline_runs",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "error_message",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 9,
+      "relation_name": "pipeline_runs",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "id",
+      "data_type": "integer",
+      "default_value": "nextval('risk_score_details_id_seq'::regclass)",
+      "not_null": true,
+      "ordinal": 1,
+      "relation_name": "risk_score_details",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "risk_score_id",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 2,
+      "relation_name": "risk_score_details",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "indicator_id",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 3,
+      "relation_name": "risk_score_details",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "indicator_code",
+      "data_type": "character varying(128)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 4,
+      "relation_name": "risk_score_details",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "raw_value",
+      "data_type": "numeric(20,8)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 5,
+      "relation_name": "risk_score_details",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "unit",
+      "data_type": "character varying(64)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 6,
+      "relation_name": "risk_score_details",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "population_min",
+      "data_type": "numeric(20,8)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 7,
+      "relation_name": "risk_score_details",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "population_max",
+      "data_type": "numeric(20,8)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 8,
+      "relation_name": "risk_score_details",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "normalized_value",
+      "data_type": "numeric(12,8)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 9,
+      "relation_name": "risk_score_details",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "configured_weight",
+      "data_type": "numeric(12,8)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 10,
+      "relation_name": "risk_score_details",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "effective_weight",
+      "data_type": "numeric(12,8)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 11,
+      "relation_name": "risk_score_details",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "contribution",
+      "data_type": "numeric(12,8)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 12,
+      "relation_name": "risk_score_details",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "direction",
+      "data_type": "character varying(16)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 13,
+      "relation_name": "risk_score_details",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "source_observation_id",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 14,
+      "relation_name": "risk_score_details",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "character varying(32)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 15,
+      "relation_name": "risk_score_details",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "updated_at",
+      "data_type": "character varying(32)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 16,
+      "relation_name": "risk_score_details",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "id",
+      "data_type": "integer",
+      "default_value": "nextval('risk_score_indicator_configs_id_seq'::regclass)",
+      "not_null": true,
+      "ordinal": 1,
+      "relation_name": "risk_score_indicator_configs",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "risk_score_model_id",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 2,
+      "relation_name": "risk_score_indicator_configs",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "indicator_id",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 3,
+      "relation_name": "risk_score_indicator_configs",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "indicator_code",
+      "data_type": "character varying(128)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 4,
+      "relation_name": "risk_score_indicator_configs",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "logical_code",
+      "data_type": "character varying(128)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 5,
+      "relation_name": "risk_score_indicator_configs",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "weight",
+      "data_type": "numeric(12,8)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 6,
+      "relation_name": "risk_score_indicator_configs",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "direction",
+      "data_type": "character varying(16)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 7,
+      "relation_name": "risk_score_indicator_configs",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "normalization_method",
+      "data_type": "character varying(64)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 8,
+      "relation_name": "risk_score_indicator_configs",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "fixed_min",
+      "data_type": "numeric(20,8)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 9,
+      "relation_name": "risk_score_indicator_configs",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "fixed_max",
+      "data_type": "numeric(20,8)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 10,
+      "relation_name": "risk_score_indicator_configs",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "expected_unit",
+      "data_type": "character varying(64)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 11,
+      "relation_name": "risk_score_indicator_configs",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "is_required",
+      "data_type": "boolean",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 12,
+      "relation_name": "risk_score_indicator_configs",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "is_active",
+      "data_type": "boolean",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 13,
+      "relation_name": "risk_score_indicator_configs",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "character varying(32)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 14,
+      "relation_name": "risk_score_indicator_configs",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "updated_at",
+      "data_type": "character varying(32)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 15,
+      "relation_name": "risk_score_indicator_configs",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "id",
+      "data_type": "integer",
+      "default_value": "nextval('risk_score_models_id_seq'::regclass)",
+      "not_null": true,
+      "ordinal": 1,
+      "relation_name": "risk_score_models",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "code",
+      "data_type": "character varying(128)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 2,
+      "relation_name": "risk_score_models",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "name",
+      "data_type": "character varying(255)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 3,
+      "relation_name": "risk_score_models",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "version",
+      "data_type": "character varying(64)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 4,
+      "relation_name": "risk_score_models",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "description",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 5,
+      "relation_name": "risk_score_models",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "normalization_method",
+      "data_type": "character varying(64)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 6,
+      "relation_name": "risk_score_models",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "minimum_coverage_ratio",
+      "data_type": "numeric(8,6)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 7,
+      "relation_name": "risk_score_models",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "is_active",
+      "data_type": "boolean",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 8,
+      "relation_name": "risk_score_models",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "configuration_json",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 9,
+      "relation_name": "risk_score_models",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "character varying(32)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 10,
+      "relation_name": "risk_score_models",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "updated_at",
+      "data_type": "character varying(32)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 11,
+      "relation_name": "risk_score_models",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "id",
+      "data_type": "integer",
+      "default_value": "nextval('risk_scores_id_seq'::regclass)",
+      "not_null": true,
+      "ordinal": 1,
+      "relation_name": "risk_scores",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "risk_score_model_id",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 2,
+      "relation_name": "risk_scores",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "geographic_level",
+      "data_type": "character varying(32)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 3,
+      "relation_name": "risk_scores",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "geographic_code",
+      "data_type": "character varying(64)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 4,
+      "relation_name": "risk_scores",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "geographic_name",
+      "data_type": "character varying(255)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 5,
+      "relation_name": "risk_scores",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "reference_period",
+      "data_type": "character varying(16)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 6,
+      "relation_name": "risk_scores",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "score",
+      "data_type": "numeric(12,8)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 7,
+      "relation_name": "risk_scores",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "risk_level",
+      "data_type": "character varying(32)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 8,
+      "relation_name": "risk_scores",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "coverage_ratio",
+      "data_type": "numeric(8,6)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 9,
+      "relation_name": "risk_scores",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "status",
+      "data_type": "character varying(32)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 10,
+      "relation_name": "risk_scores",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "missing_indicators_json",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 11,
+      "relation_name": "risk_scores",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "warnings_json",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 12,
+      "relation_name": "risk_scores",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "calculated_at",
+      "data_type": "character varying(32)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 13,
+      "relation_name": "risk_scores",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "character varying(32)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 14,
+      "relation_name": "risk_scores",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "updated_at",
+      "data_type": "character varying(32)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 15,
+      "relation_name": "risk_scores",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "object_name",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 1,
+      "relation_name": "schema_deprecations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "object_type",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 2,
+      "relation_name": "schema_deprecations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "deprecated_since",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 3,
+      "relation_name": "schema_deprecations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "replacement",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 4,
+      "relation_name": "schema_deprecations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "reason",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 5,
+      "relation_name": "schema_deprecations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "version",
+      "data_type": "character varying(64)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 1,
+      "relation_name": "schema_migrations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "description",
+      "data_type": "character varying(512)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 2,
+      "relation_name": "schema_migrations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "applied_at",
+      "data_type": "character varying(32)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 3,
+      "relation_name": "schema_migrations",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "id",
+      "data_type": "integer",
+      "default_value": "nextval('source_documents_id_seq'::regclass)",
+      "not_null": true,
+      "ordinal": 1,
+      "relation_name": "source_documents",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "source_name",
+      "data_type": "character varying(255)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 2,
+      "relation_name": "source_documents",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "publication_type",
+      "data_type": "character varying(255)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 3,
+      "relation_name": "source_documents",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "region_code",
+      "data_type": "character varying(16)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 4,
+      "relation_name": "source_documents",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "region_name",
+      "data_type": "character varying(255)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 5,
+      "relation_name": "source_documents",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "reference_period",
+      "data_type": "character varying(7)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 6,
+      "relation_name": "source_documents",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "publication_date",
+      "data_type": "character varying(32)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 7,
+      "relation_name": "source_documents",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "updated_date",
+      "data_type": "character varying(32)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 8,
+      "relation_name": "source_documents",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "page_url",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 9,
+      "relation_name": "source_documents",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "pdf_url",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 10,
+      "relation_name": "source_documents",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "pdf_filename",
+      "data_type": "character varying(512)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 11,
+      "relation_name": "source_documents",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "pdf_sha256",
+      "data_type": "character varying(64)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 12,
+      "relation_name": "source_documents",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "pdf_size_bytes",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 13,
+      "relation_name": "source_documents",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "storage_path",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 14,
+      "relation_name": "source_documents",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "http_etag",
+      "data_type": "character varying(255)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 15,
+      "relation_name": "source_documents",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "http_last_modified",
+      "data_type": "character varying(255)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 16,
+      "relation_name": "source_documents",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "downloaded_at",
+      "data_type": "character varying(32)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 17,
+      "relation_name": "source_documents",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "extraction_status",
+      "data_type": "character varying(64)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 18,
+      "relation_name": "source_documents",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "extractor_version",
+      "data_type": "character varying(64)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 19,
+      "relation_name": "source_documents",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "character varying(32)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 20,
+      "relation_name": "source_documents",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "updated_at",
+      "data_type": "character varying(32)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 21,
+      "relation_name": "source_documents",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "id",
+      "data_type": "integer",
+      "default_value": "nextval('surendettement_data_id_seq'::regclass)",
+      "not_null": true,
+      "ordinal": 1,
+      "relation_name": "surendettement_data",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "year",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 2,
+      "relation_name": "surendettement_data",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "region",
+      "data_type": "character varying(255)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 3,
+      "relation_name": "surendettement_data",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "indicator",
+      "data_type": "character varying(255)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 4,
+      "relation_name": "surendettement_data",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "value",
+      "data_type": "double precision",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 5,
+      "relation_name": "surendettement_data",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "source_file",
+      "data_type": "character varying(255)",
+      "default_value": "",
+      "not_null": true,
+      "ordinal": 6,
+      "relation_name": "surendettement_data",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "reference_period",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 1,
+      "relation_name": "v_bdf_total_deposits",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "reference_year",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 2,
+      "relation_name": "v_bdf_total_deposits",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "reference_month_number",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 3,
+      "relation_name": "v_bdf_total_deposits",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "departement_code",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 4,
+      "relation_name": "v_bdf_total_deposits",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "departement_name",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 5,
+      "relation_name": "v_bdf_total_deposits",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "region_name",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 6,
+      "relation_name": "v_bdf_total_deposits",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "bdf_total_deposits_value",
+      "data_type": "real",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 7,
+      "relation_name": "v_bdf_total_deposits",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "bdf_reference_period",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 1,
+      "relation_name": "v_bdf_total_deposits_with_insee_macro",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "bdf_reference_year",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 2,
+      "relation_name": "v_bdf_total_deposits_with_insee_macro",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "bdf_reference_month_number",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 3,
+      "relation_name": "v_bdf_total_deposits_with_insee_macro",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "departement_code",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 4,
+      "relation_name": "v_bdf_total_deposits_with_insee_macro",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "departement_name",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 5,
+      "relation_name": "v_bdf_total_deposits_with_insee_macro",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "region_name",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 6,
+      "relation_name": "v_bdf_total_deposits_with_insee_macro",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "bdf_total_deposits_value",
+      "data_type": "real",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 7,
+      "relation_name": "v_bdf_total_deposits_with_insee_macro",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "macro_reference_year",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 8,
+      "relation_name": "v_bdf_total_deposits_with_insee_macro",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "macro_indicator_code",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 9,
+      "relation_name": "v_bdf_total_deposits_with_insee_macro",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "macro_indicator_name",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 10,
+      "relation_name": "v_bdf_total_deposits_with_insee_macro",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "macro_indicator_group",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 11,
+      "relation_name": "v_bdf_total_deposits_with_insee_macro",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "macro_value",
+      "data_type": "real",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 12,
+      "relation_name": "v_bdf_total_deposits_with_insee_macro",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "reference_year",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 1,
+      "relation_name": "v_insee_macro_region",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "region_code",
+      "data_type": "character varying(16)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 2,
+      "relation_name": "v_insee_macro_region",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "region_name",
+      "data_type": "character varying(255)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 3,
+      "relation_name": "v_insee_macro_region",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "indicator_code",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 4,
+      "relation_name": "v_insee_macro_region",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "indicator_name",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 5,
+      "relation_name": "v_insee_macro_region",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "indicator_group",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 6,
+      "relation_name": "v_insee_macro_region",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "aggregation_rule",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 7,
+      "relation_name": "v_insee_macro_region",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "value",
+      "data_type": "real",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 8,
+      "relation_name": "v_insee_macro_region",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "reference_year",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 1,
+      "relation_name": "v_insee_macro_region_selected",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "region_code",
+      "data_type": "character varying(16)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 2,
+      "relation_name": "v_insee_macro_region_selected",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "region_name",
+      "data_type": "character varying(255)",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 3,
+      "relation_name": "v_insee_macro_region_selected",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "indicator_code",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 4,
+      "relation_name": "v_insee_macro_region_selected",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "indicator_name",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 5,
+      "relation_name": "v_insee_macro_region_selected",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "indicator_group",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 6,
+      "relation_name": "v_insee_macro_region_selected",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "aggregation_rule",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 7,
+      "relation_name": "v_insee_macro_region_selected",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "value",
+      "data_type": "double precision",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 8,
+      "relation_name": "v_insee_macro_region_selected",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "reference_year",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 1,
+      "relation_name": "v_surendettement_annual",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "departement_code",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 2,
+      "relation_name": "v_surendettement_annual",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "departement_name",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 3,
+      "relation_name": "v_surendettement_annual",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "region_name",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 4,
+      "relation_name": "v_surendettement_annual",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "surendettement_value",
+      "data_type": "real",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 5,
+      "relation_name": "v_surendettement_annual",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "reference_year",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 1,
+      "relation_name": "v_surendettement_with_insee_macro",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "departement_code",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 2,
+      "relation_name": "v_surendettement_with_insee_macro",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "departement_name",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 3,
+      "relation_name": "v_surendettement_with_insee_macro",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "region_name",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 4,
+      "relation_name": "v_surendettement_with_insee_macro",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "surendettement_value",
+      "data_type": "real",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 5,
+      "relation_name": "v_surendettement_with_insee_macro",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "macro_reference_year",
+      "data_type": "integer",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 6,
+      "relation_name": "v_surendettement_with_insee_macro",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "macro_indicator_code",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 7,
+      "relation_name": "v_surendettement_with_insee_macro",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "macro_indicator_name",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 8,
+      "relation_name": "v_surendettement_with_insee_macro",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "macro_indicator_group",
+      "data_type": "text",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 9,
+      "relation_name": "v_surendettement_with_insee_macro",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "macro_value",
+      "data_type": "real",
+      "default_value": "",
+      "not_null": false,
+      "ordinal": 10,
+      "relation_name": "v_surendettement_with_insee_macro",
+      "schema_name": "public"
+    }
+  ],
+  "constraints": [
+    {
+      "constraint_name": "corpus_chunks_ordinal_check",
+      "constraint_type": "c",
+      "definition": "CHECK (ordinal >= 0)",
+      "relation_name": "corpus_chunks",
+      "schema_name": "assistant"
+    },
+    {
+      "constraint_name": "corpus_chunks_pkey",
+      "constraint_type": "p",
+      "definition": "PRIMARY KEY (chunk_id)",
+      "relation_name": "corpus_chunks",
+      "schema_name": "assistant"
+    },
+    {
+      "constraint_name": "corpus_chunks_source_id_ordinal_source_sha256_key",
+      "constraint_type": "u",
+      "definition": "UNIQUE (source_id, ordinal, source_sha256)",
+      "relation_name": "corpus_chunks",
+      "schema_name": "assistant"
+    },
+    {
+      "constraint_name": "schema_migrations_pkey",
+      "constraint_type": "p",
+      "definition": "PRIMARY KEY (version)",
+      "relation_name": "schema_migrations",
+      "schema_name": "assistant"
+    },
+    {
+      "constraint_name": "sql_executions_pkey",
+      "constraint_type": "p",
+      "definition": "PRIMARY KEY (execution_id)",
+      "relation_name": "sql_executions",
+      "schema_name": "assistant"
+    },
+    {
+      "constraint_name": "assistant_conversation_pkey",
+      "constraint_type": "p",
+      "definition": "PRIMARY KEY (id)",
+      "relation_name": "assistant_conversation",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "assistant_conversation_user_id_d68b3caa_fk_auth_user_id",
+      "constraint_type": "f",
+      "definition": "FOREIGN KEY (user_id) REFERENCES auth_user(id) DEFERRABLE INITIALLY DEFERRED",
+      "relation_name": "assistant_conversation",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "assistant_conversati_conversation_id_e3ed1e9d_fk_assistant",
+      "constraint_type": "f",
+      "definition": "FOREIGN KEY (conversation_id) REFERENCES assistant_conversation(id) DEFERRABLE INITIALLY DEFERRED",
+      "relation_name": "assistant_conversationmessage",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "assistant_conversationmessage_pkey",
+      "constraint_type": "p",
+      "definition": "PRIMARY KEY (id)",
+      "relation_name": "assistant_conversationmessage",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "assistant_ragchunk_document_version_id_fa53b364_fk_assistant",
+      "constraint_type": "f",
+      "definition": "FOREIGN KEY (document_version_id) REFERENCES assistant_ragdocumentversion(id) DEFERRABLE INITIALLY DEFERRED",
+      "relation_name": "assistant_ragchunk",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "assistant_ragchunk_ordinal_check",
+      "constraint_type": "c",
+      "definition": "CHECK (ordinal >= 0)",
+      "relation_name": "assistant_ragchunk",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "assistant_ragchunk_page_number_check",
+      "constraint_type": "c",
+      "definition": "CHECK (page_number >= 0)",
+      "relation_name": "assistant_ragchunk",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "assistant_ragchunk_pkey",
+      "constraint_type": "p",
+      "definition": "PRIMARY KEY (id)",
+      "relation_name": "assistant_ragchunk",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "uq_rag_chunk_version_ordinal",
+      "constraint_type": "u",
+      "definition": "UNIQUE (document_version_id, ordinal)",
+      "relation_name": "assistant_ragchunk",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "assistant_ragdocumen_source_id_7cb0f5f5_fk_assistant",
+      "constraint_type": "f",
+      "definition": "FOREIGN KEY (source_id) REFERENCES assistant_ragsource(id) DEFERRABLE INITIALLY DEFERRED",
+      "relation_name": "assistant_ragdocument",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "assistant_ragdocument_pkey",
+      "constraint_type": "p",
+      "definition": "PRIMARY KEY (id)",
+      "relation_name": "assistant_ragdocument",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "assistant_ragdocument_slug_key",
+      "constraint_type": "u",
+      "definition": "UNIQUE (slug)",
+      "relation_name": "assistant_ragdocument",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "assistant_ragdocumen_document_id_1ab70475_fk_assistant",
+      "constraint_type": "f",
+      "definition": "FOREIGN KEY (document_id) REFERENCES assistant_ragdocument(id) DEFERRABLE INITIALLY DEFERRED",
+      "relation_name": "assistant_ragdocumentversion",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "assistant_ragdocumentversion_pkey",
+      "constraint_type": "p",
+      "definition": "PRIMARY KEY (id)",
+      "relation_name": "assistant_ragdocumentversion",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "uq_rag_document_version_sha",
+      "constraint_type": "u",
+      "definition": "UNIQUE (document_id, sha256)",
+      "relation_name": "assistant_ragdocumentversion",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "assistant_ragindexrun_chunks_created_check",
+      "constraint_type": "c",
+      "definition": "CHECK (chunks_created >= 0)",
+      "relation_name": "assistant_ragindexrun",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "assistant_ragindexrun_documents_created_check",
+      "constraint_type": "c",
+      "definition": "CHECK (documents_created >= 0)",
+      "relation_name": "assistant_ragindexrun",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "assistant_ragindexrun_documents_skipped_check",
+      "constraint_type": "c",
+      "definition": "CHECK (documents_skipped >= 0)",
+      "relation_name": "assistant_ragindexrun",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "assistant_ragindexrun_pkey",
+      "constraint_type": "p",
+      "definition": "PRIMARY KEY (id)",
+      "relation_name": "assistant_ragindexrun",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "assistant_ragindexrun_versions_created_check",
+      "constraint_type": "c",
+      "definition": "CHECK (versions_created >= 0)",
+      "relation_name": "assistant_ragindexrun",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "assistant_ragsource_name_key",
+      "constraint_type": "u",
+      "definition": "UNIQUE (name)",
+      "relation_name": "assistant_ragsource",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "assistant_ragsource_pkey",
+      "constraint_type": "p",
+      "definition": "PRIMARY KEY (id)",
+      "relation_name": "assistant_ragsource",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "auth_group_name_key",
+      "constraint_type": "u",
+      "definition": "UNIQUE (name)",
+      "relation_name": "auth_group",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "auth_group_pkey",
+      "constraint_type": "p",
+      "definition": "PRIMARY KEY (id)",
+      "relation_name": "auth_group",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "auth_group_permissio_permission_id_84c5c92e_fk_auth_perm",
+      "constraint_type": "f",
+      "definition": "FOREIGN KEY (permission_id) REFERENCES auth_permission(id) DEFERRABLE INITIALLY DEFERRED",
+      "relation_name": "auth_group_permissions",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "auth_group_permissions_group_id_b120cbf9_fk_auth_group_id",
+      "constraint_type": "f",
+      "definition": "FOREIGN KEY (group_id) REFERENCES auth_group(id) DEFERRABLE INITIALLY DEFERRED",
+      "relation_name": "auth_group_permissions",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "auth_group_permissions_group_id_permission_id_0cd325b0_uniq",
+      "constraint_type": "u",
+      "definition": "UNIQUE (group_id, permission_id)",
+      "relation_name": "auth_group_permissions",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "auth_group_permissions_pkey",
+      "constraint_type": "p",
+      "definition": "PRIMARY KEY (id)",
+      "relation_name": "auth_group_permissions",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "auth_permission_content_type_id_2f476e4b_fk_django_co",
+      "constraint_type": "f",
+      "definition": "FOREIGN KEY (content_type_id) REFERENCES django_content_type(id) DEFERRABLE INITIALLY DEFERRED",
+      "relation_name": "auth_permission",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "auth_permission_content_type_id_codename_01ab375a_uniq",
+      "constraint_type": "u",
+      "definition": "UNIQUE (content_type_id, codename)",
+      "relation_name": "auth_permission",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "auth_permission_pkey",
+      "constraint_type": "p",
+      "definition": "PRIMARY KEY (id)",
+      "relation_name": "auth_permission",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "auth_user_pkey",
+      "constraint_type": "p",
+      "definition": "PRIMARY KEY (id)",
+      "relation_name": "auth_user",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "auth_user_username_key",
+      "constraint_type": "u",
+      "definition": "UNIQUE (username)",
+      "relation_name": "auth_user",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "auth_user_groups_group_id_97559544_fk_auth_group_id",
+      "constraint_type": "f",
+      "definition": "FOREIGN KEY (group_id) REFERENCES auth_group(id) DEFERRABLE INITIALLY DEFERRED",
+      "relation_name": "auth_user_groups",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "auth_user_groups_pkey",
+      "constraint_type": "p",
+      "definition": "PRIMARY KEY (id)",
+      "relation_name": "auth_user_groups",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "auth_user_groups_user_id_6a12ed8b_fk_auth_user_id",
+      "constraint_type": "f",
+      "definition": "FOREIGN KEY (user_id) REFERENCES auth_user(id) DEFERRABLE INITIALLY DEFERRED",
+      "relation_name": "auth_user_groups",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "auth_user_groups_user_id_group_id_94350c0c_uniq",
+      "constraint_type": "u",
+      "definition": "UNIQUE (user_id, group_id)",
+      "relation_name": "auth_user_groups",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "auth_user_user_permi_permission_id_1fbb5f2c_fk_auth_perm",
+      "constraint_type": "f",
+      "definition": "FOREIGN KEY (permission_id) REFERENCES auth_permission(id) DEFERRABLE INITIALLY DEFERRED",
+      "relation_name": "auth_user_user_permissions",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "auth_user_user_permissions_pkey",
+      "constraint_type": "p",
+      "definition": "PRIMARY KEY (id)",
+      "relation_name": "auth_user_user_permissions",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "auth_user_user_permissions_user_id_a95ead1b_fk_auth_user_id",
+      "constraint_type": "f",
+      "definition": "FOREIGN KEY (user_id) REFERENCES auth_user(id) DEFERRABLE INITIALLY DEFERRED",
+      "relation_name": "auth_user_user_permissions",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "auth_user_user_permissions_user_id_permission_id_14a6b632_uniq",
+      "constraint_type": "u",
+      "definition": "UNIQUE (user_id, permission_id)",
+      "relation_name": "auth_user_user_permissions",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "dim_department_pkey",
+      "constraint_type": "p",
+      "definition": "PRIMARY KEY (departement_code)",
+      "relation_name": "dim_department",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "dim_indicator_pkey",
+      "constraint_type": "p",
+      "definition": "PRIMARY KEY (indicator_key)",
+      "relation_name": "dim_indicator",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "ck_dim_period_granularity",
+      "constraint_type": "c",
+      "definition": "CHECK (granularity::text = ANY (ARRAY['month'::character varying, 'year'::character varying]::text[]))",
+      "relation_name": "dim_period",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "dim_period_pkey",
+      "constraint_type": "p",
+      "definition": "PRIMARY KEY (period_key)",
+      "relation_name": "dim_period",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "dim_region_pkey",
+      "constraint_type": "p",
+      "definition": "PRIMARY KEY (region_code)",
+      "relation_name": "dim_region",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "dim_region_region_name_key",
+      "constraint_type": "u",
+      "definition": "UNIQUE (region_name)",
+      "relation_name": "dim_region",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "django_admin_log_action_flag_check",
+      "constraint_type": "c",
+      "definition": "CHECK (action_flag >= 0)",
+      "relation_name": "django_admin_log",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "django_admin_log_content_type_id_c4bce8eb_fk_django_co",
+      "constraint_type": "f",
+      "definition": "FOREIGN KEY (content_type_id) REFERENCES django_content_type(id) DEFERRABLE INITIALLY DEFERRED",
+      "relation_name": "django_admin_log",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "django_admin_log_pkey",
+      "constraint_type": "p",
+      "definition": "PRIMARY KEY (id)",
+      "relation_name": "django_admin_log",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "django_admin_log_user_id_c564eba6_fk_auth_user_id",
+      "constraint_type": "f",
+      "definition": "FOREIGN KEY (user_id) REFERENCES auth_user(id) DEFERRABLE INITIALLY DEFERRED",
+      "relation_name": "django_admin_log",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "django_content_type_app_label_model_76bd3d3b_uniq",
+      "constraint_type": "u",
+      "definition": "UNIQUE (app_label, model)",
+      "relation_name": "django_content_type",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "django_content_type_pkey",
+      "constraint_type": "p",
+      "definition": "PRIMARY KEY (id)",
+      "relation_name": "django_content_type",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "django_migrations_pkey",
+      "constraint_type": "p",
+      "definition": "PRIMARY KEY (id)",
+      "relation_name": "django_migrations",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "django_session_pkey",
+      "constraint_type": "p",
+      "definition": "PRIMARY KEY (session_key)",
+      "relation_name": "django_session",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "fact_bdf_statinfo_departement_code_fkey",
+      "constraint_type": "f",
+      "definition": "FOREIGN KEY (departement_code) REFERENCES dim_department(departement_code)",
+      "relation_name": "fact_bdf_statinfo",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "fact_bdf_statinfo_indicator_key_fkey",
+      "constraint_type": "f",
+      "definition": "FOREIGN KEY (indicator_key) REFERENCES dim_indicator(indicator_key)",
+      "relation_name": "fact_bdf_statinfo",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "fact_insee_macro_departement_code_fkey",
+      "constraint_type": "f",
+      "definition": "FOREIGN KEY (departement_code) REFERENCES dim_department(departement_code)",
+      "relation_name": "fact_insee_macro",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "fact_insee_macro_indicator_key_fkey",
+      "constraint_type": "f",
+      "definition": "FOREIGN KEY (indicator_key) REFERENCES dim_indicator(indicator_key)",
+      "relation_name": "fact_insee_macro",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "fact_macro_override_departement_code_fkey",
+      "constraint_type": "f",
+      "definition": "FOREIGN KEY (departement_code) REFERENCES dim_department(departement_code)",
+      "relation_name": "fact_macro_override",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "fact_macro_override_indicator_key_fkey",
+      "constraint_type": "f",
+      "definition": "FOREIGN KEY (indicator_key) REFERENCES dim_indicator(indicator_key)",
+      "relation_name": "fact_macro_override",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "fact_macro_override_period_key_fkey",
+      "constraint_type": "f",
+      "definition": "FOREIGN KEY (period_key) REFERENCES dim_period(period_key)",
+      "relation_name": "fact_macro_override",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "fact_macro_override_pkey",
+      "constraint_type": "p",
+      "definition": "PRIMARY KEY (id)",
+      "relation_name": "fact_macro_override",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "fact_surendettement_departement_code_fkey",
+      "constraint_type": "f",
+      "definition": "FOREIGN KEY (departement_code) REFERENCES dim_department(departement_code)",
+      "relation_name": "fact_surendettement",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "fact_surendettement_indicator_key_fkey",
+      "constraint_type": "f",
+      "definition": "FOREIGN KEY (indicator_key) REFERENCES dim_indicator(indicator_key)",
+      "relation_name": "fact_surendettement",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "indicators_pkey",
+      "constraint_type": "p",
+      "definition": "PRIMARY KEY (id)",
+      "relation_name": "indicators",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "uq_indicators_code",
+      "constraint_type": "u",
+      "definition": "UNIQUE (code)",
+      "relation_name": "indicators",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "observations_indicator_id_fkey",
+      "constraint_type": "f",
+      "definition": "FOREIGN KEY (indicator_id) REFERENCES indicators(id)",
+      "relation_name": "observations",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "observations_pkey",
+      "constraint_type": "p",
+      "definition": "PRIMARY KEY (id)",
+      "relation_name": "observations",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "observations_source_document_id_fkey",
+      "constraint_type": "f",
+      "definition": "FOREIGN KEY (source_document_id) REFERENCES source_documents(id)",
+      "relation_name": "observations",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "uq_observations_idempotence_key",
+      "constraint_type": "u",
+      "definition": "UNIQUE (idempotence_key)",
+      "relation_name": "observations",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "ck_pipeline_runs_status",
+      "constraint_type": "c",
+      "definition": "CHECK (status::text = ANY (ARRAY['running'::character varying, 'success'::character varying, 'failed'::character varying, 'quality_failed'::character varying]::text[]))",
+      "relation_name": "pipeline_runs",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "pipeline_runs_pkey",
+      "constraint_type": "p",
+      "definition": "PRIMARY KEY (id)",
+      "relation_name": "pipeline_runs",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "ck_risk_score_details_configured_weight",
+      "constraint_type": "c",
+      "definition": "CHECK (configured_weight > 0::numeric)",
+      "relation_name": "risk_score_details",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "ck_risk_score_details_effective_weight",
+      "constraint_type": "c",
+      "definition": "CHECK (effective_weight > 0::numeric)",
+      "relation_name": "risk_score_details",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "ck_risk_score_details_normalized",
+      "constraint_type": "c",
+      "definition": "CHECK (normalized_value >= 0::numeric AND normalized_value <= 1::numeric)",
+      "relation_name": "risk_score_details",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "risk_score_details_indicator_id_fkey",
+      "constraint_type": "f",
+      "definition": "FOREIGN KEY (indicator_id) REFERENCES indicators(id)",
+      "relation_name": "risk_score_details",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "risk_score_details_pkey",
+      "constraint_type": "p",
+      "definition": "PRIMARY KEY (id)",
+      "relation_name": "risk_score_details",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "risk_score_details_risk_score_id_fkey",
+      "constraint_type": "f",
+      "definition": "FOREIGN KEY (risk_score_id) REFERENCES risk_scores(id)",
+      "relation_name": "risk_score_details",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "risk_score_details_source_observation_id_fkey",
+      "constraint_type": "f",
+      "definition": "FOREIGN KEY (source_observation_id) REFERENCES observations(id)",
+      "relation_name": "risk_score_details",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "uq_risk_score_details_score_code",
+      "constraint_type": "u",
+      "definition": "UNIQUE (risk_score_id, indicator_code)",
+      "relation_name": "risk_score_details",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "ck_risk_score_indicator_direction",
+      "constraint_type": "c",
+      "definition": "CHECK (direction::text = ANY (ARRAY['positive'::character varying, 'negative'::character varying]::text[]))",
+      "relation_name": "risk_score_indicator_configs",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "ck_risk_score_indicator_weight",
+      "constraint_type": "c",
+      "definition": "CHECK (weight > 0::numeric)",
+      "relation_name": "risk_score_indicator_configs",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "risk_score_indicator_configs_indicator_id_fkey",
+      "constraint_type": "f",
+      "definition": "FOREIGN KEY (indicator_id) REFERENCES indicators(id)",
+      "relation_name": "risk_score_indicator_configs",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "risk_score_indicator_configs_pkey",
+      "constraint_type": "p",
+      "definition": "PRIMARY KEY (id)",
+      "relation_name": "risk_score_indicator_configs",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "risk_score_indicator_configs_risk_score_model_id_fkey",
+      "constraint_type": "f",
+      "definition": "FOREIGN KEY (risk_score_model_id) REFERENCES risk_score_models(id)",
+      "relation_name": "risk_score_indicator_configs",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "uq_risk_score_indicator_model_code",
+      "constraint_type": "u",
+      "definition": "UNIQUE (risk_score_model_id, indicator_code)",
+      "relation_name": "risk_score_indicator_configs",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "ck_risk_score_models_coverage",
+      "constraint_type": "c",
+      "definition": "CHECK (minimum_coverage_ratio >= 0::numeric AND minimum_coverage_ratio <= 1::numeric)",
+      "relation_name": "risk_score_models",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "risk_score_models_pkey",
+      "constraint_type": "p",
+      "definition": "PRIMARY KEY (id)",
+      "relation_name": "risk_score_models",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "uq_risk_score_models_code_version",
+      "constraint_type": "u",
+      "definition": "UNIQUE (code, version)",
+      "relation_name": "risk_score_models",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "ck_risk_scores_coverage",
+      "constraint_type": "c",
+      "definition": "CHECK (coverage_ratio >= 0::numeric AND coverage_ratio <= 1::numeric)",
+      "relation_name": "risk_scores",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "ck_risk_scores_score",
+      "constraint_type": "c",
+      "definition": "CHECK (score IS NULL OR score >= 0::numeric AND score <= 100::numeric)",
+      "relation_name": "risk_scores",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "ck_risk_scores_status",
+      "constraint_type": "c",
+      "definition": "CHECK (status::text = ANY (ARRAY['valid'::character varying, 'partial'::character varying, 'insufficient_data'::character varying, 'error'::character varying]::text[]))",
+      "relation_name": "risk_scores",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "risk_scores_pkey",
+      "constraint_type": "p",
+      "definition": "PRIMARY KEY (id)",
+      "relation_name": "risk_scores",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "risk_scores_risk_score_model_id_fkey",
+      "constraint_type": "f",
+      "definition": "FOREIGN KEY (risk_score_model_id) REFERENCES risk_score_models(id)",
+      "relation_name": "risk_scores",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "uq_risk_scores_business_key",
+      "constraint_type": "u",
+      "definition": "UNIQUE (risk_score_model_id, geographic_level, geographic_code, reference_period)",
+      "relation_name": "risk_scores",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "schema_deprecations_pkey",
+      "constraint_type": "p",
+      "definition": "PRIMARY KEY (object_name)",
+      "relation_name": "schema_deprecations",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "schema_migrations_pkey",
+      "constraint_type": "p",
+      "definition": "PRIMARY KEY (version)",
+      "relation_name": "schema_migrations",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "source_documents_pkey",
+      "constraint_type": "p",
+      "definition": "PRIMARY KEY (id)",
+      "relation_name": "source_documents",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "uq_source_documents_business_version",
+      "constraint_type": "u",
+      "definition": "UNIQUE (publication_type, region_code, reference_period, pdf_sha256)",
+      "relation_name": "source_documents",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "uq_source_documents_pdf_sha256",
+      "constraint_type": "u",
+      "definition": "UNIQUE (pdf_sha256)",
+      "relation_name": "source_documents",
+      "schema_name": "public"
+    },
+    {
+      "constraint_name": "surendettement_data_pkey",
+      "constraint_type": "p",
+      "definition": "PRIMARY KEY (id)",
+      "relation_name": "surendettement_data",
+      "schema_name": "public"
+    }
+  ],
+  "indexes": [
+    {
+      "definition": "CREATE UNIQUE INDEX corpus_chunks_pkey ON assistant.corpus_chunks USING btree (chunk_id)",
+      "index_name": "corpus_chunks_pkey",
+      "relation_name": "corpus_chunks",
+      "schema_name": "assistant"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX corpus_chunks_source_id_ordinal_source_sha256_key ON assistant.corpus_chunks USING btree (source_id, ordinal, source_sha256)",
+      "index_name": "corpus_chunks_source_id_ordinal_source_sha256_key",
+      "relation_name": "corpus_chunks",
+      "schema_name": "assistant"
+    },
+    {
+      "definition": "CREATE INDEX ix_assistant_chunks_search ON assistant.corpus_chunks USING gin (search_vector)",
+      "index_name": "ix_assistant_chunks_search",
+      "relation_name": "corpus_chunks",
+      "schema_name": "assistant"
+    },
+    {
+      "definition": "CREATE INDEX ix_assistant_chunks_source_active ON assistant.corpus_chunks USING btree (source_id, is_active)",
+      "index_name": "ix_assistant_chunks_source_active",
+      "relation_name": "corpus_chunks",
+      "schema_name": "assistant"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX schema_migrations_pkey ON assistant.schema_migrations USING btree (version)",
+      "index_name": "schema_migrations_pkey",
+      "relation_name": "schema_migrations",
+      "schema_name": "assistant"
+    },
+    {
+      "definition": "CREATE INDEX ix_assistant_sql_executions_actor ON assistant.sql_executions USING btree (actor_id, created_at)",
+      "index_name": "ix_assistant_sql_executions_actor",
+      "relation_name": "sql_executions",
+      "schema_name": "assistant"
+    },
+    {
+      "definition": "CREATE INDEX ix_assistant_sql_executions_request ON assistant.sql_executions USING btree (request_id, created_at)",
+      "index_name": "ix_assistant_sql_executions_request",
+      "relation_name": "sql_executions",
+      "schema_name": "assistant"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX sql_executions_pkey ON assistant.sql_executions USING btree (execution_id)",
+      "index_name": "sql_executions_pkey",
+      "relation_name": "sql_executions",
+      "schema_name": "assistant"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX assistant_conversation_pkey ON public.assistant_conversation USING btree (id)",
+      "index_name": "assistant_conversation_pkey",
+      "relation_name": "assistant_conversation",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX assistant_conversation_user_id_d68b3caa ON public.assistant_conversation USING btree (user_id)",
+      "index_name": "assistant_conversation_user_id_d68b3caa",
+      "relation_name": "assistant_conversation",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX assistant_conversationmessage_conversation_id_e3ed1e9d ON public.assistant_conversationmessage USING btree (conversation_id)",
+      "index_name": "assistant_conversationmessage_conversation_id_e3ed1e9d",
+      "relation_name": "assistant_conversationmessage",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX assistant_conversationmessage_pkey ON public.assistant_conversationmessage USING btree (id)",
+      "index_name": "assistant_conversationmessage_pkey",
+      "relation_name": "assistant_conversationmessage",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX assistant_ragchunk_document_version_id_fa53b364 ON public.assistant_ragchunk USING btree (document_version_id)",
+      "index_name": "assistant_ragchunk_document_version_id_fa53b364",
+      "relation_name": "assistant_ragchunk",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX assistant_ragchunk_pkey ON public.assistant_ragchunk USING btree (id)",
+      "index_name": "assistant_ragchunk_pkey",
+      "relation_name": "assistant_ragchunk",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX ix_rag_chunk_search ON public.assistant_ragchunk USING gin (search_vector)",
+      "index_name": "ix_rag_chunk_search",
+      "relation_name": "assistant_ragchunk",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX uq_rag_chunk_version_ordinal ON public.assistant_ragchunk USING btree (document_version_id, ordinal)",
+      "index_name": "uq_rag_chunk_version_ordinal",
+      "relation_name": "assistant_ragchunk",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX assistant_ragdocument_pkey ON public.assistant_ragdocument USING btree (id)",
+      "index_name": "assistant_ragdocument_pkey",
+      "relation_name": "assistant_ragdocument",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX assistant_ragdocument_slug_b1b2c563_like ON public.assistant_ragdocument USING btree (slug varchar_pattern_ops)",
+      "index_name": "assistant_ragdocument_slug_b1b2c563_like",
+      "relation_name": "assistant_ragdocument",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX assistant_ragdocument_slug_key ON public.assistant_ragdocument USING btree (slug)",
+      "index_name": "assistant_ragdocument_slug_key",
+      "relation_name": "assistant_ragdocument",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX assistant_ragdocument_source_id_7cb0f5f5 ON public.assistant_ragdocument USING btree (source_id)",
+      "index_name": "assistant_ragdocument_source_id_7cb0f5f5",
+      "relation_name": "assistant_ragdocument",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX assistant_ragdocumentversion_document_id_1ab70475 ON public.assistant_ragdocumentversion USING btree (document_id)",
+      "index_name": "assistant_ragdocumentversion_document_id_1ab70475",
+      "relation_name": "assistant_ragdocumentversion",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX assistant_ragdocumentversion_pkey ON public.assistant_ragdocumentversion USING btree (id)",
+      "index_name": "assistant_ragdocumentversion_pkey",
+      "relation_name": "assistant_ragdocumentversion",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX uq_rag_document_version_sha ON public.assistant_ragdocumentversion USING btree (document_id, sha256)",
+      "index_name": "uq_rag_document_version_sha",
+      "relation_name": "assistant_ragdocumentversion",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX assistant_ragindexrun_pkey ON public.assistant_ragindexrun USING btree (id)",
+      "index_name": "assistant_ragindexrun_pkey",
+      "relation_name": "assistant_ragindexrun",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX assistant_ragsource_name_de4536d1_like ON public.assistant_ragsource USING btree (name varchar_pattern_ops)",
+      "index_name": "assistant_ragsource_name_de4536d1_like",
+      "relation_name": "assistant_ragsource",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX assistant_ragsource_name_key ON public.assistant_ragsource USING btree (name)",
+      "index_name": "assistant_ragsource_name_key",
+      "relation_name": "assistant_ragsource",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX assistant_ragsource_pkey ON public.assistant_ragsource USING btree (id)",
+      "index_name": "assistant_ragsource_pkey",
+      "relation_name": "assistant_ragsource",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX auth_group_name_a6ea08ec_like ON public.auth_group USING btree (name varchar_pattern_ops)",
+      "index_name": "auth_group_name_a6ea08ec_like",
+      "relation_name": "auth_group",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX auth_group_name_key ON public.auth_group USING btree (name)",
+      "index_name": "auth_group_name_key",
+      "relation_name": "auth_group",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX auth_group_pkey ON public.auth_group USING btree (id)",
+      "index_name": "auth_group_pkey",
+      "relation_name": "auth_group",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX auth_group_permissions_group_id_b120cbf9 ON public.auth_group_permissions USING btree (group_id)",
+      "index_name": "auth_group_permissions_group_id_b120cbf9",
+      "relation_name": "auth_group_permissions",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX auth_group_permissions_group_id_permission_id_0cd325b0_uniq ON public.auth_group_permissions USING btree (group_id, permission_id)",
+      "index_name": "auth_group_permissions_group_id_permission_id_0cd325b0_uniq",
+      "relation_name": "auth_group_permissions",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX auth_group_permissions_permission_id_84c5c92e ON public.auth_group_permissions USING btree (permission_id)",
+      "index_name": "auth_group_permissions_permission_id_84c5c92e",
+      "relation_name": "auth_group_permissions",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX auth_group_permissions_pkey ON public.auth_group_permissions USING btree (id)",
+      "index_name": "auth_group_permissions_pkey",
+      "relation_name": "auth_group_permissions",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX auth_permission_content_type_id_2f476e4b ON public.auth_permission USING btree (content_type_id)",
+      "index_name": "auth_permission_content_type_id_2f476e4b",
+      "relation_name": "auth_permission",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX auth_permission_content_type_id_codename_01ab375a_uniq ON public.auth_permission USING btree (content_type_id, codename)",
+      "index_name": "auth_permission_content_type_id_codename_01ab375a_uniq",
+      "relation_name": "auth_permission",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX auth_permission_pkey ON public.auth_permission USING btree (id)",
+      "index_name": "auth_permission_pkey",
+      "relation_name": "auth_permission",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX auth_user_pkey ON public.auth_user USING btree (id)",
+      "index_name": "auth_user_pkey",
+      "relation_name": "auth_user",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX auth_user_username_6821ab7c_like ON public.auth_user USING btree (username varchar_pattern_ops)",
+      "index_name": "auth_user_username_6821ab7c_like",
+      "relation_name": "auth_user",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX auth_user_username_key ON public.auth_user USING btree (username)",
+      "index_name": "auth_user_username_key",
+      "relation_name": "auth_user",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX auth_user_groups_group_id_97559544 ON public.auth_user_groups USING btree (group_id)",
+      "index_name": "auth_user_groups_group_id_97559544",
+      "relation_name": "auth_user_groups",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX auth_user_groups_pkey ON public.auth_user_groups USING btree (id)",
+      "index_name": "auth_user_groups_pkey",
+      "relation_name": "auth_user_groups",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX auth_user_groups_user_id_6a12ed8b ON public.auth_user_groups USING btree (user_id)",
+      "index_name": "auth_user_groups_user_id_6a12ed8b",
+      "relation_name": "auth_user_groups",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX auth_user_groups_user_id_group_id_94350c0c_uniq ON public.auth_user_groups USING btree (user_id, group_id)",
+      "index_name": "auth_user_groups_user_id_group_id_94350c0c_uniq",
+      "relation_name": "auth_user_groups",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX auth_user_user_permissions_permission_id_1fbb5f2c ON public.auth_user_user_permissions USING btree (permission_id)",
+      "index_name": "auth_user_user_permissions_permission_id_1fbb5f2c",
+      "relation_name": "auth_user_user_permissions",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX auth_user_user_permissions_pkey ON public.auth_user_user_permissions USING btree (id)",
+      "index_name": "auth_user_user_permissions_pkey",
+      "relation_name": "auth_user_user_permissions",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX auth_user_user_permissions_user_id_a95ead1b ON public.auth_user_user_permissions USING btree (user_id)",
+      "index_name": "auth_user_user_permissions_user_id_a95ead1b",
+      "relation_name": "auth_user_user_permissions",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX auth_user_user_permissions_user_id_permission_id_14a6b632_uniq ON public.auth_user_user_permissions USING btree (user_id, permission_id)",
+      "index_name": "auth_user_user_permissions_user_id_permission_id_14a6b632_uniq",
+      "relation_name": "auth_user_user_permissions",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX dim_department_pkey ON public.dim_department USING btree (departement_code)",
+      "index_name": "dim_department_pkey",
+      "relation_name": "dim_department",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX idx_department_region_code ON public.dim_department USING btree (region_code)",
+      "index_name": "idx_department_region_code",
+      "relation_name": "dim_department",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX dim_indicator_pkey ON public.dim_indicator USING btree (indicator_key)",
+      "index_name": "dim_indicator_pkey",
+      "relation_name": "dim_indicator",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX dim_period_pkey ON public.dim_period USING btree (period_key)",
+      "index_name": "dim_period_pkey",
+      "relation_name": "dim_period",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX dim_region_pkey ON public.dim_region USING btree (region_code)",
+      "index_name": "dim_region_pkey",
+      "relation_name": "dim_region",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX dim_region_region_name_key ON public.dim_region USING btree (region_name)",
+      "index_name": "dim_region_region_name_key",
+      "relation_name": "dim_region",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX django_admin_log_content_type_id_c4bce8eb ON public.django_admin_log USING btree (content_type_id)",
+      "index_name": "django_admin_log_content_type_id_c4bce8eb",
+      "relation_name": "django_admin_log",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX django_admin_log_pkey ON public.django_admin_log USING btree (id)",
+      "index_name": "django_admin_log_pkey",
+      "relation_name": "django_admin_log",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX django_admin_log_user_id_c564eba6 ON public.django_admin_log USING btree (user_id)",
+      "index_name": "django_admin_log_user_id_c564eba6",
+      "relation_name": "django_admin_log",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX django_content_type_app_label_model_76bd3d3b_uniq ON public.django_content_type USING btree (app_label, model)",
+      "index_name": "django_content_type_app_label_model_76bd3d3b_uniq",
+      "relation_name": "django_content_type",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX django_content_type_pkey ON public.django_content_type USING btree (id)",
+      "index_name": "django_content_type_pkey",
+      "relation_name": "django_content_type",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX django_migrations_pkey ON public.django_migrations USING btree (id)",
+      "index_name": "django_migrations_pkey",
+      "relation_name": "django_migrations",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX django_session_expire_date_a5c62663 ON public.django_session USING btree (expire_date)",
+      "index_name": "django_session_expire_date_a5c62663",
+      "relation_name": "django_session",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX django_session_pkey ON public.django_session USING btree (session_key)",
+      "index_name": "django_session_pkey",
+      "relation_name": "django_session",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX django_session_session_key_c0390e0f_like ON public.django_session USING btree (session_key varchar_pattern_ops)",
+      "index_name": "django_session_session_key_c0390e0f_like",
+      "relation_name": "django_session",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX idx_bdf_department_period ON public.fact_bdf_statinfo USING btree (departement_code, reference_period)",
+      "index_name": "idx_bdf_department_period",
+      "relation_name": "fact_bdf_statinfo",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX idx_bdf_indicator ON public.fact_bdf_statinfo USING btree (indicator_key)",
+      "index_name": "idx_bdf_indicator",
+      "relation_name": "fact_bdf_statinfo",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX uq_bdf_fact ON public.fact_bdf_statinfo USING btree (reference_period, departement_code, indicator_key)",
+      "index_name": "uq_bdf_fact",
+      "relation_name": "fact_bdf_statinfo",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX idx_insee_department_year ON public.fact_insee_macro USING btree (departement_code, reference_year)",
+      "index_name": "idx_insee_department_year",
+      "relation_name": "fact_insee_macro",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX idx_insee_indicator ON public.fact_insee_macro USING btree (indicator_key)",
+      "index_name": "idx_insee_indicator",
+      "relation_name": "fact_insee_macro",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX uq_insee_fact ON public.fact_insee_macro USING btree (reference_year, departement_code, indicator_key)",
+      "index_name": "uq_insee_fact",
+      "relation_name": "fact_insee_macro",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX fact_macro_override_pkey ON public.fact_macro_override USING btree (id)",
+      "index_name": "fact_macro_override_pkey",
+      "relation_name": "fact_macro_override",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX idx_macro_override_lookup ON public.fact_macro_override USING btree (period_key, departement_code, indicator_key)",
+      "index_name": "idx_macro_override_lookup",
+      "relation_name": "fact_macro_override",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX idx_surendettement_department_year ON public.fact_surendettement USING btree (departement_code, reference_year)",
+      "index_name": "idx_surendettement_department_year",
+      "relation_name": "fact_surendettement",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX idx_surendettement_indicator ON public.fact_surendettement USING btree (indicator_key)",
+      "index_name": "idx_surendettement_indicator",
+      "relation_name": "fact_surendettement",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX indicators_pkey ON public.indicators USING btree (id)",
+      "index_name": "indicators_pkey",
+      "relation_name": "indicators",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX ix_indicators_code ON public.indicators USING btree (code)",
+      "index_name": "ix_indicators_code",
+      "relation_name": "indicators",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX uq_indicators_code ON public.indicators USING btree (code)",
+      "index_name": "uq_indicators_code",
+      "relation_name": "indicators",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX ix_observations_code_level_period ON public.observations USING btree (indicator_code, geographic_level, reference_period)",
+      "index_name": "ix_observations_code_level_period",
+      "relation_name": "observations",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX ix_observations_geo_period_indicator ON public.observations USING btree (geographic_level, reference_period, indicator_id, geographic_code)",
+      "index_name": "ix_observations_geo_period_indicator",
+      "relation_name": "observations",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX ix_observations_idempotence_key ON public.observations USING btree (idempotence_key)",
+      "index_name": "ix_observations_idempotence_key",
+      "relation_name": "observations",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX ix_observations_indicator_code ON public.observations USING btree (indicator_code)",
+      "index_name": "ix_observations_indicator_code",
+      "relation_name": "observations",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX ix_observations_indicator_id ON public.observations USING btree (indicator_id)",
+      "index_name": "ix_observations_indicator_id",
+      "relation_name": "observations",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX ix_observations_period_level_code ON public.observations USING btree (reference_period, geographic_level, geographic_code)",
+      "index_name": "ix_observations_period_level_code",
+      "relation_name": "observations",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX ix_observations_reference_period ON public.observations USING btree (reference_period)",
+      "index_name": "ix_observations_reference_period",
+      "relation_name": "observations",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX ix_observations_region_code ON public.observations USING btree (region_code)",
+      "index_name": "ix_observations_region_code",
+      "relation_name": "observations",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX ix_observations_source_document_id ON public.observations USING btree (source_document_id)",
+      "index_name": "ix_observations_source_document_id",
+      "relation_name": "observations",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX observations_pkey ON public.observations USING btree (id)",
+      "index_name": "observations_pkey",
+      "relation_name": "observations",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX uq_observations_idempotence_key ON public.observations USING btree (idempotence_key)",
+      "index_name": "uq_observations_idempotence_key",
+      "relation_name": "observations",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX ix_pipeline_runs_name_started ON public.pipeline_runs USING btree (pipeline_name, started_at)",
+      "index_name": "ix_pipeline_runs_name_started",
+      "relation_name": "pipeline_runs",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX ix_pipeline_runs_pipeline_name ON public.pipeline_runs USING btree (pipeline_name)",
+      "index_name": "ix_pipeline_runs_pipeline_name",
+      "relation_name": "pipeline_runs",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX ix_pipeline_runs_status ON public.pipeline_runs USING btree (status)",
+      "index_name": "ix_pipeline_runs_status",
+      "relation_name": "pipeline_runs",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX pipeline_runs_pkey ON public.pipeline_runs USING btree (id)",
+      "index_name": "pipeline_runs_pkey",
+      "relation_name": "pipeline_runs",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX ix_risk_score_details_risk_score_id ON public.risk_score_details USING btree (risk_score_id)",
+      "index_name": "ix_risk_score_details_risk_score_id",
+      "relation_name": "risk_score_details",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX risk_score_details_pkey ON public.risk_score_details USING btree (id)",
+      "index_name": "risk_score_details_pkey",
+      "relation_name": "risk_score_details",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX uq_risk_score_details_score_code ON public.risk_score_details USING btree (risk_score_id, indicator_code)",
+      "index_name": "uq_risk_score_details_score_code",
+      "relation_name": "risk_score_details",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX ix_risk_score_indicator_configs_indicator_id ON public.risk_score_indicator_configs USING btree (indicator_id)",
+      "index_name": "ix_risk_score_indicator_configs_indicator_id",
+      "relation_name": "risk_score_indicator_configs",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX ix_risk_score_indicator_configs_risk_score_model_id ON public.risk_score_indicator_configs USING btree (risk_score_model_id)",
+      "index_name": "ix_risk_score_indicator_configs_risk_score_model_id",
+      "relation_name": "risk_score_indicator_configs",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX risk_score_indicator_configs_pkey ON public.risk_score_indicator_configs USING btree (id)",
+      "index_name": "risk_score_indicator_configs_pkey",
+      "relation_name": "risk_score_indicator_configs",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX uq_risk_score_indicator_model_code ON public.risk_score_indicator_configs USING btree (risk_score_model_id, indicator_code)",
+      "index_name": "uq_risk_score_indicator_model_code",
+      "relation_name": "risk_score_indicator_configs",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX ix_risk_score_models_code ON public.risk_score_models USING btree (code)",
+      "index_name": "ix_risk_score_models_code",
+      "relation_name": "risk_score_models",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX ix_risk_score_models_is_active ON public.risk_score_models USING btree (is_active)",
+      "index_name": "ix_risk_score_models_is_active",
+      "relation_name": "risk_score_models",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX risk_score_models_pkey ON public.risk_score_models USING btree (id)",
+      "index_name": "risk_score_models_pkey",
+      "relation_name": "risk_score_models",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX uq_risk_score_models_code_version ON public.risk_score_models USING btree (code, version)",
+      "index_name": "uq_risk_score_models_code_version",
+      "relation_name": "risk_score_models",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX ix_risk_scores_geo_period ON public.risk_scores USING btree (geographic_level, geographic_code, reference_period)",
+      "index_name": "ix_risk_scores_geo_period",
+      "relation_name": "risk_scores",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX ix_risk_scores_model_level_period_score ON public.risk_scores USING btree (risk_score_model_id, geographic_level, reference_period, score)",
+      "index_name": "ix_risk_scores_model_level_period_score",
+      "relation_name": "risk_scores",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX ix_risk_scores_risk_score_model_id ON public.risk_scores USING btree (risk_score_model_id)",
+      "index_name": "ix_risk_scores_risk_score_model_id",
+      "relation_name": "risk_scores",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX risk_scores_pkey ON public.risk_scores USING btree (id)",
+      "index_name": "risk_scores_pkey",
+      "relation_name": "risk_scores",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX uq_risk_scores_business_key ON public.risk_scores USING btree (risk_score_model_id, geographic_level, geographic_code, reference_period)",
+      "index_name": "uq_risk_scores_business_key",
+      "relation_name": "risk_scores",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX schema_deprecations_pkey ON public.schema_deprecations USING btree (object_name)",
+      "index_name": "schema_deprecations_pkey",
+      "relation_name": "schema_deprecations",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX schema_migrations_pkey ON public.schema_migrations USING btree (version)",
+      "index_name": "schema_migrations_pkey",
+      "relation_name": "schema_migrations",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX ix_source_documents_pdf_sha256 ON public.source_documents USING btree (pdf_sha256)",
+      "index_name": "ix_source_documents_pdf_sha256",
+      "relation_name": "source_documents",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX ix_source_documents_period_status ON public.source_documents USING btree (reference_period, extraction_status)",
+      "index_name": "ix_source_documents_period_status",
+      "relation_name": "source_documents",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX ix_source_documents_publication_type ON public.source_documents USING btree (publication_type)",
+      "index_name": "ix_source_documents_publication_type",
+      "relation_name": "source_documents",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX ix_source_documents_reference_period ON public.source_documents USING btree (reference_period)",
+      "index_name": "ix_source_documents_reference_period",
+      "relation_name": "source_documents",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX ix_source_documents_region_code ON public.source_documents USING btree (region_code)",
+      "index_name": "ix_source_documents_region_code",
+      "relation_name": "source_documents",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX source_documents_pkey ON public.source_documents USING btree (id)",
+      "index_name": "source_documents_pkey",
+      "relation_name": "source_documents",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX uq_source_documents_business_version ON public.source_documents USING btree (publication_type, region_code, reference_period, pdf_sha256)",
+      "index_name": "uq_source_documents_business_version",
+      "relation_name": "source_documents",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX uq_source_documents_pdf_sha256 ON public.source_documents USING btree (pdf_sha256)",
+      "index_name": "uq_source_documents_pdf_sha256",
+      "relation_name": "source_documents",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX ix_surendettement_data_region ON public.surendettement_data USING btree (region)",
+      "index_name": "ix_surendettement_data_region",
+      "relation_name": "surendettement_data",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE INDEX ix_surendettement_data_year ON public.surendettement_data USING btree (year)",
+      "index_name": "ix_surendettement_data_year",
+      "relation_name": "surendettement_data",
+      "schema_name": "public"
+    },
+    {
+      "definition": "CREATE UNIQUE INDEX surendettement_data_pkey ON public.surendettement_data USING btree (id)",
+      "index_name": "surendettement_data_pkey",
+      "relation_name": "surendettement_data",
+      "schema_name": "public"
+    }
+  ],
+  "relations": [
+    {
+      "relation_kind": "r",
+      "relation_name": "corpus_chunks",
+      "schema_name": "assistant"
+    },
+    {
+      "relation_kind": "r",
+      "relation_name": "schema_migrations",
+      "schema_name": "assistant"
+    },
+    {
+      "relation_kind": "r",
+      "relation_name": "sql_executions",
+      "schema_name": "assistant"
+    },
+    {
+      "relation_kind": "v",
+      "relation_name": "analytics_macro_regions",
+      "schema_name": "public"
+    },
+    {
+      "relation_kind": "v",
+      "relation_name": "analytics_model_comparisons",
+      "schema_name": "public"
+    },
+    {
+      "relation_kind": "v",
+      "relation_name": "analytics_observations",
+      "schema_name": "public"
+    },
+    {
+      "relation_kind": "v",
+      "relation_name": "analytics_pipeline_status",
+      "schema_name": "public"
+    },
+    {
+      "relation_kind": "v",
+      "relation_name": "analytics_risk_scores",
+      "schema_name": "public"
+    },
+    {
+      "relation_kind": "v",
+      "relation_name": "analytics_score_factors",
+      "schema_name": "public"
+    },
+    {
+      "relation_kind": "r",
+      "relation_name": "assistant_conversation",
+      "schema_name": "public"
+    },
+    {
+      "relation_kind": "r",
+      "relation_name": "assistant_conversationmessage",
+      "schema_name": "public"
+    },
+    {
+      "relation_kind": "r",
+      "relation_name": "assistant_ragchunk",
+      "schema_name": "public"
+    },
+    {
+      "relation_kind": "r",
+      "relation_name": "assistant_ragdocument",
+      "schema_name": "public"
+    },
+    {
+      "relation_kind": "r",
+      "relation_name": "assistant_ragdocumentversion",
+      "schema_name": "public"
+    },
+    {
+      "relation_kind": "r",
+      "relation_name": "assistant_ragindexrun",
+      "schema_name": "public"
+    },
+    {
+      "relation_kind": "r",
+      "relation_name": "assistant_ragsource",
+      "schema_name": "public"
+    },
+    {
+      "relation_kind": "r",
+      "relation_name": "auth_group",
+      "schema_name": "public"
+    },
+    {
+      "relation_kind": "r",
+      "relation_name": "auth_group_permissions",
+      "schema_name": "public"
+    },
+    {
+      "relation_kind": "r",
+      "relation_name": "auth_permission",
+      "schema_name": "public"
+    },
+    {
+      "relation_kind": "r",
+      "relation_name": "auth_user",
+      "schema_name": "public"
+    },
+    {
+      "relation_kind": "r",
+      "relation_name": "auth_user_groups",
+      "schema_name": "public"
+    },
+    {
+      "relation_kind": "r",
+      "relation_name": "auth_user_user_permissions",
+      "schema_name": "public"
+    },
+    {
+      "relation_kind": "r",
+      "relation_name": "dim_department",
+      "schema_name": "public"
+    },
+    {
+      "relation_kind": "r",
+      "relation_name": "dim_indicator",
+      "schema_name": "public"
+    },
+    {
+      "relation_kind": "r",
+      "relation_name": "dim_period",
+      "schema_name": "public"
+    },
+    {
+      "relation_kind": "r",
+      "relation_name": "dim_region",
+      "schema_name": "public"
+    },
+    {
+      "relation_kind": "r",
+      "relation_name": "django_admin_log",
+      "schema_name": "public"
+    },
+    {
+      "relation_kind": "r",
+      "relation_name": "django_content_type",
+      "schema_name": "public"
+    },
+    {
+      "relation_kind": "r",
+      "relation_name": "django_migrations",
+      "schema_name": "public"
+    },
+    {
+      "relation_kind": "r",
+      "relation_name": "django_session",
+      "schema_name": "public"
+    },
+    {
+      "relation_kind": "r",
+      "relation_name": "fact_bdf_statinfo",
+      "schema_name": "public"
+    },
+    {
+      "relation_kind": "r",
+      "relation_name": "fact_insee_macro",
+      "schema_name": "public"
+    },
+    {
+      "relation_kind": "r",
+      "relation_name": "fact_macro_override",
+      "schema_name": "public"
+    },
+    {
+      "relation_kind": "r",
+      "relation_name": "fact_surendettement",
+      "schema_name": "public"
+    },
+    {
+      "relation_kind": "r",
+      "relation_name": "indicators",
+      "schema_name": "public"
+    },
+    {
+      "relation_kind": "r",
+      "relation_name": "observations",
+      "schema_name": "public"
+    },
+    {
+      "relation_kind": "r",
+      "relation_name": "pipeline_metadata",
+      "schema_name": "public"
+    },
+    {
+      "relation_kind": "r",
+      "relation_name": "pipeline_runs",
+      "schema_name": "public"
+    },
+    {
+      "relation_kind": "r",
+      "relation_name": "risk_score_details",
+      "schema_name": "public"
+    },
+    {
+      "relation_kind": "r",
+      "relation_name": "risk_score_indicator_configs",
+      "schema_name": "public"
+    },
+    {
+      "relation_kind": "r",
+      "relation_name": "risk_score_models",
+      "schema_name": "public"
+    },
+    {
+      "relation_kind": "r",
+      "relation_name": "risk_scores",
+      "schema_name": "public"
+    },
+    {
+      "relation_kind": "r",
+      "relation_name": "schema_deprecations",
+      "schema_name": "public"
+    },
+    {
+      "relation_kind": "r",
+      "relation_name": "schema_migrations",
+      "schema_name": "public"
+    },
+    {
+      "relation_kind": "r",
+      "relation_name": "source_documents",
+      "schema_name": "public"
+    },
+    {
+      "relation_kind": "r",
+      "relation_name": "surendettement_data",
+      "schema_name": "public"
+    },
+    {
+      "relation_kind": "v",
+      "relation_name": "v_bdf_total_deposits",
+      "schema_name": "public"
+    },
+    {
+      "relation_kind": "v",
+      "relation_name": "v_bdf_total_deposits_with_insee_macro",
+      "schema_name": "public"
+    },
+    {
+      "relation_kind": "v",
+      "relation_name": "v_insee_macro_region",
+      "schema_name": "public"
+    },
+    {
+      "relation_kind": "v",
+      "relation_name": "v_insee_macro_region_selected",
+      "schema_name": "public"
+    },
+    {
+      "relation_kind": "v",
+      "relation_name": "v_surendettement_annual",
+      "schema_name": "public"
+    },
+    {
+      "relation_kind": "v",
+      "relation_name": "v_surendettement_with_insee_macro",
+      "schema_name": "public"
+    }
+  ],
+  "sequences": [
+    {
+      "cycle": false,
+      "data_type": "bigint",
+      "increment_by": 1,
+      "max_value": 9223372036854775807,
+      "min_value": 1,
+      "schema_name": "public",
+      "sequence_name": "assistant_conversation_id_seq",
+      "start_value": 1
+    },
+    {
+      "cycle": false,
+      "data_type": "bigint",
+      "increment_by": 1,
+      "max_value": 9223372036854775807,
+      "min_value": 1,
+      "schema_name": "public",
+      "sequence_name": "assistant_conversationmessage_id_seq",
+      "start_value": 1
+    },
+    {
+      "cycle": false,
+      "data_type": "bigint",
+      "increment_by": 1,
+      "max_value": 9223372036854775807,
+      "min_value": 1,
+      "schema_name": "public",
+      "sequence_name": "assistant_ragchunk_id_seq",
+      "start_value": 1
+    },
+    {
+      "cycle": false,
+      "data_type": "bigint",
+      "increment_by": 1,
+      "max_value": 9223372036854775807,
+      "min_value": 1,
+      "schema_name": "public",
+      "sequence_name": "assistant_ragdocument_id_seq",
+      "start_value": 1
+    },
+    {
+      "cycle": false,
+      "data_type": "bigint",
+      "increment_by": 1,
+      "max_value": 9223372036854775807,
+      "min_value": 1,
+      "schema_name": "public",
+      "sequence_name": "assistant_ragdocumentversion_id_seq",
+      "start_value": 1
+    },
+    {
+      "cycle": false,
+      "data_type": "bigint",
+      "increment_by": 1,
+      "max_value": 9223372036854775807,
+      "min_value": 1,
+      "schema_name": "public",
+      "sequence_name": "assistant_ragindexrun_id_seq",
+      "start_value": 1
+    },
+    {
+      "cycle": false,
+      "data_type": "bigint",
+      "increment_by": 1,
+      "max_value": 9223372036854775807,
+      "min_value": 1,
+      "schema_name": "public",
+      "sequence_name": "assistant_ragsource_id_seq",
+      "start_value": 1
+    },
+    {
+      "cycle": false,
+      "data_type": "integer",
+      "increment_by": 1,
+      "max_value": 2147483647,
+      "min_value": 1,
+      "schema_name": "public",
+      "sequence_name": "auth_group_id_seq",
+      "start_value": 1
+    },
+    {
+      "cycle": false,
+      "data_type": "bigint",
+      "increment_by": 1,
+      "max_value": 9223372036854775807,
+      "min_value": 1,
+      "schema_name": "public",
+      "sequence_name": "auth_group_permissions_id_seq",
+      "start_value": 1
+    },
+    {
+      "cycle": false,
+      "data_type": "integer",
+      "increment_by": 1,
+      "max_value": 2147483647,
+      "min_value": 1,
+      "schema_name": "public",
+      "sequence_name": "auth_permission_id_seq",
+      "start_value": 1
+    },
+    {
+      "cycle": false,
+      "data_type": "bigint",
+      "increment_by": 1,
+      "max_value": 9223372036854775807,
+      "min_value": 1,
+      "schema_name": "public",
+      "sequence_name": "auth_user_groups_id_seq",
+      "start_value": 1
+    },
+    {
+      "cycle": false,
+      "data_type": "integer",
+      "increment_by": 1,
+      "max_value": 2147483647,
+      "min_value": 1,
+      "schema_name": "public",
+      "sequence_name": "auth_user_id_seq",
+      "start_value": 1
+    },
+    {
+      "cycle": false,
+      "data_type": "bigint",
+      "increment_by": 1,
+      "max_value": 9223372036854775807,
+      "min_value": 1,
+      "schema_name": "public",
+      "sequence_name": "auth_user_user_permissions_id_seq",
+      "start_value": 1
+    },
+    {
+      "cycle": false,
+      "data_type": "integer",
+      "increment_by": 1,
+      "max_value": 2147483647,
+      "min_value": 1,
+      "schema_name": "public",
+      "sequence_name": "django_admin_log_id_seq",
+      "start_value": 1
+    },
+    {
+      "cycle": false,
+      "data_type": "integer",
+      "increment_by": 1,
+      "max_value": 2147483647,
+      "min_value": 1,
+      "schema_name": "public",
+      "sequence_name": "django_content_type_id_seq",
+      "start_value": 1
+    },
+    {
+      "cycle": false,
+      "data_type": "bigint",
+      "increment_by": 1,
+      "max_value": 9223372036854775807,
+      "min_value": 1,
+      "schema_name": "public",
+      "sequence_name": "django_migrations_id_seq",
+      "start_value": 1
+    },
+    {
+      "cycle": false,
+      "data_type": "integer",
+      "increment_by": 1,
+      "max_value": 2147483647,
+      "min_value": 1,
+      "schema_name": "public",
+      "sequence_name": "fact_macro_override_id_seq",
+      "start_value": 1
+    },
+    {
+      "cycle": false,
+      "data_type": "integer",
+      "increment_by": 1,
+      "max_value": 2147483647,
+      "min_value": 1,
+      "schema_name": "public",
+      "sequence_name": "indicators_id_seq",
+      "start_value": 1
+    },
+    {
+      "cycle": false,
+      "data_type": "integer",
+      "increment_by": 1,
+      "max_value": 2147483647,
+      "min_value": 1,
+      "schema_name": "public",
+      "sequence_name": "observations_id_seq",
+      "start_value": 1
+    },
+    {
+      "cycle": false,
+      "data_type": "integer",
+      "increment_by": 1,
+      "max_value": 2147483647,
+      "min_value": 1,
+      "schema_name": "public",
+      "sequence_name": "pipeline_runs_id_seq",
+      "start_value": 1
+    },
+    {
+      "cycle": false,
+      "data_type": "integer",
+      "increment_by": 1,
+      "max_value": 2147483647,
+      "min_value": 1,
+      "schema_name": "public",
+      "sequence_name": "risk_score_details_id_seq",
+      "start_value": 1
+    },
+    {
+      "cycle": false,
+      "data_type": "integer",
+      "increment_by": 1,
+      "max_value": 2147483647,
+      "min_value": 1,
+      "schema_name": "public",
+      "sequence_name": "risk_score_indicator_configs_id_seq",
+      "start_value": 1
+    },
+    {
+      "cycle": false,
+      "data_type": "integer",
+      "increment_by": 1,
+      "max_value": 2147483647,
+      "min_value": 1,
+      "schema_name": "public",
+      "sequence_name": "risk_score_models_id_seq",
+      "start_value": 1
+    },
+    {
+      "cycle": false,
+      "data_type": "integer",
+      "increment_by": 1,
+      "max_value": 2147483647,
+      "min_value": 1,
+      "schema_name": "public",
+      "sequence_name": "risk_scores_id_seq",
+      "start_value": 1
+    },
+    {
+      "cycle": false,
+      "data_type": "integer",
+      "increment_by": 1,
+      "max_value": 2147483647,
+      "min_value": 1,
+      "schema_name": "public",
+      "sequence_name": "source_documents_id_seq",
+      "start_value": 1
+    },
+    {
+      "cycle": false,
+      "data_type": "integer",
+      "increment_by": 1,
+      "max_value": 2147483647,
+      "min_value": 1,
+      "schema_name": "public",
+      "sequence_name": "surendettement_data_id_seq",
+      "start_value": 1
+    }
+  ],
+  "triggers": [],
+  "types": [],
+  "views": [
+    {
+      "definition": " SELECT reference_year,\n    region_name,\n    indicator_code,\n    indicator_name,\n    indicator_group,\n    aggregation_rule,\n    value AS value_numeric\n   FROM v_insee_macro_region_selected;",
+      "schema_name": "public",
+      "view_name": "analytics_macro_regions"
+    },
+    {
+      "definition": " SELECT score_a.geographic_level,\n    score_a.geographic_code,\n    score_a.geographic_name,\n    score_a.reference_period,\n    model_a.code AS model_code,\n    model_a.version AS version_a,\n    model_b.version AS version_b,\n    score_a.score AS score_a,\n    score_b.score AS score_b,\n    (score_b.score - score_a.score) AS score_change\n   FROM (((risk_scores score_a\n     JOIN risk_score_models model_a ON ((model_a.id = score_a.risk_score_model_id)))\n     JOIN risk_scores score_b ON ((((score_b.geographic_level)::text = (score_a.geographic_level)::text) AND ((score_b.geographic_code)::text = (score_a.geographic_code)::text) AND ((score_b.reference_period)::text = (score_a.reference_period)::text))))\n     JOIN risk_score_models model_b ON (((model_b.id = score_b.risk_score_model_id) AND ((model_b.code)::text = (model_a.code)::text) AND ((model_b.version)::text > (model_a.version)::text))));",
+      "schema_name": "public",
+      "view_name": "analytics_model_comparisons"
+    },
+    {
+      "definition": " SELECT observation.id,\n    observation.indicator_code,\n    indicator.label AS indicator_label,\n    observation.geographic_level,\n    observation.geographic_code,\n    observation.geographic_name,\n    observation.region_code,\n    observation.reference_period,\n    observation.value_numeric,\n    observation.unit,\n    observation.observation_type,\n    observation.comparison_period,\n    observation.variation_numeric,\n    observation.variation_unit,\n    observation.confidence_score,\n    observation.updated_at\n   FROM (observations observation\n     JOIN indicators indicator ON ((indicator.id = observation.indicator_id)));",
+      "schema_name": "public",
+      "view_name": "analytics_observations"
+    },
+    {
+      "definition": " SELECT id,\n    pipeline_name,\n    status,\n    started_at,\n    finished_at\n   FROM pipeline_runs;",
+      "schema_name": "public",
+      "view_name": "analytics_pipeline_status"
+    },
+    {
+      "definition": " SELECT rs.id,\n    rs.geographic_level,\n    rs.geographic_code,\n    rs.geographic_name,\n    rs.reference_period,\n    rs.score,\n    rs.risk_level,\n    rs.coverage_ratio,\n    rs.status,\n    model.code AS model_code,\n    model.version AS model_version,\n    model.is_active AS model_is_active,\n    rs.calculated_at\n   FROM (risk_scores rs\n     JOIN risk_score_models model ON ((model.id = rs.risk_score_model_id)));",
+      "schema_name": "public",
+      "view_name": "analytics_risk_scores"
+    },
+    {
+      "definition": " SELECT detail.id,\n    score.geographic_level,\n    score.geographic_code,\n    score.geographic_name,\n    score.reference_period,\n    model.code AS model_code,\n    model.version AS model_version,\n    detail.indicator_code,\n    detail.raw_value,\n    detail.unit,\n    detail.normalized_value,\n    detail.configured_weight,\n    detail.effective_weight,\n    detail.contribution,\n    detail.direction\n   FROM ((risk_score_details detail\n     JOIN risk_scores score ON ((score.id = detail.risk_score_id)))\n     JOIN risk_score_models model ON ((model.id = score.risk_score_model_id)));",
+      "schema_name": "public",
+      "view_name": "analytics_score_factors"
+    },
+    {
+      "definition": " SELECT b.reference_period,\n    b.reference_year,\n    b.reference_month_number,\n    b.departement_code,\n    d.departement_name,\n    d.region_name,\n    b.value AS bdf_total_deposits_value\n   FROM ((fact_bdf_statinfo b\n     JOIN dim_indicator i ON ((i.indicator_key = b.indicator_key)))\n     LEFT JOIN dim_department d ON ((d.departement_code = b.departement_code)))\n  WHERE ((i.source_system = 'bdf_statinfo'::text) AND (i.indicator_code = 'total'::text));",
+      "schema_name": "public",
+      "view_name": "v_bdf_total_deposits"
+    },
+    {
+      "definition": " SELECT b.reference_period AS bdf_reference_period,\n    b.reference_year AS bdf_reference_year,\n    b.reference_month_number AS bdf_reference_month_number,\n    b.departement_code,\n    b.departement_name,\n    b.region_name,\n    b.bdf_total_deposits_value,\n    m.reference_year AS macro_reference_year,\n    i.indicator_code AS macro_indicator_code,\n    i.indicator_name AS macro_indicator_name,\n    i.indicator_group AS macro_indicator_group,\n    m.value AS macro_value\n   FROM ((v_bdf_total_deposits b\n     JOIN fact_insee_macro m ON (((m.departement_code = b.departement_code) AND (m.reference_year = ( SELECT max(fact_insee_macro.reference_year) AS max\n           FROM fact_insee_macro\n          WHERE (fact_insee_macro.reference_year <= (b.reference_year + 1)))))))\n     JOIN dim_indicator i ON ((i.indicator_key = m.indicator_key)))\n  WHERE (i.source_system = 'insee_macro'::text);",
+      "schema_name": "public",
+      "view_name": "v_bdf_total_deposits_with_insee_macro"
+    },
+    {
+      "definition": " SELECT m.reference_year,\n    r.region_code,\n    r.region_name,\n    i.indicator_code,\n    i.indicator_name,\n    i.indicator_group,\n    i.aggregation_rule,\n    sum(m.value) AS value\n   FROM (((fact_insee_macro m\n     JOIN dim_department d ON ((d.departement_code = m.departement_code)))\n     JOIN dim_region r ON (((r.region_code)::text = d.region_code)))\n     JOIN dim_indicator i ON ((i.indicator_key = m.indicator_key)))\n  WHERE (i.source_system = 'insee_macro'::text)\n  GROUP BY m.reference_year, r.region_code, r.region_name, i.indicator_code, i.indicator_name, i.indicator_group, i.aggregation_rule;",
+      "schema_name": "public",
+      "view_name": "v_insee_macro_region"
+    },
+    {
+      "definition": " WITH ratio_definitions(indicator_code, indicator_name, indicator_group, numerator_code, denominator_code) AS (\n         VALUES ('part_population_0014'::text,'Part de la population de 0 à 14 ans'::text,'démographie'::text,'P22_POP0014'::text,'P22_POP'::text), ('part_population_1529'::text,'Part de la population de 15 à 29 ans'::text,'démographie'::text,'P22_POP1529'::text,'P22_POP'::text), ('part_population_3044'::text,'Part de la population de 30 à 44 ans'::text,'démographie'::text,'P22_POP3044'::text,'P22_POP'::text), ('part_population_4559'::text,'Part de la population de 45 à 59 ans'::text,'démographie'::text,'P22_POP4559'::text,'P22_POP'::text), ('part_population_6074'::text,'Part de la population de 60 à 74 ans'::text,'démographie'::text,'P22_POP6074'::text,'P22_POP'::text), ('part_population_7589'::text,'Part de la population de 75 à 89 ans'::text,'démographie'::text,'P22_POP7589'::text,'P22_POP'::text), ('part_population_90p'::text,'Part de la population de 90 ans ou plus'::text,'démographie'::text,'P22_POP90P'::text,'P22_POP'::text), ('taux_activite_1564'::text,'Taux d’activité des 15 à 64 ans'::text,'emploi_chômage'::text,'P22_ACT1564'::text,'P22_POP1564'::text), ('taux_emploi_1564'::text,'Taux d’emploi des 15 à 64 ans'::text,'emploi_chômage'::text,'P22_ACTOCC1564'::text,'P22_POP1564'::text), ('taux_chomage_1564'::text,'Taux de chômage des 15 à 64 ans'::text,'emploi_chômage'::text,'P22_CHOM1564'::text,'P22_ACT1564'::text), ('part_residences_principales'::text,'Part des résidences principales'::text,'logement'::text,'P22_RP'::text,'P22_LOG'::text), ('part_residences_secondaires'::text,'Part des résidences secondaires'::text,'logement'::text,'P22_RSECOCC'::text,'P22_LOG'::text), ('part_logements_vacants'::text,'Part des logements vacants'::text,'logement'::text,'P22_LOGVAC'::text,'P22_LOG'::text), ('part_proprietaires'::text,'Part des résidences principales occupées par des propriétaires'::text,'logement'::text,'P22_RP_PROP'::text,'P22_RP'::text), ('part_locataires'::text,'Part des résidences principales occupées par des locataires'::text,'logement'::text,'P22_RP_LOC'::text,'P22_RP'::text), ('part_menages_seuls'::text,'Part des ménages d’une personne'::text,'familles'::text,'C22_MENPSEUL'::text,'C22_MEN'::text), ('part_familles_monoparentales'::text,'Part des familles monoparentales'::text,'familles'::text,'C22_FAMMONO'::text,'C22_FAM'::text), ('part_sans_diplome'::text,'Part des personnes sans diplôme ou titulaires au plus du CEP'::text,'formation'::text,'P22_NSCOL15P_DIPLMIN'::text,'P22_NSCOL15P'::text), ('part_diplomees_bac5'::text,'Part des diplômés Bac +5 ou plus'::text,'formation'::text,'P22_NSCOL15P_SUP5'::text,'P22_NSCOL15P'::text)\n        ), derived AS (\n         SELECT numerator.reference_year,\n            numerator.region_code,\n            numerator.region_name,\n            definitions.indicator_code,\n            definitions.indicator_name,\n            definitions.indicator_group,\n            'derived_ratio'::text AS aggregation_rule,\n            (((100.0)::double precision * numerator.value) / NULLIF(denominator.value, (0)::double precision)) AS value\n           FROM ((ratio_definitions definitions\n             JOIN v_insee_macro_region numerator ON ((numerator.indicator_code = definitions.numerator_code)))\n             JOIN v_insee_macro_region denominator ON (((denominator.reference_year = numerator.reference_year) AND ((denominator.region_code)::text = (numerator.region_code)::text) AND (denominator.indicator_code = definitions.denominator_code))))\n        )\n SELECT v_insee_macro_region.reference_year,\n    v_insee_macro_region.region_code,\n    v_insee_macro_region.region_name,\n    v_insee_macro_region.indicator_code,\n    v_insee_macro_region.indicator_name,\n    v_insee_macro_region.indicator_group,\n    v_insee_macro_region.aggregation_rule,\n    v_insee_macro_region.value\n   FROM v_insee_macro_region\nUNION ALL\n SELECT derived.reference_year,\n    derived.region_code,\n    derived.region_name,\n    derived.indicator_code,\n    derived.indicator_name,\n    derived.indicator_group,\n    derived.aggregation_rule,\n    derived.value\n   FROM derived;",
+      "schema_name": "public",
+      "view_name": "v_insee_macro_region_selected"
+    },
+    {
+      "definition": " SELECT s.reference_year,\n    s.departement_code,\n    d.departement_name,\n    d.region_name,\n    sum(s.value) AS surendettement_value\n   FROM (fact_surendettement s\n     LEFT JOIN dim_department d ON ((d.departement_code = s.departement_code)))\n  GROUP BY s.reference_year, s.departement_code, d.departement_name, d.region_name;",
+      "schema_name": "public",
+      "view_name": "v_surendettement_annual"
+    },
+    {
+      "definition": " SELECT s.reference_year,\n    s.departement_code,\n    s.departement_name,\n    s.region_name,\n    s.surendettement_value,\n    m.reference_year AS macro_reference_year,\n    i.indicator_code AS macro_indicator_code,\n    i.indicator_name AS macro_indicator_name,\n    i.indicator_group AS macro_indicator_group,\n    m.value AS macro_value\n   FROM ((v_surendettement_annual s\n     JOIN fact_insee_macro m ON (((m.departement_code = s.departement_code) AND (m.reference_year = ( SELECT max(fact_insee_macro.reference_year) AS max\n           FROM fact_insee_macro\n          WHERE (fact_insee_macro.reference_year <= (s.reference_year + 1)))))))\n     JOIN dim_indicator i ON ((i.indicator_key = m.indicator_key)))\n  WHERE (i.source_system = 'insee_macro'::text);",
+      "schema_name": "public",
+      "view_name": "v_surendettement_with_insee_macro"
+    }
+  ]
+}

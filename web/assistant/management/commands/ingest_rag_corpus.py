@@ -7,7 +7,7 @@ from web.assistant.ingestion import CorpusIngestionError, ingest_manifest
 
 
 class Command(BaseCommand):
-    help = "Index the explicitly approved documentary corpus"
+    help = "Index the deprecated Django RAG corpus (emergency compatibility only)"
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -15,8 +15,25 @@ class Command(BaseCommand):
             type=Path,
             default=Path("web/assistant/corpus_manifest.json"),
         )
+        parser.add_argument(
+            "--allow-deprecated",
+            action="store_true",
+            help="Explicitly allow writes to the deprecated Django RAG corpus.",
+        )
 
     def handle(self, *args, **options):
+        if not options["allow_deprecated"]:
+            raise CommandError(
+                "Le corpus RAG Django est déprécié depuis le 25/08/2026. "
+                "Utiliser `python -m assistant_api.cli index`. "
+                "L'option --allow-deprecated est réservée à une reprise "
+                "historique explicitement autorisée."
+            )
+        self.stderr.write(
+            self.style.WARNING(
+                "Écriture exceptionnelle dans le corpus RAG Django déprécié."
+            )
+        )
         try:
             run = ingest_manifest(
                 options["manifest"],

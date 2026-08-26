@@ -9,3 +9,4 @@ __pycache__/
 /app/reports/ci-fixtures/
 AGENTS.md
 .codex
+infos.txt

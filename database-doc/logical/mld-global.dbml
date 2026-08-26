@@ -1,0 +1,195 @@
+// MLD global simplifié — les détails physiques restent dans physical/mpd.dbml.
+
+Project surendettement_mld_global {
+  database_type: "Modèle relationnel logique"
+  Note: "18 objets logiques issus de 52 objets PostgreSQL. Les regroupements sont tracés dans logical/mld-global.md."
+}
+
+Table territoire {
+  code string [pk]
+  niveau string [not null]
+  nom string
+  code_parent string
+}
+
+Table periode {
+  cle string [pk]
+  annee integer [not null]
+  mois integer
+  granularite string [not null]
+}
+
+Table indicateur {
+  code string [pk]
+  libelle string [not null]
+  source string [not null]
+  categorie string
+  unite string
+  regle_agregation string
+}
+
+Table document_source {
+  id integer [pk]
+  source string [not null]
+  type_publication string [not null]
+  empreinte string [unique, not null]
+  statut_extraction string [not null]
+}
+
+Table observation {
+  id integer [pk]
+  document_id integer [not null]
+  code_indicateur string [not null]
+  code_territoire string
+  cle_periode string [not null]
+  valeur_numerique decimal
+  valeur_textuelle string
+  unite string
+  confiance decimal
+  cle_idempotence string [unique, not null]
+}
+
+Table fait_analytique {
+  source string [not null]
+  code_indicateur string [not null]
+  code_territoire string [not null]
+  cle_periode string [not null]
+  valeur decimal [not null]
+  provenance string
+  Note: "Regroupement logique des faits BDF, INSEE et corrections macro."
+}
+
+Table execution_pipeline {
+  id integer [pk]
+  pipeline string [not null]
+  statut string [not null]
+  debut datetime [not null]
+  fin datetime
+  rapport_qualite json
+  erreur string
+}
+
+Table modele_risque {
+  id integer [pk]
+  code string [not null]
+  version string [not null]
+  nom string [not null]
+  couverture_minimale decimal [not null]
+  actif boolean [not null]
+  indexes { (code, version) [unique] }
+}
+
+Table configuration_indicateur {
+  id integer [pk]
+  modele_id integer [not null]
+  code_indicateur string [not null]
+  poids decimal [not null]
+  direction string [not null]
+  obligatoire boolean [not null]
+  indexes { (modele_id, code_indicateur) [unique] }
+}
+
+Table score_territorial {
+  id integer [pk]
+  modele_id integer [not null]
+  code_territoire string [not null]
+  cle_periode string [not null]
+  score decimal
+  niveau_risque string
+  couverture decimal [not null]
+  statut string [not null]
+  indexes { (modele_id, code_territoire, cle_periode) [unique] }
+}
+
+Table detail_score {
+  id integer [pk]
+  score_id integer [not null]
+  code_indicateur string [not null]
+  observation_id integer
+  valeur_brute decimal [not null]
+  valeur_normalisee decimal [not null]
+  contribution decimal [not null]
+  indexes { (score_id, code_indicateur) [unique] }
+}
+
+Table utilisateur {
+  id integer [pk]
+  identifiant string [unique, not null]
+  email string
+  actif boolean [not null]
+}
+
+Table habilitation {
+  utilisateur_id integer [not null]
+  role string [not null]
+  permission string [not null]
+  Note: "Vue logique des rôles, permissions et jointures Django."
+}
+
+Table conversation {
+  id integer [pk]
+  utilisateur_id integer [not null]
+  titre string [not null]
+  type string [not null]
+  creation datetime [not null]
+}
+
+Table message {
+  id integer [pk]
+  conversation_id integer [not null]
+  role string [not null]
+  contenu text [not null]
+  sql_genere text
+  feedback string
+  creation datetime [not null]
+}
+
+Table document_rag {
+  identifiant string [pk]
+  source string [not null]
+  titre string [not null]
+  version string
+  empreinte string [not null]
+  actif boolean [not null]
+  Note: "Concept commun aux deux implémentations RAG ; correspondance à valider."
+}
+
+Table fragment_rag {
+  identifiant string [pk]
+  document_id string [not null]
+  ordre integer [not null]
+  contenu text [not null]
+  empreinte string [not null]
+  indexe_le datetime
+}
+
+Table execution_sql {
+  id uuid [pk]
+  acteur string
+  question text [not null]
+  sql_genere text [not null]
+  validation string [not null]
+  duree_ms integer
+  nombre_lignes integer
+  creation datetime [not null]
+}
+
+Ref: observation.document_id > document_source.id
+Ref: observation.code_indicateur > indicateur.code
+Ref: observation.code_territoire > territoire.code
+Ref: observation.cle_periode > periode.cle
+Ref: fait_analytique.code_indicateur > indicateur.code
+Ref: fait_analytique.code_territoire > territoire.code
+Ref: fait_analytique.cle_periode > periode.cle
+Ref: configuration_indicateur.modele_id > modele_risque.id
+Ref: configuration_indicateur.code_indicateur > indicateur.code
+Ref: score_territorial.modele_id > modele_risque.id
+Ref: score_territorial.code_territoire > territoire.code
+Ref: score_territorial.cle_periode > periode.cle
+Ref: detail_score.score_id > score_territorial.id
+Ref: detail_score.code_indicateur > indicateur.code
+Ref: detail_score.observation_id > observation.id
+Ref: habilitation.utilisateur_id > utilisateur.id
+Ref: conversation.utilisateur_id > utilisateur.id
+Ref: message.conversation_id > conversation.id
+Ref: fragment_rag.document_id > document_rag.identifiant

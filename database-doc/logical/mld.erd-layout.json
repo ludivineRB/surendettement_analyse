@@ -1,0 +1,122 @@
+{
+  "version": 1,
+  "positions": {
+    "region": {
+      "dx": 0,
+      "dy": 0
+    },
+    "departement": {
+      "dx": 0,
+      "dy": 0
+    },
+    "periode": {
+      "dx": 0,
+      "dy": 0
+    },
+    "indicateur_analytique": {
+      "dx": -65.99396984924613,
+      "dy": 136.87638190954775
+    },
+    "fait_bdf": {
+      "dx": 23.869346733668408,
+      "dy": 95.47738693467335
+    },
+    "fait_insee": {
+      "dx": -479.0673366834171,
+      "dy": -58.66130653266332
+    },
+    "correction_macro": {
+      "dx": 0,
+      "dy": 0
+    },
+    "document_source": {
+      "dx": 7.332663316582909,
+      "dy": -68.43819095477392
+    },
+    "indicateur_operationnel": {
+      "dx": 0,
+      "dy": 0
+    },
+    "observation": {
+      "dx": -144.20904522613068,
+      "dy": 65.99396984924624
+    },
+    "execution_pipeline": {
+      "dx": 0,
+      "dy": 0
+    },
+    "modele_risque": {
+      "dx": 0,
+      "dy": 0
+    },
+    "configuration_indicateur": {
+      "dx": 0,
+      "dy": 0
+    },
+    "score_territorial": {
+      "dx": -80.65929648241206,
+      "dy": 17.109547738693436
+    },
+    "detail_score": {
+      "dx": 0,
+      "dy": 0
+    },
+    "utilisateur": {
+      "dx": 0,
+      "dy": 0
+    },
+    "role": {
+      "dx": 0,
+      "dy": 0
+    },
+    "permission": {
+      "dx": 0,
+      "dy": 0
+    },
+    "utilisateur_role": {
+      "dx": 0,
+      "dy": 0
+    },
+    "role_permission": {
+      "dx": 0,
+      "dy": 0
+    },
+    "utilisateur_permission": {
+      "dx": 0,
+      "dy": 0
+    },
+    "conversation": {
+      "dx": 0,
+      "dy": 0
+    },
+    "message_conversation": {
+      "dx": 0,
+      "dy": 0
+    },
+    "source_rag": {
+      "dx": 0,
+      "dy": 0
+    },
+    "document_rag": {
+      "dx": 0,
+      "dy": 0
+    },
+    "version_document_rag": {
+      "dx": 0,
+      "dy": 0
+    },
+    "fragment_rag": {
+      "dx": 0,
+      "dy": 0
+    },
+    "fragment_corpus_assistant": {
+      "dx": 0,
+      "dy": 0
+    },
+    "execution_sql": {
+      "dx": 0,
+      "dy": 0
+    }
+  },
+  "savedAt": "2026-08-25T12:54:13.749Z"
+}

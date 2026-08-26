@@ -1,0 +1,202 @@
+erDiagram
+    DOCUMENT_SOURCE ||--o{ OBSERVATION : produit
+    INDICATEUR ||--o{ OBSERVATION : qualifie
+
+    MODELE_RISQUE ||--o{ CONFIGURATION_INDICATEUR : configure
+    INDICATEUR o|--o{ CONFIGURATION_INDICATEUR : parametre
+    MODELE_RISQUE ||--o{ SCORE_TERRITORIAL : produit
+    SCORE_TERRITORIAL ||--o{ DETAIL_SCORE : detaille
+    INDICATEUR o|--o{ DETAIL_SCORE : explique
+    OBSERVATION o|--o{ DETAIL_SCORE : justifie
+
+    DEPARTEMENT ||--o{ FAIT_BDF : localise
+    INDICATEUR_ANALYTIQUE ||--o{ FAIT_BDF : mesure
+    DEPARTEMENT ||--o{ FAIT_INSEE : localise
+    INDICATEUR_ANALYTIQUE ||--o{ FAIT_INSEE : mesure
+    PERIODE ||--o{ CORRECTION_MACRO : date
+    DEPARTEMENT ||--o{ CORRECTION_MACRO : localise
+    INDICATEUR_ANALYTIQUE ||--o{ CORRECTION_MACRO : corrige
+
+    UTILISATEUR }o--o{ ROLE : appartient
+    ROLE }o--o{ PERMISSION : accorde
+    UTILISATEUR }o--o{ PERMISSION : recoit_directement
+    UTILISATEUR ||--o{ CONVERSATION : ouvre
+    CONVERSATION ||--o{ MESSAGE : contient
+
+    SOURCE_RAG ||--o{ DOCUMENT_RAG : publie
+    DOCUMENT_RAG ||--o{ VERSION_DOCUMENT_RAG : versionne
+    VERSION_DOCUMENT_RAG ||--o{ FRAGMENT_RAG : decoupe
+
+    DOCUMENT_SOURCE {
+        identifiant id
+        string source
+        string type_publication
+        string region
+        string periode
+        string empreinte
+        string statut_extraction
+    }
+    INDICATEUR {
+        identifiant id
+        string code
+        string libelle
+        string categorie
+        string unite
+    }
+    OBSERVATION {
+        identifiant id
+        string cle_idempotence
+        string niveau_geographique
+        string code_geographique
+        string periode
+        decimal valeur_numerique
+        string valeur_texte
+        decimal confiance
+    }
+    MODELE_RISQUE {
+        identifiant id
+        string code
+        string version
+        string nom
+        decimal couverture_minimale
+        boolean actif
+    }
+    CONFIGURATION_INDICATEUR {
+        identifiant id
+        string code_indicateur
+        decimal poids
+        string direction
+        boolean obligatoire
+    }
+    SCORE_TERRITORIAL {
+        identifiant id
+        string niveau_geographique
+        string code_geographique
+        string periode
+        decimal score
+        decimal couverture
+        string statut
+    }
+    DETAIL_SCORE {
+        identifiant id
+        string code_indicateur
+        decimal valeur_brute
+        decimal valeur_normalisee
+        decimal poids_effectif
+        decimal contribution
+    }
+    REGION {
+        string code
+        string nom
+    }
+    DEPARTEMENT {
+        string code
+        string nom
+        string code_region_non_contraint
+    }
+    PERIODE {
+        string cle
+        integer annee
+        integer mois
+        string granularite
+    }
+    INDICATEUR_ANALYTIQUE {
+        string cle
+        string source
+        string code
+        string nom
+        string unite
+    }
+    FAIT_BDF {
+        string periode
+        integer annee
+        integer mois
+        decimal valeur
+    }
+    FAIT_INSEE {
+        integer annee
+        decimal valeur
+    }
+    CORRECTION_MACRO {
+        identifiant id
+        decimal valeur
+        string justification
+    }
+    UTILISATEUR {
+        identifiant id
+        string identifiant
+        string email
+        boolean actif
+    }
+    ROLE {
+        identifiant id
+        string nom
+    }
+    PERMISSION {
+        identifiant id
+        string code
+    }
+    CONVERSATION {
+        identifiant id
+        string titre
+        string type
+        datetime creation
+    }
+    MESSAGE {
+        identifiant id
+        string role
+        text contenu
+        text sql_genere
+        string feedback
+        datetime creation
+    }
+    SOURCE_RAG {
+        identifiant id
+        string nom
+        string editeur
+        string statut_deprecie
+    }
+    DOCUMENT_RAG {
+        identifiant id
+        string identifiant
+        string titre
+        string type
+        boolean actif
+        string statut_deprecie
+    }
+    VERSION_DOCUMENT_RAG {
+        identifiant id
+        string version
+        string empreinte
+        datetime approbation
+    }
+    FRAGMENT_RAG {
+        identifiant id
+        integer ordre
+        text contenu
+        string empreinte
+        string statut_deprecie
+    }
+    FRAGMENT_CORPUS_ASSISTANT {
+        string id
+        string source
+        integer ordre
+        text contenu
+        boolean actif
+        string statut_canonique
+    }
+    EXECUTION_SQL {
+        uuid id
+        uuid requete
+        string acteur_non_contraint
+        text question
+        text sql_genere
+        string validation
+    }
+    EXECUTION_PIPELINE {
+        identifiant id
+        string pipeline
+        string statut
+        datetime debut
+        datetime fin
+    }
