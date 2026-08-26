@@ -41,6 +41,10 @@ docker compose --profile ci -f docker/compose.yaml run --rm --no-deps \
   -v "$(pwd)/$report_dir:/workspace/$report_dir" \
   ci python -m assistant_api.evaluation --offline \
   --output-dir "$report_dir/rag"
+docker compose --profile ci -f docker/compose.yaml run --rm --no-deps \
+  -v "$(pwd)/$report_dir:/workspace/$report_dir" \
+  ci python -m benchmark.evaluation \
+  --output-dir "$report_dir/text_to_sql"
 
 printf '%s\n' '5/8 Django tests'
 docker compose --profile ci -f docker/compose.yaml run --rm \

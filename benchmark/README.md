@@ -113,14 +113,18 @@ Les contrôles sont cumulatifs : filtrage/routage, contrat de sortie, validation
 AST, listes blanches, rôle DB minimal, transaction read-only, limites de plan,
 timeout, rollback, audit et alertes. Aucun framework ne remplace ces frontières.
 
-## Reproduction et livrables suivants
+## Reproduction et intégration CI
 
 1. Valider le JSON : `python -m json.tool benchmark/text_to_sql_dataset.json`.
 2. Exécuter les tests existants avant toute intégration :
    `python -m pytest -q tests/test_sql_validation.py tests/test_sql_executor.py tests/test_sql_service.py`.
-3. Implémenter ensuite un runner hors ligne produisant JSON et Markdown sous
-   `app/reports/ci/text_to_sql/`, puis l'ajouter à `docker/run_ci.sh` et à
-   l'artefact déjà publié par la CI.
+3. Exécuter le benchmark hors ligne :
+   `python -m benchmark.evaluation --output-dir app/reports/ci/text_to_sql`.
+
+La CI exécute cette dernière commande sans fournisseur LLM et échoue dès qu'un
+seuil du dataset n'est plus respecté. Les rapports `evaluation.json` et
+`evaluation.md` sont inclus dans l'artefact `app/reports/` publié pendant 14
+jours, y compris lorsque la validation échoue.
 
 ## Correspondance RNCP
 
@@ -131,4 +135,3 @@ timeout, rollback, audit et alertes. Aucun framework ne remplace ces frontières
 | C8 | Architecture paramétrée, schéma/prompt versionnés et contrôles PostgreSQL |
 | C11 | Audit, compteurs, latence, lignes, coût de plan et seuils d'alerte |
 | C12 | Dataset versionné, tests adversariaux, runner hors ligne et artefact CI prévu |
-

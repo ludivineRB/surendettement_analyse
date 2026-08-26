@@ -7,7 +7,12 @@ import pytest
 from sqlalchemy import create_engine
 
 from assistant_api.sql_executor import execute_readonly_sql
-from benchmark.evaluation import evaluate_dataset, evaluate_reference_results, write_reports
+from benchmark.evaluation import (
+    evaluate_dataset,
+    evaluate_reference_results,
+    main,
+    write_reports,
+)
 
 
 DATASET_PATH = Path("benchmark/text_to_sql_dataset.json")
@@ -57,6 +62,24 @@ def test_reports_are_written_as_json_and_markdown(tmp_path):
 
     assert json.loads((tmp_path / "evaluation.json").read_text())["status"] == "PASS"
     assert "Statut : **PASS**" in (tmp_path / "evaluation.md").read_text()
+
+
+def test_cli_returns_failure_when_an_offline_threshold_is_missed(tmp_path):
+    dataset = deepcopy(_dataset())
+    target = next(case for case in dataset["cases"] if case.get("adversarial_sql"))
+    target["adversarial_sql"] = "SELECT score FROM analytics_risk_scores LIMIT 1"
+    dataset_path = tmp_path / "dataset.json"
+    output_dir = tmp_path / "reports"
+    dataset_path.write_text(json.dumps(dataset), encoding="utf-8")
+
+    exit_code = main(
+        ["--dataset", str(dataset_path), "--output-dir", str(output_dir)]
+    )
+
+    assert exit_code == 1
+    assert json.loads((output_dir / "evaluation.json").read_text())["status"] == (
+        "FAIL"
+    )
 
 
 @pytest.mark.postgres_integration
