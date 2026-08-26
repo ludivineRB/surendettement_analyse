@@ -35,6 +35,8 @@ def test_accepts_allowlisted_aggregate_with_boolean_filters():
         ("SELECT score FROM analytics_risk_scores LIMIT 10000", "invalid_limit"),
         ("SELECT * FROM analytics_risk_scores LIMIT 10", "wildcard_forbidden"),
         ("COPY analytics_risk_scores TO '/tmp/data'", "read_only_required"),
+        ("SELECT secret_value FROM analytics_risk_scores LIMIT 1", "column_forbidden"),
+        ("SELECT x.score FROM analytics_risk_scores r LIMIT 1", "column_forbidden"),
     ],
 )
 def test_rejects_unsafe_sql(sql, code):
@@ -50,3 +52,25 @@ def test_rejects_more_than_three_joins():
     with pytest.raises(SQLValidationError) as error:
         validate_analytical_sql(sql)
     assert error.value.code == "too_many_joins"
+
+
+def test_rejects_unqualified_column_shared_by_joined_views():
+    sql = (
+        "SELECT geographic_code FROM analytics_risk_scores scores "
+        "JOIN analytics_score_factors factors "
+        "ON factors.geographic_code = scores.geographic_code LIMIT 10"
+    )
+    with pytest.raises(SQLValidationError) as error:
+        validate_analytical_sql(sql)
+    assert error.value.code == "column_ambiguous"
+
+
+def test_accepts_qualified_columns_and_projection_alias():
+    result = validate_analytical_sql(
+        "SELECT scores.geographic_code, AVG(scores.score) AS average_score "
+        "FROM analytics_risk_scores scores "
+        "JOIN analytics_score_factors factors "
+        "ON factors.geographic_code = scores.geographic_code "
+        "GROUP BY scores.geographic_code ORDER BY average_score DESC LIMIT 10"
+    )
+    assert result.tables == ("analytics_risk_scores", "analytics_score_factors")
