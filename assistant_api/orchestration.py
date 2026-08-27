@@ -82,6 +82,6 @@ def _select_dataset(question: str) -> AnalyticsDataset:
     return "macro-economic"
 
 
-def _extract_filters(question: str) -> dict[str, int]:
+def _extract_filters(question: str) -> dict[str, str | int]:
     match = _YEAR.search(question)
     return {"reference_year": int(match.group())} if match else {}

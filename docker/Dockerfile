@@ -6,6 +6,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /workspace
 
 COPY requirements.txt .
+COPY pyproject.toml .
 COPY web/requirements.txt web-requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt \
     && pip install --no-cache-dir -r web-requirements.txt \
@@ -17,6 +18,7 @@ COPY web ./web
 COPY src ./src
 COPY config ./config
 COPY tests ./tests
+COPY benchmark ./benchmark
 COPY models ./models
 COPY app.py .
 

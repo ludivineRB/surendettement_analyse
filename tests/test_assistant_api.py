@@ -5,6 +5,7 @@ from unittest.mock import Mock, patch
 
 from assistant_api.main import answer_question, health, metrics, retrieval_search
 from assistant_api.schemas import AnswerRequest, RetrievalRequest
+from assistant_api.sql_service import SQLClarificationRequired, run_text_to_sql
 
 
 def test_health_identifies_assistant_service():
@@ -126,6 +127,68 @@ def test_sql_mode_rejects_missing_internal_token(monkeypatch):
         )
 
     assert error.value.status_code == 403
+
+
+@patch("assistant_api.sql_service.record_sql_execution")
+def test_ambiguous_sql_stops_before_generator_and_database(record_execution):
+    generator = Mock()
+    readonly_engine = Mock()
+
+    with pytest.raises(SQLClarificationRequired):
+        run_text_to_sql(
+            "Compare Paris et Lyon.",
+            generator=generator,
+            readonly_engine=readonly_engine,
+            audit_engine=Mock(),
+            request_id=Mock(),
+            actor_id=None,
+            model_version="test",
+        )
+
+    generator.generate.assert_not_called()
+    readonly_engine.connect.assert_not_called()
+    assert record_execution.call_args.args[1]["validation_error"] == (
+        "clarification_required"
+    )
+
+
+@patch("assistant_api.sql_service.record_sql_execution")
+def test_department_codes_do_not_count_as_a_comparison_period(record_execution):
+    generator = Mock()
+
+    with pytest.raises(SQLClarificationRequired, match="période"):
+        run_text_to_sql(
+            "Compare le score des départements 59 et 62.",
+            generator=generator,
+            readonly_engine=Mock(),
+            audit_engine=Mock(),
+            request_id=Mock(),
+            actor_id=None,
+            model_version="test",
+        )
+
+    generator.generate.assert_not_called()
+
+
+@patch("assistant_api.sql_service.record_sql_execution")
+def test_sql_mode_returns_clarification_instead_of_service_error(
+    record_execution,
+    monkeypatch,
+):
+    monkeypatch.setenv("ASSISTANT_INTERNAL_TOKEN", "expected-token")
+
+    response = answer_question(
+        AnswerRequest(question="Quel territoire va mal ?", mode="sql"),
+        Mock(),
+        Mock(),
+        Mock(),
+        x_internal_token="expected-token",
+    )
+
+    assert response.method == "refusal"
+    assert response.category == "advanced_sql"
+    assert "indicateur" in response.answer
+    assert response.generated_sql is None
 
 
 @patch("assistant_api.main.search_active_chunks")

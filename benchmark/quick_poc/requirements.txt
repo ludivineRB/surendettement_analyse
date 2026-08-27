@@ -1,0 +1,8 @@
+openai>=1.0
+polyglot-sql
+sqloxide
+sqlfluff
+sqlglot
+sqlparse
+
+# Optionnel et lourd : pip install datafusion

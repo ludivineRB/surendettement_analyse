@@ -394,3 +394,157 @@ pour arrêter docker compose \
   -f docker/compose.yaml \
   -f docker/compose.staging.yaml \
   down
+
+Utilisation sqlglot
+
+Générer des mdp sécurisé : python -c "import secrets; print(secrets.token_urlsafe(32))"
+
+ruff + Bandit en CI/CD check Bandit
+
+
+Pour ajouter un nouveau lot : 
+Créer une issue dans le dépôt avec le titrev:LOT-NN - Nom du prochain lot et on ajoute immédiatement le label lot
+utiliser ce corps:
+## Objectif
+
+Résultat concret attendu.
+
+## Périmètre prévu
+
+- fonctionnalité 1 ;
+- fonctionnalité 2 ;
+- évolution technique.
+
+## Critères de validation
+
+- [ ] tests réussis ;
+- [ ] documentation mise à jour ;
+- [ ] recette fonctionnelle effectuée ;
+- [ ] Pull Request approuvée ;
+- [ ] absence de régression connue.
+
+## Sous-tâches
+
+À créer sous forme de sous-Issues.
+
+## Références techniques
+
+Fichiers, modules et documentation concernés.
+
+## Dates
+
+- Début prévu :
+- Validation prévue :
+
+## Notes
+
+Risques, dépendances et décisions.
+e workflow ajoutera automatiquement l’Issue au Project.
+4. Décomposer le lot en sous-Issues
+Dans l’Issue LOT-16 :
+Repérez la section Sub-issues.
+
+Cliquez sur Create sub-issue.
+
+Créez, par exemple :
+Préparer le modèle de données
+Implémenter l’API
+Ajouter les tests
+Mettre à jour la documentation
+
+Ajoutez également ces sous-Issues au Project si vous voulez suivre leur détail.
+
+GitHub relie alors chaque tâche à son lot parent et calcule automatiquement la progression, par exemple 3/4. Affichez les champs Parent issue et Sub-issues progress dans votre table pour voir cette hiérarchie. Documentation GitHub sur les sous-Issues
+Ensuite on nomme la branche lot-16/nom-court
+Dans l’Issue, la section Development permet aussi de créer ou de rattacher directement une branche.
+6. Relier les commits
+Mentionnez l’Issue dans chaque message de commit :
+feat: ajoute le calcul automatisé du score
+
+Refs #16
+Refs #16 crée une référence sans fermer l’Issue.
+Évitez Closes #16 dans les commits intermédiaires : le lot ne doit être fermé qu’une fois l’ensemble validé.
+7. Relier la Pull Request au lot
+Créez une Pull Request depuis la branche du lot vers main.
+Dans sa description, ajoutez :
+## Lot associé
+
+Closes #16
+
+## Résumé
+
+- ajout du calcul ;
+- ajout des tests ;
+- mise à jour de la documentation.
+
+## Validation
+
+- [ ] tests réussis ;
+- [ ] revue effectuée ;
+- [ ] recette validée.
+Refs #16 crée une référence sans fermer l’Issue.
+Évitez Closes #16 dans les commits intermédiaires : le lot ne doit être fermé qu’une fois l’ensemble validé.
+7. Relier la Pull Request au lot
+Créez une Pull Request depuis la branche du lot vers main.
+Dans sa description, ajoutez :
+## Lot associé
+
+Closes #16
+
+## Résumé
+
+- ajout du calcul ;
+- ajout des tests ;
+- mise à jour de la documentation.
+
+## Validation
+
+- [ ] tests réussis ;
+- [ ] revue effectuée ;
+- [ ] recette validée.
+loses #16 relie formellement la PR au lot. Lorsque la PR est fusionnée dans la branche par défaut, GitHub ferme automatiquement l’Issue. Ce mécanisme fonctionne lorsque la PR cible la branche par défaut, ici normalement main. Documentation GitHub sur les PR liées
+8. Renseigner les champs du Project
+Pour la carte LOT-16, indiquez :
+Lot : LOT-16
+Date début : date réelle de démarrage
+Date validation : vide tant que le lot n’est pas validé
+Type de lot : Feature, Migration, Infrastructure…
+Confiance : Élevé si le périmètre est clairement défini
+Version / Phase : par exemple Scoring v2
+Status : À confirmer pendant le travail
+Après validation réelle :
+renseignez Date validation ;
+passez Status à Validé ;
+fusionnez la PR, ce qui ferme l’Issue.
+9. Attention au champ Status
+Votre champ actuel mesure la validation historique :
+Validé
+Partiellement validé
+À confirmer
+Il ne représente pas très bien l’avancement quotidien. Je recommande d’ajouter un second champ Avancement :
+À faire
+En cours
+En revue
+Terminé
+Bloqué
+Vous pourrez alors conserver :
+Status pour la validation réelle ;
+Avancement pour le Board opérationnel.
+Votre Board quotidien utilisera Avancement comme colonnes, tandis que le Board historique continuera d’utiliser Status.
+10. Automatisation obtenue
+Avec cette organisation :
+création de l’Issue avec le label lot ;
+ajout automatique au Project ;
+sous-Issues automatiquement rattachées au lot ;
+commits reliés grâce à Refs #XX ;
+PR reliée grâce à Closes #XX ;
+fusion de la PR → fermeture automatique du lot ;
+progression des sous-Issues automatiquement calculée ;
+Board et Roadmap automatiquement actualisés à partir des champs.
+GitHub synchronise automatiquement dans Projects les métadonnées des Issues et PR, notamment leur état et leurs relations. Bonnes pratiques GitHub Projects
+
+A mettre : Refs #16 pour fermer.
+
+Procédure pour appeler lancer le notifier de grafana : python3 -m src.local_alert_notifier
+
+Utilisation de mermaid cli pour les svg des mcd et autress

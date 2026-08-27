@@ -7,6 +7,8 @@ from dataclasses import dataclass
 from sqlglot import exp, parse
 from sqlglot.errors import ParseError
 
+from assistant_api.sql_generation import ANALYTICS_SCHEMA
+
 
 ALLOWED_VIEWS = frozenset(
     {
@@ -82,13 +84,49 @@ def validate_analytical_sql(sql: str) -> ValidatedSQL:
         raise SQLValidationError("wildcard_forbidden", "SELECT * est interdit.")
 
     tables = []
+    alias_to_table = {}
     for table in statement.find_all(exp.Table):
         name = table.name.casefold()
         if table.catalog or table.db or name not in ALLOWED_VIEWS:
             raise SQLValidationError("table_forbidden", f"Vue non autorisée: {name}")
         tables.append(name)
+        alias_to_table[table.alias_or_name.casefold()] = name
     if not tables:
         raise SQLValidationError("table_required", "Une vue analytique est requise.")
+
+    projection_aliases = {
+        projection.alias.casefold()
+        for select in statement.find_all(exp.Select)
+        for projection in select.expressions
+        if projection.alias
+    }
+    referenced_tables = set(tables)
+    for column in statement.find_all(exp.Column):
+        column_name = column.name.casefold()
+        qualifier = column.table.casefold()
+        if not qualifier and column_name in projection_aliases:
+            continue
+        if qualifier:
+            table_name = alias_to_table.get(qualifier)
+            if table_name is None or column_name not in ANALYTICS_SCHEMA[table_name]:
+                raise SQLValidationError(
+                    "column_forbidden",
+                    f"Colonne non autorisée: {column.sql(dialect='postgres')}",
+                )
+            continue
+        matching_tables = {
+            table_name
+            for table_name in referenced_tables
+            if column_name in ANALYTICS_SCHEMA[table_name]
+        }
+        if not matching_tables:
+            raise SQLValidationError(
+                "column_forbidden", f"Colonne non autorisée: {column_name}"
+            )
+        if len(matching_tables) > 1:
+            raise SQLValidationError(
+                "column_ambiguous", f"Colonne non qualifiée ambiguë: {column_name}"
+            )
 
     for function in statement.find_all(exp.Func):
         if isinstance(function, (exp.Connector, exp.Predicate)):
