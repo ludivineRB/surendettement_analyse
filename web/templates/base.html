@@ -107,6 +107,13 @@
         </div>
       {% endif %}
       {% block content %}{% endblock %}
+      <footer class="section-stack" aria-label="Informations légales">
+        <p>
+          <a class="button-link" href="{% url 'privacy' %}">
+            Confidentialité et protection des données
+          </a>
+        </p>
+      </footer>
     </main>
   </div>
 </body>
