@@ -56,7 +56,6 @@
     const controls = {
       level: dashboard.querySelector("#map-level"),
       indicator: dashboard.querySelector("#map-indicator"),
-      period: dashboard.querySelector("#map-period"),
       from: dashboard.querySelector("#chart-from"),
       to: dashboard.querySelector("#chart-to"),
     };
@@ -66,7 +65,9 @@
     const status = dashboard.querySelector(".map-status");
     const trendNote = dashboard.querySelector("[data-trend-note]");
     const trendLegend = dashboard.querySelector("[data-trend-legend]");
-    const state = { catalog: [], rows: [], geo: {}, selected: null };
+    const exportChart = dashboard.querySelector("[data-export-chart]");
+    const exportCsv = dashboard.querySelector("[data-export-csv]");
+    const state = { catalog: [], rows: [], chartRows: [], geo: {}, selected: null };
 
     const normalize = (value) => String(value ?? "").normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -136,34 +137,55 @@
           value_numeric: values.reduce((sum, value) => sum + value, 0) / values.length,
         }));
       };
-      const territoryLabel = state.selected?.name
-        ?? (nationalRows.length ? "France" : `France — moyenne des ${controls.level.value === "region" ? "régions" : "départements"}`);
-      trendLegend.replaceChildren();
-      const marker = document.createElement("i");
-      marker.setAttribute("aria-hidden", "true");
-      const label = document.createElement("span");
-      label.textContent = `${territoryLabel} — ${indicatorLabel}${unit}`;
-      trendLegend.append(marker, label);
-      trendLegend.hidden = false;
+      const nationalLabel = nationalRows.length
+        ? "France"
+        : `Moyenne nationale des ${controls.level.value === "region" ? "régions" : "départements"}`;
       const from = controls.from.value;
       const to = controls.to.value;
-      const sourceRows = state.selected ? state.rows.filter((row) =>
-        (row.geographic_code && String(row.geographic_code) === state.selected.code)
-          || normalize(row.geographic_name) === normalize(state.selected.name))
-        : (nationalRows.length ? nationalRows : averageRows());
-      const rows = sourceRows.filter((row) =>
+      const filterPeriod = (rows) => rows.filter((row) =>
         String(row.reference_period) >= from && String(row.reference_period) <= to)
         .sort((a, b) => String(a.reference_period).localeCompare(String(b.reference_period)));
-      if (rows.length < 2) {
-        trendNote.textContent = rows.length
+      const benchmarkRows = filterPeriod(nationalRows.length ? nationalRows : averageRows());
+      const territoryRows = state.selected ? filterPeriod(state.rows.filter((row) =>
+        (row.geographic_code && String(row.geographic_code) === state.selected.code)
+          || normalize(row.geographic_name) === normalize(state.selected.name))) : [];
+      const chartSeries = [
+        { label: nationalLabel, rows: benchmarkRows, national: true },
+        ...(state.selected ? [{ label: state.selected.name, rows: territoryRows, national: false }] : []),
+      ];
+      trendLegend.replaceChildren();
+      chartSeries.forEach((series) => {
+        const marker = document.createElement("i");
+        marker.setAttribute("aria-hidden", "true");
+        marker.style.borderTop = series.national ? "3px dashed #6b7c7a" : "3px solid #087f73";
+        marker.style.background = "transparent";
+        const label = document.createElement("span");
+        if (catalog?.code === "risk_score") {
+          label.textContent = series.national
+            ? "Moyenne nationale"
+            : `Score ${series.label}`;
+        } else {
+          label.textContent = `${series.label} — ${indicatorLabel}${unit}`;
+        }
+        trendLegend.append(marker, label);
+      });
+      trendLegend.hidden = false;
+      state.chartRows = chartSeries.flatMap((series) => series.rows.map((row) => ({
+        ...row, series_label: series.label,
+      })));
+      const periods = [...new Set(state.chartRows.map((row) => String(row.reference_period)))].sort();
+      exportChart.disabled = periods.length < 2;
+      exportCsv.disabled = state.chartRows.length === 0;
+      if (periods.length < 2) {
+        trendNote.textContent = periods.length
           ? "Une seule période est disponible pour cet indicateur : aucune progression ne peut être calculée."
           : "Aucune donnée disponible sur l’intervalle sélectionné.";
         return;
       }
-      trendNote.textContent = `${rows.length} périodes affichées, de ${rows[0].reference_period} à ${rows.at(-1).reference_period}.`;
-      const values = rows.map((row) => Number(row.value_numeric));
+      trendNote.textContent = `${periods.length} périodes affichées, de ${periods[0]} à ${periods.at(-1)}.`;
+      const values = state.chartRows.map((row) => Number(row.value_numeric));
       const min = Math.min(...values); const max = Math.max(...values); const span = max - min || 1;
-      const x = (index) => 70 + index * 780 / (rows.length - 1);
+      const x = (period) => 70 + periods.indexOf(String(period)) * 780 / (periods.length - 1);
       const y = (value) => 245 - (value - min) * 190 / span;
       const ns = "http://www.w3.org/2000/svg";
       const svg = (name, attributes = {}) => {
@@ -182,36 +204,46 @@
       }
       chart.append(svg("line", { x1: 70, x2: 70, y1: 55, y2: 245, class: "chart-axis" }));
       chart.append(svg("line", { x1: 70, x2: 850, y1: 245, y2: 245, class: "chart-axis" }));
-      const xTickStep = Math.max(1, Math.ceil((rows.length - 1) / 6));
-      rows.forEach((row, i) => {
-        if (i % xTickStep !== 0 && i !== rows.length - 1) return;
-        chart.append(svg("line", { x1: x(i), x2: x(i), y1: 245, y2: 251, class: "chart-axis" }));
-        const label = svg("text", { x: x(i), y: 268, class: "chart-axis-label chart-axis-label--x" });
-        label.textContent = row.reference_period;
+      const xTickStep = Math.max(1, Math.ceil((periods.length - 1) / 6));
+      periods.forEach((period, i) => {
+        if (i % xTickStep !== 0 && i !== periods.length - 1) return;
+        chart.append(svg("line", { x1: x(period), x2: x(period), y1: 245, y2: 251, class: "chart-axis" }));
+        const label = svg("text", { x: x(period), y: 268, class: "chart-axis-label chart-axis-label--x" });
+        label.textContent = period;
         chart.append(label);
       });
       const unitLabel = svg("text", { x: 14, y: 150, class: "chart-axis-title", transform: "rotate(-90 14 150)" });
       unitLabel.textContent = catalog?.unit || "Valeur";
       chart.append(unitLabel);
-      const polyline = document.createElementNS(ns, "polyline");
-      polyline.setAttribute("points", rows.map((row, i) => `${x(i)},${y(Number(row.value_numeric))}`).join(" "));
-      polyline.setAttribute("class", "chart-line"); chart.append(polyline);
-      rows.forEach((row, i) => {
-        const point = document.createElementNS(ns, "circle");
-        point.setAttribute("cx", String(x(i))); point.setAttribute("cy", String(y(Number(row.value_numeric))));
-        point.setAttribute("r", "5"); point.setAttribute("class", "chart-point");
-        const title = document.createElementNS(ns, "title");
-        title.textContent = `${row.reference_period} : ${formatValue(row.value_numeric)}`;
-        point.append(title); chart.append(point);
+      chartSeries.forEach((series) => {
+        if (series.rows.length < 2) return;
+        const polyline = svg("polyline", {
+          points: series.rows.map((row) => `${x(row.reference_period)},${y(Number(row.value_numeric))}`).join(" "),
+          class: "chart-line",
+          stroke: series.national ? "#6b7c7a" : "#087f73",
+          "stroke-dasharray": series.national ? "10 7" : "none",
+        });
+        chart.append(polyline);
+        if (series.national) return;
+        series.rows.forEach((row) => {
+          const point = svg("circle", {
+            cx: x(row.reference_period), cy: y(Number(row.value_numeric)), r: 5, class: "chart-point",
+          });
+          const title = svg("title");
+          title.textContent = `${row.reference_period} : ${formatValue(row.value_numeric)}`;
+          point.append(title); chart.append(point);
+        });
       });
     };
 
     const renderMap = async () => {
-      const periodRows = state.rows.filter((row) => String(row.reference_period) === controls.period.value);
+      const periodRows = state.rows.filter((row) => String(row.reference_period) === controls.to.value);
       const url = controls.level.value === "department"
         ? dashboard.dataset.departmentsGeojson : dashboard.dataset.regionsGeojson;
       state.geo[url] ??= await fetch(url).then((response) => response.json());
-      const features = state.geo[url].features.filter((feature) => rowForFeature(feature, periodRows));
+      const isMetropolitan = (feature) => everyPoint([feature]).some(([x, y]) =>
+        x >= -6.5 && x <= 10 && y >= 41 && y <= 52);
+      const features = state.geo[url].features.filter(isMetropolitan);
       const points = everyPoint(features);
       const xs = points.map((point) => point[0]); const ys = points.map((point) => point[1]);
       const minX = Math.min(...xs); const maxX = Math.max(...xs);
@@ -224,25 +256,42 @@
       features.forEach((feature) => {
         const row = rowForFeature(feature, periodRows);
         const value = Number(row?.value_numeric);
+        const hasValue = Number.isFinite(value);
         const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
         path.setAttribute("d", pathFor(feature.geometry, project));
         path.setAttribute("class", `map-territory level-${classification(value, values, item.polarity)}`);
         path.setAttribute("tabindex", "0"); path.setAttribute("role", "button");
-        path.setAttribute("aria-label", `${featureName(feature)} : ${value.toLocaleString("fr-FR", { maximumFractionDigits: 2 })}`);
-        const select = () => {
+        const displayedValue = hasValue
+          ? value.toLocaleString("fr-FR", { maximumFractionDigits: 2 })
+          : "indisponible";
+        path.setAttribute("aria-label", `${featureName(feature)} : ${displayedValue}`);
+        const select = (submitDashboard = true) => {
+          if (!hasValue) return;
           state.selected = { code: featureKey(feature), name: featureName(feature) };
           mapLayer.querySelectorAll(".is-selected").forEach((node) => node.classList.remove("is-selected"));
           path.classList.add("is-selected");
-          summary.innerHTML = `<p class="eyebrow">Territoire sélectionné</p><h3>${featureName(feature)}</h3><strong class="territory-value">${value.toLocaleString("fr-FR", { maximumFractionDigits: 2 })}${item.unit ? ` ${item.unit}` : ""}</strong><p>${item.label} · ${controls.period.value}</p><span class="badge">Position relative : ${classification(value, values, item.polarity)}</span>`;
+          summary.innerHTML = `<p class="eyebrow">Territoire sélectionné</p><h3>${featureName(feature)}</h3><strong class="territory-value">${value.toLocaleString("fr-FR", { maximumFractionDigits: 2 })}${item.unit ? ` ${item.unit}` : ""}</strong><p>${item.label} · ${controls.to.value}</p><span class="badge">Position relative : ${classification(value, values, item.polarity)}</span>`;
           renderChart();
+          if (submitDashboard) {
+            const params = new URLSearchParams(window.location.search);
+            params.set("geographic_level", controls.level.value);
+            params.set("geographic_code", featureKey(feature));
+            params.delete("reference_period");
+            params.delete("comparison_period");
+            params.delete("comparison_model_version");
+            window.location.search = params.toString();
+          }
         };
-        path.addEventListener("click", select);
+        path.addEventListener("click", () => select());
         path.addEventListener("keydown", (event) => { if (["Enter", " "].includes(event.key)) select(); });
         const title = document.createElementNS("http://www.w3.org/2000/svg", "title");
-        title.textContent = `${featureName(feature)} — ${value.toLocaleString("fr-FR", { maximumFractionDigits: 2 })}`;
+        title.textContent = `${featureName(feature)} — ${displayedValue}`;
         path.append(title); mapLayer.append(path);
+        if (dashboard.dataset.selectedTerritory === featureKey(feature)) {
+          select(false);
+        }
       });
-      status.textContent = `${features.length} territoires représentés pour ${controls.period.value}. Les couleurs indiquent une position relative, pas un diagnostic.`;
+      status.textContent = `${features.length} territoires représentés pour ${controls.to.value}. Les couleurs indiquent une position relative, pas un diagnostic.`;
     };
 
     const loadIndicator = async () => {
@@ -251,8 +300,8 @@
       const item = selectedCatalog();
       state.rows = await api({ source: item.source, indicator_code: item.code, geographic_level: item.level });
       const periods = [...new Set(state.rows.map((row) => String(row.reference_period)))].sort();
-      fillSelect(controls.period, periods, periods.at(-1));
-      fillSelect(controls.from, periods, periods[0]); fillSelect(controls.to, periods, periods.at(-1));
+      fillSelect(controls.from, periods, periods[0]);
+      fillSelect(controls.to, periods, periods.at(-1));
       await renderMap(); renderChart();
     };
     const syncIndicators = async () => {
@@ -262,8 +311,54 @@
     };
     controls.level.addEventListener("change", () => syncIndicators().catch((error) => { status.textContent = error.message; }));
     controls.indicator.addEventListener("change", () => loadIndicator().catch((error) => { status.textContent = error.message; }));
-    controls.period.addEventListener("change", () => renderMap().catch((error) => { status.textContent = error.message; }));
-    controls.from.addEventListener("change", renderChart); controls.to.addEventListener("change", renderChart);
+    controls.from.addEventListener("change", () => {
+      if (controls.from.value > controls.to.value) controls.to.value = controls.from.value;
+      renderMap().then(renderChart).catch((error) => { status.textContent = error.message; });
+    });
+    controls.to.addEventListener("change", () => {
+      if (controls.to.value < controls.from.value) controls.from.value = controls.to.value;
+      renderMap().then(renderChart).catch((error) => { status.textContent = error.message; });
+    });
+    const download = (blob, filename) => {
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob); link.download = filename; link.click();
+      setTimeout(() => URL.revokeObjectURL(link.href), 0);
+    };
+    exportCsv.addEventListener("click", () => {
+      const item = selectedCatalog();
+      const header = ["periode", "territoire", "indicateur", "valeur", "unite"];
+      const escape = (value) => `"${String(value ?? "").replaceAll('"', '""')}"`;
+      const rows = state.chartRows.map((row) => [
+        row.reference_period,
+        row.series_label ?? state.selected?.name ?? row.geographic_name ?? "France",
+        item?.label ?? item?.code ?? "",
+        row.value_numeric,
+        item?.unit ?? row.unit ?? "",
+      ]);
+      const csv = "\ufeff" + [header, ...rows].map((row) => row.map(escape).join(";")).join("\r\n");
+      download(new Blob([csv], { type: "text/csv;charset=utf-8" }), "evolution-territoriale.csv");
+    });
+    exportChart.addEventListener("click", () => {
+      const clone = chart.cloneNode(true);
+      const style = document.createElementNS("http://www.w3.org/2000/svg", "style");
+      style.textContent = ".chart-gridline{stroke:#dce8e6;stroke-width:1}.chart-axis{stroke:#58706c;stroke-width:1.5}.chart-axis-label,.chart-axis-title{fill:#58706c;font:12px sans-serif}.chart-axis-label--x{text-anchor:middle}.chart-axis-label--y{text-anchor:end}.chart-line{fill:none;stroke:#087f73;stroke-width:4}.chart-point{fill:#fff;stroke:#087f73;stroke-width:3}";
+      clone.prepend(style);
+      clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+      const image = new Image();
+      const source = new Blob([new XMLSerializer().serializeToString(clone)], { type: "image/svg+xml" });
+      const url = URL.createObjectURL(source);
+      image.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = 1800; canvas.height = 600;
+        const context = canvas.getContext("2d");
+        context.fillStyle = "#ffffff"; context.fillRect(0, 0, canvas.width, canvas.height);
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        URL.revokeObjectURL(url);
+        canvas.toBlob((blob) => { if (blob) download(blob, "evolution-territoriale.png"); }, "image/png");
+      };
+      image.src = url;
+    });
+    if (levelSelect?.value) controls.level.value = levelSelect.value;
     api({ catalog: "1" }).then((catalog) => { state.catalog = catalog; return syncIndicators(); })
       .catch((error) => { status.textContent = error.message; });
   }

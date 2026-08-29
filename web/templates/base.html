@@ -5,9 +5,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#087f73">
-  <title>{% block title %}Surendettement Analyse{% endblock %}</title>
+  <title>{% block title %}Analyse du surendettement en France{% endblock %}</title>
   <link rel="stylesheet" href="{% static 'css/site.css' %}">
-  <script src="{% static 'js/site.js' %}" defer></script>
+  <script src="{% static 'js/site.js' %}?v=20260830-2" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main-content">Aller au contenu</a>
@@ -17,7 +17,7 @@
         <div class="topbar__left">
           <a class="brand brand--topbar" href="{% url 'dashboard' %}">
             <span class="brand__mark" aria-hidden="true">S</span>
-            <span class="brand__title">Surendettement Analyse</span>
+            <span class="brand__title">Analyse du surendettement en France</span>
           </a>
           <span class="topbar__label">Espace analytique</span>
         </div>
@@ -30,7 +30,7 @@
         <div class="sidebar__header">
           <a class="brand" href="{% url 'dashboard' %}">
             <span class="brand__mark" aria-hidden="true">S</span>
-            <span class="brand__label">Surendettement<br>Analyse</span>
+            <span class="brand__label">Analyse du<br>surendettement en France</span>
           </a>
           <button class="icon-button sidebar__compact" type="button" data-nav-compact
                   aria-label="Réduire la navigation" aria-pressed="false">
@@ -92,7 +92,7 @@
       </aside>
     {% else %}
       <header class="public-header">
-        <a class="brand" href="{% url 'home' %}"><span class="brand__mark" aria-hidden="true">S</span><span>Surendettement Analyse</span></a>
+        <a class="brand" href="{% url 'home' %}"><span class="brand__mark" aria-hidden="true">S</span><span>Analyse du surendettement en France</span></a>
         <nav aria-label="Navigation principale">
           <a class="button button--ghost" href="{% url 'login' %}">Connexion</a>
           <a class="button button--primary" href="{% url 'register' %}">Créer un compte</a>

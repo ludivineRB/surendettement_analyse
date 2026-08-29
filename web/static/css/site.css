@@ -128,7 +128,7 @@ tbody tr:last-child td { border-bottom: 0; }
 .series-row strong { text-align: right; font-variant-numeric: tabular-nums; }
 .factor-note { display: flex; gap: .65rem; margin: 1rem 0 0; padding: .85rem 1rem; border-radius: var(--radius-sm); background: var(--surface-soft); color: var(--text-secondary); font-size: .84rem; }
 .territorial-dashboard { margin-bottom: 2rem; }
-.map-controls { display: grid; grid-template-columns: repeat(5, minmax(130px, 1fr)); gap: .8rem; padding: 1rem; border-radius: var(--radius-md); background: var(--surface-soft); }
+.map-controls { display: grid; grid-template-columns: repeat(3, minmax(150px, 1fr)); gap: .8rem; padding: 1rem; border-radius: var(--radius-md); background: var(--surface-soft); }
 .map-controls p { margin: 0; }
 .map-status { min-height: 2.5rem; padding: .75rem 0; color: var(--text-secondary); font-size: .82rem; }
 .territorial-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(230px, .8fr); gap: 1.25rem; align-items: start; }

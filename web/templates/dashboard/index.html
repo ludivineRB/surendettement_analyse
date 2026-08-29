@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Vue d’ensemble — Surendettement Analyse{% endblock %}
+{% block title %}Vue d’ensemble — Analyse du surendettement en France{% endblock %}
 
 {% block content %}
   <header class="page-header">
@@ -20,15 +20,15 @@
   {% endif %}
 
   {% if form %}
-    <form method="get" class="filters card" aria-label="Filtres de l’analyse">
+    <form method="get" data-dashboard-selection hidden aria-hidden="true">
       {{ form.as_p }}
-      <button type="submit">Afficher l’analyse</button>
     </form>
   {% endif %}
 
-  {% if score %}
+  {% if form %}
     <section class="territorial-dashboard data-card" data-territorial-dashboard
              data-api-url="{% url 'territorial-indicators' %}"
+             data-selected-territory="{% if territory_selected %}{{ form.geographic_code.value }}{% endif %}"
              data-departments-geojson="{% url 'territorial-boundaries' %}?level=department"
              data-regions-geojson="{% url 'territorial-boundaries' %}?level=region">
       <header class="data-card__header">
@@ -43,9 +43,8 @@
         <div class="map-controls" aria-label="Paramètres de la carte">
           <p><label for="map-level">Niveau géographique</label><select id="map-level"><option value="department">Départements</option><option value="region">Régions</option></select></p>
           <p><label for="map-indicator">Indicateur</label><select id="map-indicator"></select></p>
-          <p><label for="map-period">Période cartographiée</label><select id="map-period"></select></p>
-          <p><label for="chart-from">Début de l’évolution</label><select id="chart-from"></select></p>
-          <p><label for="chart-to">Fin de l’évolution</label><select id="chart-to"></select></p>
+          <p><label for="chart-from">Période de début</label><select id="chart-from"></select></p>
+          <p><label for="chart-to">Période de fin</label><select id="chart-to"></select></p>
         </div>
         <div class="map-status" role="status" aria-live="polite"></div>
         <div class="territorial-grid">
@@ -69,14 +68,21 @@
           </aside>
         </div>
         <section class="trend-panel" aria-labelledby="trend-title">
-          <div class="data-card__header"><div><p class="eyebrow">Série temporelle</p><h3 id="trend-title">Évolution observée</h3></div></div>
+          <div class="data-card__header">
+            <div><p class="eyebrow">Série temporelle</p><h3 id="trend-title">Évolution observée</h3></div>
+            <div class="account-actions">
+              <button type="button" class="button button--ghost" data-export-chart disabled>Exporter le graphique en PNG</button>
+              <button type="button" class="button button--ghost" data-export-csv disabled>Exporter les données en CSV</button>
+            </div>
+          </div>
           <div class="trend-legend" data-trend-legend hidden aria-label="Légende de la série temporelle"></div>
           <div class="trend-chart-wrap"><svg class="trend-chart" viewBox="0 0 900 300" role="img" aria-label="Graphique d’évolution" data-trend-chart></svg></div>
-          <p class="trend-note" data-trend-note>Sélectionnez un territoire.</p>
+          <p class="trend-note" data-trend-note>Moyenne nationale affichée par défaut.</p>
         </section>
       </div>
     </section>
 
+    {% if territory_selected and score %}
     <section aria-labelledby="territory-title">
       <div class="data-card__header">
         <div>
@@ -191,7 +197,6 @@
         {% endif %}
       </div>
     </div>
-  {% elif form and not analytics_error %}
-    <div class="data-card empty-state"><h2>Aucune donnée disponible</h2><p>Aucun score ne correspond aux filtres sélectionnés.</p></div>
+    {% endif %}
   {% endif %}
 {% endblock %}

@@ -28,6 +28,7 @@ def dashboard(request):
         "model_comparison": None,
         "observability": None,
         "analytics_error": None,
+        "territory_selected": False,
     }
     try:
         models = client.list_models()
@@ -36,8 +37,24 @@ def dashboard(request):
             include_details=False,
         )
         defaults = dashboard_defaults(catalog, models)
+        selected_values = defaults.copy()
+        selected_values.update(request.GET.dict())
+        requested_level = request.GET.get("geographic_level")
+        requested_code = request.GET.get("geographic_code")
+        if requested_level and requested_code:
+            territory_scores = [
+                item
+                for item in catalog
+                if item["geographic_level"] == requested_level
+                and item["geographic_code"] == requested_code
+            ]
+            if territory_scores:
+                selected_values["reference_period"] = max(
+                    item["reference_period"] for item in territory_scores
+                )
+                context["territory_selected"] = True
         form = DashboardFilterForm(
-            request.GET or defaults,
+            selected_values,
             scores=catalog,
             models=models,
         )
