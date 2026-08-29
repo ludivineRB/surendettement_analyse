@@ -63,6 +63,11 @@
               <span class="badge badge--nav">Lecture seule</span>
             </a>
           {% endif %}
+          <a class="nav-link{% if request.resolver_match.url_name == 'privacy' %} is-active{% endif %}"
+             href="{% url 'privacy' %}" {% if request.resolver_match.url_name == 'privacy' %}aria-current="page"{% endif %}>
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.6 2.9 8.8 7 10 4.1-1.2 7-5.4 7-10V6l-7-3Z"/><path d="M9 12l2 2 4-4"/></svg>
+            <span>Confidentialité</span>
+          </a>
           {% if user.is_superuser %}
             <a class="nav-link{% if request.resolver_match.url_name == 'data-quality' %} is-active{% endif %}"
                href="{% url 'data-quality' %}" {% if request.resolver_match.url_name == 'data-quality' %}aria-current="page"{% endif %}>

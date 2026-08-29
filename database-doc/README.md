@@ -70,3 +70,8 @@ Les inventaires détaillés, MLD, MCD, dictionnaire, flux, correspondances avec
 les modèles applicatifs et écarts audités sont disponibles dans ce répertoire.
 La [revue technique](review/technical-review.md) consigne leur contrôle final et
 les réserves qui devront être traitées dans des lots séparés.
+
+Le lot 19 rassemble la [validation Merise](review/lot-19-merise.md) et
+l'[analyse assortie des règles RGPD](compliance/rgpd.md). Les décisions
+juridiques ou organisationnelles non démontrées y restent explicitement à
+valider.

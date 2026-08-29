@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}Confidentialité et protection des données{% endblock %}
+
+{% block content %}
+  <header class="page-header">
+    <div class="page-header__copy">
+      <p class="eyebrow">Protection des données</p>
+      <h1>Confidentialité et RGPD</h1>
+      <p>
+        Cette page explique comment le projet Surendettement traite les données
+        de ses utilisateurs.
+      </p>
+    </div>
+  </header>
+
+  <div class="section-stack">
+    <section class="data-card">
+      <header class="data-card__header"><h2>Responsable et contact</h2></header>
+      <div class="data-card__body">
+        <p>
+          Le responsable du traitement et contact RGPD provisoire est
+          <strong>Ludivine Raby</strong> :
+          <a href="mailto:ludivine.raby@gmail.com">ludivine.raby@gmail.com</a>.
+        </p>
+        <p>
+          Cette gouvernance pourra évoluer si le projet est intégré à Sofinco.
+          La présente information sera alors mise à jour avant tout changement
+          de responsable ou de finalité.
+        </p>
+      </div>
+    </section>
+
+    <section class="data-card">
+      <header class="data-card__header"><h2>Données et finalités</h2></header>
+      <div class="data-card__body">
+        <p>
+          Les données du compte servent à fournir et sécuriser l'accès. Lorsque
+          vous utilisez l'assistant, les questions, réponses, citations et
+          éléments d'historique servent à fournir le service demandé.
+        </p>
+        <p>
+          Les journaux techniques et audits SQL servent à la sécurité, au
+          diagnostic et à la traçabilité. Les statistiques territoriales sont
+          agrégées et ne décrivent pas une situation financière individuelle.
+        </p>
+      </div>
+    </section>
+
+    <section class="data-card">
+      <header class="data-card__header"><h2>Bases légales et conservation</h2></header>
+      <div class="data-card__body">
+        <p>
+          Le compte et les conversations sont traités pour exécuter le service
+          demandé. La sécurité et l'audit reposent sur l'intérêt légitime à
+          protéger et exploiter le service.
+        </p>
+        <ul>
+          <li>conversations : 90 jours après la dernière activité ;</li>
+          <li>audits SQL : 6 mois, puis suppression ou anonymisation ;</li>
+          <li>compte inactif : 24 mois, avec préavis avant suppression.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="data-card">
+      <header class="data-card__header"><h2>Assistant et champs libres</h2></header>
+      <div class="data-card__body">
+        <div class="alert alert--warning" role="note">
+          <strong>Attention :</strong> ne saisissez aucun mot de passe, secret,
+          donnée bancaire ni information sensible concernant votre santé, vos
+          opinions, votre religion, votre origine, votre appartenance syndicale
+          ou votre vie privée.
+        </div>
+        <p>
+          Si la génération OpenAI est activée, votre question peut être
+          transmise à l'API OpenAI afin de produire la réponse. Les informations
+          sur l'hébergeur et les garanties contractuelles seront complétées
+          avant une ouverture du service à des tiers.
+        </p>
+      </div>
+    </section>
+
+    <section class="data-card">
+      <header class="data-card__header"><h2>Vos droits</h2></header>
+      <div class="data-card__body">
+        <p>
+          Vous pouvez demander l'accès, la rectification, l'effacement, la
+          limitation ou l'opposition au traitement de vos données. Lorsque le
+          droit s'applique, vous pouvez également demander leur portabilité.
+        </p>
+        <p>
+          Pour exercer vos droits, écrivez à
+          <a href="mailto:ludivine.raby@gmail.com">ludivine.raby@gmail.com</a>.
+          Vous pouvez aussi introduire une réclamation auprès de la
+          <a href="https://www.cnil.fr/" rel="external noopener">CNIL</a>.
+        </p>
+      </div>
+    </section>
+
+    <section class="data-card">
+      <header class="data-card__header"><h2>Cadre juridique et références</h2></header>
+      <div class="data-card__body">
+        <p>
+          Le traitement des données personnelles est notamment encadré par les
+          textes et ressources officiels suivants :
+        </p>
+        <ul>
+          <li>
+            <a href="https://eur-lex.europa.eu/eli/reg/2016/679/oj?locale=FR"
+               rel="external noopener">
+              Règlement (UE) 2016/679 — Règlement général sur la protection des données (RGPD)
+            </a> ;
+          </li>
+          <li>
+            <a href="https://www.legifrance.gouv.fr/codes/id/JORFTEXT000000886460/"
+               rel="external noopener">
+              Loi n° 78-17 du 6 janvier 1978 relative à l'informatique, aux fichiers et aux libertés
+            </a> ;
+          </li>
+          <li>
+            <a href="https://www.cnil.fr/fr/respecter-les-droits-des-personnes"
+               rel="external noopener">
+              CNIL — Comprendre et exercer les droits des personnes
+            </a> ;
+          </li>
+          <li>
+            <a href="https://www.cnil.fr/fr/adresser-une-plainte"
+               rel="external noopener">
+              CNIL — Adresser une réclamation
+            </a>.
+          </li>
+        </ul>
+        <p>
+          Les articles 5, 6, 12 à 22, 25, 30, 32 à 35 du RGPD constituent les
+          principales références pour les principes, bases légales,
+          informations, droits, sécurité et responsabilité applicables à ce
+          service. L'article 9 s'applique si un champ libre révèle une catégorie
+          particulière de données personnelles.
+        </p>
+      </div>
+    </section>
+  </div>
+{% endblock %}
