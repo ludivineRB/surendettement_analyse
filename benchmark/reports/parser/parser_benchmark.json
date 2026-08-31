@@ -1,0 +1,777 @@
+{
+  "configuration": {
+    "date": "2026-08-31T20:48:36.474082+00:00",
+    "repeat": 20,
+    "dataset_version": "2026-08-26",
+    "dialect": "sqlite"
+  },
+  "notice": "Parsing capability is not a security verdict; SQLGlot remains the guard.",
+  "parsers": [
+    {
+      "parser": "sqlglot",
+      "available": true,
+      "parse_success_rate": 1.0,
+      "invalid_sql_detection_rate": 1.0,
+      "mean_ms": 0.42051838571428574,
+      "p50_ms": 0.21474,
+      "p95_ms": 0.476613,
+      "exceptions": [
+        "ParseError"
+      ],
+      "capabilities": {
+        "ast": true,
+        "tables": true,
+        "columns": true,
+        "joins": true,
+        "statement_type": true
+      },
+      "dependency": "light",
+      "cases": [
+        {
+          "id": "quality_aggregate_01",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "quality_ranking_01",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "quality_ranking_02",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "quality_territory_01",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "quality_time_01",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "quality_macro_01",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "quality_macro_02",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "quality_factor_01",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "quality_models_01",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "quality_freshness_01",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "forbidden_sql_01",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "forbidden_sql_02",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "forbidden_sql_03",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "forbidden_sql_04",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "forbidden_sql_05",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "forbidden_sql_06",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "cost_01",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "cost_02",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "cost_03",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "cost_04",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "parser_invalid_sql",
+          "expected_valid": false,
+          "parse_success": false,
+          "ast_type": null
+        }
+      ]
+    },
+    {
+      "parser": "sqloxide",
+      "available": true,
+      "parse_success_rate": 1.0,
+      "invalid_sql_detection_rate": 1.0,
+      "mean_ms": 0.04432581904761905,
+      "p50_ms": 0.0406575,
+      "p95_ms": 0.069605,
+      "exceptions": [
+        "ValueError"
+      ],
+      "capabilities": {
+        "ast": true,
+        "tables": true,
+        "columns": true,
+        "joins": true,
+        "statement_type": true
+      },
+      "dependency": "rust binding",
+      "cases": [
+        {
+          "id": "quality_aggregate_01",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "quality_ranking_01",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "quality_ranking_02",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "quality_territory_01",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "quality_time_01",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "quality_macro_01",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "quality_macro_02",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "quality_factor_01",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "quality_models_01",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "quality_freshness_01",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "forbidden_sql_01",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "forbidden_sql_02",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "forbidden_sql_03",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "forbidden_sql_04",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "forbidden_sql_05",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "forbidden_sql_06",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "cost_01",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "cost_02",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "cost_03",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "cost_04",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "parser_invalid_sql",
+          "expected_valid": false,
+          "parse_success": false,
+          "ast_type": null
+        }
+      ]
+    },
+    {
+      "parser": "polyglot-sql",
+      "available": true,
+      "parse_success_rate": 1.0,
+      "invalid_sql_detection_rate": 1.0,
+      "mean_ms": 0.02200149761904762,
+      "p50_ms": 0.0108185,
+      "p95_ms": 0.022865,
+      "exceptions": [
+        "ParseError"
+      ],
+      "capabilities": {
+        "ast": true,
+        "tables": true,
+        "columns": true,
+        "joins": true,
+        "statement_type": true
+      },
+      "dependency": "rust binding",
+      "cases": [
+        {
+          "id": "quality_aggregate_01",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "quality_ranking_01",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "quality_ranking_02",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "quality_territory_01",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "quality_time_01",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "quality_macro_01",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "quality_macro_02",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "quality_factor_01",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "quality_models_01",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "quality_freshness_01",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "forbidden_sql_01",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "forbidden_sql_02",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "forbidden_sql_03",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "forbidden_sql_04",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "forbidden_sql_05",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "forbidden_sql_06",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "cost_01",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "cost_02",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "cost_03",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "cost_04",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "list"
+        },
+        {
+          "id": "parser_invalid_sql",
+          "expected_valid": false,
+          "parse_success": false,
+          "ast_type": null
+        }
+      ]
+    },
+    {
+      "parser": "sqlparse",
+      "available": true,
+      "parse_success_rate": 1.0,
+      "invalid_sql_detection_rate": 0.0,
+      "mean_ms": 0.6746264452380952,
+      "p50_ms": 0.6392875,
+      "p95_ms": 1.55184,
+      "exceptions": [],
+      "capabilities": {
+        "ast": false,
+        "tables": false,
+        "columns": false,
+        "joins": false,
+        "statement_type": "token_only"
+      },
+      "dependency": "light",
+      "cases": [
+        {
+          "id": "quality_aggregate_01",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "tuple"
+        },
+        {
+          "id": "quality_ranking_01",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "tuple"
+        },
+        {
+          "id": "quality_ranking_02",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "tuple"
+        },
+        {
+          "id": "quality_territory_01",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "tuple"
+        },
+        {
+          "id": "quality_time_01",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "tuple"
+        },
+        {
+          "id": "quality_macro_01",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "tuple"
+        },
+        {
+          "id": "quality_macro_02",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "tuple"
+        },
+        {
+          "id": "quality_factor_01",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "tuple"
+        },
+        {
+          "id": "quality_models_01",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "tuple"
+        },
+        {
+          "id": "quality_freshness_01",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "tuple"
+        },
+        {
+          "id": "forbidden_sql_01",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "tuple"
+        },
+        {
+          "id": "forbidden_sql_02",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "tuple"
+        },
+        {
+          "id": "forbidden_sql_03",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "tuple"
+        },
+        {
+          "id": "forbidden_sql_04",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "tuple"
+        },
+        {
+          "id": "forbidden_sql_05",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "tuple"
+        },
+        {
+          "id": "forbidden_sql_06",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "tuple"
+        },
+        {
+          "id": "cost_01",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "tuple"
+        },
+        {
+          "id": "cost_02",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "tuple"
+        },
+        {
+          "id": "cost_03",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "tuple"
+        },
+        {
+          "id": "cost_04",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "tuple"
+        },
+        {
+          "id": "parser_invalid_sql",
+          "expected_valid": false,
+          "parse_success": true,
+          "ast_type": "tuple"
+        }
+      ]
+    },
+    {
+      "parser": "sqlfluff",
+      "available": true,
+      "parse_success_rate": 0.9,
+      "invalid_sql_detection_rate": 1.0,
+      "mean_ms": 16.371203414285713,
+      "p50_ms": 10.692332,
+      "p95_ms": 35.25777,
+      "exceptions": [
+        "APIParsingError"
+      ],
+      "capabilities": {
+        "ast": true,
+        "tables": true,
+        "columns": true,
+        "joins": true,
+        "statement_type": true
+      },
+      "dependency": "medium",
+      "cases": [
+        {
+          "id": "quality_aggregate_01",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "dict"
+        },
+        {
+          "id": "quality_ranking_01",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "dict"
+        },
+        {
+          "id": "quality_ranking_02",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "dict"
+        },
+        {
+          "id": "quality_territory_01",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "dict"
+        },
+        {
+          "id": "quality_time_01",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "dict"
+        },
+        {
+          "id": "quality_macro_01",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "dict"
+        },
+        {
+          "id": "quality_macro_02",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "dict"
+        },
+        {
+          "id": "quality_factor_01",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "dict"
+        },
+        {
+          "id": "quality_models_01",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "dict"
+        },
+        {
+          "id": "quality_freshness_01",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "dict"
+        },
+        {
+          "id": "forbidden_sql_01",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "dict"
+        },
+        {
+          "id": "forbidden_sql_02",
+          "expected_valid": true,
+          "parse_success": false,
+          "ast_type": null
+        },
+        {
+          "id": "forbidden_sql_03",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "dict"
+        },
+        {
+          "id": "forbidden_sql_04",
+          "expected_valid": true,
+          "parse_success": false,
+          "ast_type": null
+        },
+        {
+          "id": "forbidden_sql_05",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "dict"
+        },
+        {
+          "id": "forbidden_sql_06",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "dict"
+        },
+        {
+          "id": "cost_01",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "dict"
+        },
+        {
+          "id": "cost_02",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "dict"
+        },
+        {
+          "id": "cost_03",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "dict"
+        },
+        {
+          "id": "cost_04",
+          "expected_valid": true,
+          "parse_success": true,
+          "ast_type": "dict"
+        },
+        {
+          "id": "parser_invalid_sql",
+          "expected_valid": false,
+          "parse_success": false,
+          "ast_type": null
+        }
+      ]
+    },
+    {
+      "parser": "datafusion",
+      "available": false,
+      "parse_success_rate": 0.0,
+      "invalid_sql_detection_rate": 0,
+      "mean_ms": 0.090008,
+      "p50_ms": 0.090008,
+      "p95_ms": 0.090008,
+      "exceptions": [
+        "ModuleNotFoundError"
+      ],
+      "capabilities": {
+        "ast": false,
+        "tables": true,
+        "columns": true,
+        "joins": true,
+        "statement_type": "logical_plan"
+      },
+      "dependency": "heavy/optional",
+      "cases": [
+        {
+          "id": "quality_aggregate_01",
+          "expected_valid": true,
+          "parse_success": false,
+          "ast_type": null
+        }
+      ]
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 openai>=1.0
 polyglot-sql
+pytest
 sqloxide
 sqlfluff
 sqlglot
