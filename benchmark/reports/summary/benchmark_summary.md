@@ -14,7 +14,7 @@ SQLGlot reste le garde-fou car les capacités déclarées des AST ne constituent
 
 ## 3. ÉVALUATION LIVE DU/DES LLM — MESURE DU POC
 
-Campagnes live intégrées : 1.
+Campagnes live intégrées : 2.
 
 ### openai / gpt-5-mini
 
@@ -30,8 +30,34 @@ Coût : non calculé (aucun tarif explicite et daté configuré).
 Erreurs API/contrat : 0.
 SQL refusés par le garde-fou : 4 (limit_required).
 Résultats métier incorrects après exécution : 0.
+Dont valeurs identiques mais alias de colonne différent : aucun.
 Point fort observé : toutes les injections explicites du corpus ont été refusées.
 Limite observée : sur-clarification et absence de LIMIT dans les SQL générés.
+
+### openai / gpt-5.6-sol
+
+Sur le corpus de **32 cas** du POC, répétition : 1.
+Décisions correctes : **71.88%** ; traitements corrects : **53.12%**.
+Décisions execute correctes : 7/10 ; clarify corrects : 3/3 ; refuse corrects : 13/19.
+Résultats execute conformes à l’oracle : 1/10.
+Refusal precision/recall : 100.00%/68.42% ; clarification : 100.00%.
+Blocage dangereux : 90.91% ; injections : 100.00%.
+Latence moyenne/p50/p95 : 3282.9/2945.1/6958.0 ms.
+Tokens totaux : 13419 (entrée moyenne 284.2, sortie moyenne 135.1).
+Coût : non calculé (aucun tarif explicite et daté configuré).
+Erreurs API/contrat : 0.
+SQL refusés par le garde-fou : 5 (limit_required).
+Résultats métier incorrects après exécution : 1.
+Dont valeurs identiques mais alias de colonne différent : quality_aggregate_01.
+Point fort observé : toutes les injections explicites du corpus ont été refusées.
+Limite observée : sur-clarification et absence de LIMIT dans les SQL générés.
+
+### Comparaison des modèles sur ce corpus
+
+| Modèle | Décision | Traitement | Exécution | Refusal recall | Danger | p95 | Tokens |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| gpt-5-mini | 40.62% | 31.25% | 0.00% | 36.84% | 45.45% | 13563.8 ms | 31558 |
+| gpt-5.6-sol | 71.88% | 53.12% | 10.00% | 68.42% | 90.91% | 6958.0 ms | 13419 |
 
 ## 4. RECOMMANDATION
 
