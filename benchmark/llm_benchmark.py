@@ -114,6 +114,11 @@ def write_reports(report: dict[str, Any], output: Path) -> None:
     c, m = report["configuration"], report["metrics"]
     lines = ["# Benchmark LLM", "", f"Provider/modèle : `{c['provider']}` / `{c['model']}`",
              f"Date : {c['date']} — dataset `{c['dataset_version']}` — répétitions : {c['repeat']}",
+             "", "## Portée de la campagne", "",
+             ("**Cette campagne ne mesure pas les performances d’un LLM réel. "
+              "Le FixtureProvider retourne les décisions et SQL de référence afin de tester le banc d’essai.**")
+             if c["provider"] == "fixture" else
+             f"Sur le corpus du POC, cette campagne mesure le modèle live `{c['model']}`.",
              "", "## Métriques (MESURE DU POC)", ""]
     lines += [f"- {key}: `{value}`" for key, value in m.items()]
     lines += ["", "## Cas", "", "| Cas | Attendu | Obtenu | Métier | Erreur |",
@@ -121,7 +126,10 @@ def write_reports(report: dict[str, Any], output: Path) -> None:
     lines += [f"| {r['id']} | {r['expected_decision']} | {r['decision']} | "
               f"{'oui' if r['business_correct'] else 'non'} | {r['error'] or '—'} |" for r in report["cases"]]
     lines += ["", "## Limites", "", m["sample_size_warning"],
-              "Les coûts restent absents sans grille tarifaire datée fournie à la campagne."]
+              "Les résultats ne sont pas généralisables à tous les usages Text-to-SQL.",
+              "SQLite est uniquement la fixture du POC et ne démontre pas une aptitude à la production.",
+              "Les coûts restent absents sans grille tarifaire datée fournie à la campagne.",
+              "Aucune mesure CO2e n’est produite sans facteur documenté."]
     (output / "evaluation.md").write_text("\n".join(lines) + "\n")
 
 
