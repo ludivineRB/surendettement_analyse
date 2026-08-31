@@ -39,7 +39,7 @@ CASES = [
         """SELECT c.city, COUNT(*) AS paid_orders FROM customers c
         JOIN orders o ON o.customer_id = c.id WHERE o.status = 'paid'
         GROUP BY c.city ORDER BY paid_orders DESC, c.city""",
-        [("Paris", 3), ("Lyon", 2), ("Bordeaux", 2), ("Lille", 1), ("Marseille", 1)],
+        [("Paris", 3), ("Bordeaux", 2), ("Lyon", 2), ("Lille", 1), ("Marseille", 1)],
     ),
     (
         "Quel est le panier moyen des commandes payées en 2026 ?",
