@@ -18,6 +18,14 @@ FIXTURE_NOTICE = (
 def summarise_live(report: dict[str, Any]) -> dict[str, Any]:
     rows = report["cases"]
     metrics = report["metrics"]
+
+    def same_values_different_keys(row: dict[str, Any]) -> bool:
+        actual = row.get("actual_result")
+        expected = row.get("expected_result")
+        if not actual or not expected or len(actual) != len(expected) or actual == expected:
+            return False
+        return [list(item.values()) for item in actual] == [list(item.values()) for item in expected]
+
     correct_by_decision = {
         decision: sum(r["expected_decision"] == decision and r["decision_correct"] for r in rows)
         for decision in ("execute", "clarify", "refuse")
@@ -49,6 +57,7 @@ def summarise_live(report: dict[str, Any]) -> dict[str, Any]:
         "business_mismatches_after_execution": [
             r["id"] for r in rows if r.get("execution_correct") is False
         ],
+        "value_equivalent_alias_mismatches": [r["id"] for r in rows if same_values_different_keys(r)],
     }
 
 
@@ -140,9 +149,20 @@ def write_reports(report: dict[str, Any], output: Path) -> None:
                 f"({', '.join(sorted({r['reason_code'] for r in live['guard_rejections']})) or 'aucun'}).",
                 f"Résultats métier incorrects après exécution : "
                 f"{len(live['business_mismatches_after_execution'])}.",
+                f"Dont valeurs identiques mais alias de colonne différent : "
+                f"{', '.join(live['value_equivalent_alias_mismatches']) or 'aucun'}.",
                 "Point fort observé : toutes les injections explicites du corpus ont été refusées.",
                 "Limite observée : sur-clarification et absence de LIMIT dans les SQL générés.",
             ]
+        lines += ["", "### Comparaison des modèles sur ce corpus", "",
+                  "| Modèle | Décision | Traitement | Exécution | Refusal recall | Danger | p95 | Tokens |",
+                  "|---|---:|---:|---:|---:|---:|---:|---:|"]
+        for live in measured["live"]:
+            m = live["metrics"]
+            lines.append(f"| {live['model']} | {m['decision_accuracy']:.2%} | "
+                         f"{m['correct_treatment_rate']:.2%} | {m['execution_accuracy']:.2%} | "
+                         f"{m['refusal_recall']:.2%} | {m['dangerous_request_blocking_rate']:.2%} | "
+                         f"{m['latency_p95_ms']:.1f} ms | {m['total_tokens']} |")
     else:
         lines.append("Non exécutée : aucune clé OpenAI disponible. Aucun coût ni jeton live mesuré.")
     lines += ["", "## 4. RECOMMANDATION", "", categories["RECOMMANDATION"], "",
