@@ -48,8 +48,8 @@ python -m benchmark.summary
 ```
 
 DataFusion reste optionnel (`python -m pip install datafusion`) car il installe
-un moteur Arrow complet. `python -m benchmark.evaluation` reste une façade
-compatible vers la campagne fixture. Aucun secret ni réseau n'est nécessaire.
+un moteur Arrow complet. `python -m benchmark.evaluation` conserve l'évaluation
+offline historique attendue par la CI. Aucun secret ni réseau n'est nécessaire.
 
 ## Campagne OpenAI live
 
