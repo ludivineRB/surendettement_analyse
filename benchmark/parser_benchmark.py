@@ -93,15 +93,27 @@ def run(repeat: int = 20) -> dict[str, Any]:
 def write_reports(report: dict[str, Any], output: Path) -> None:
     output.mkdir(parents=True, exist_ok=True)
     (output / "parser_benchmark.json").write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n")
+    invalid_count = sum(not case["expected_valid"]
+                        for parser in report["parsers"][:1] for case in parser["cases"])
     lines = ["# Benchmark des parseurs", "", report["notice"], "",
              f"Date : {report['configuration']['date']} — répétitions : {report['configuration']['repeat']}",
-             "", "| Parseur | Disponible | Parse | SQL invalide détecté | Moyenne | p50 | p95 | AST | Dépendance |",
-             "|---|---:|---:|---:|---:|---:|---:|---:|---|"]
+             f"Corpus invalide : {invalid_count} cas seulement; le taux de détection est donc peu robuste.",
+             "", "## Résultats expérimentaux (MESURE DU POC)", "",
+             "| Parseur | Disponible | Parse | SQL invalide détecté | Moyenne | p50 | p95 |",
+             "|---|---:|---:|---:|---:|---:|---:|"]
     for p in report["parsers"]:
         timing = lambda key: f"{p[key]:.4f}" if p[key] is not None else "—"
         lines.append(f"| {p['parser']} | {'oui' if p['available'] else 'non'} | {p['parse_success_rate']:.0%} | "
                      f"{p['invalid_sql_detection_rate']:.0%} | {timing('mean_ms')} | {timing('p50_ms')} | "
-                     f"{timing('p95_ms')} | {p['capabilities']['ast']} | {p['dependency']} |")
+                     f"{timing('p95_ms')} |")
+    lines += ["", "## Capacités déclarées/implémentées (FAIT DOCUMENTÉ)", "",
+              "Ces capacités proviennent des adaptateurs et ne sont pas mesurées par cette campagne.", "",
+              "| Parseur | AST | Tables | Colonnes | JOIN | Statement | Dépendance |",
+              "|---|---:|---:|---:|---:|---:|---|"]
+    for p in report["parsers"]:
+        c = p["capabilities"]
+        lines.append(f"| {p['parser']} | {c['ast']} | {c['tables']} | {c['columns']} | "
+                     f"{c['joins']} | {c['statement_type']} | {p['dependency']} |")
     lines += ["", "## Conclusion (RECOMMANDATION)", "",
               "Comparer richesse, erreurs, temps et dépendances; ne remplacer SQLGlot qu’après équivalence fonctionnelle démontrée."]
     (output / "parser_benchmark.md").write_text("\n".join(lines) + "\n")

@@ -1,7 +1,11 @@
 # Benchmark LLM
 
 Provider/modèle : `fixture` / `dataset-reference`
-Date : 2026-08-31T20:48:29.225704+00:00 — dataset `2026-08-26` — répétitions : 1
+Date : 2026-08-31T21:43:34.790292+00:00 — dataset `2026-08-26` — répétitions : 1
+
+## Portée de la campagne
+
+**Cette campagne ne mesure pas les performances d’un LLM réel. Le FixtureProvider retourne les décisions et SQL de référence afin de tester le banc d’essai.**
 
 ## Métriques (MESURE DU POC)
 
@@ -16,9 +20,9 @@ Date : 2026-08-31T20:48:29.225704+00:00 — dataset `2026-08-26` — répétitio
 - clarification_accuracy: `1.0`
 - dangerous_request_blocking_rate: `1.0`
 - prompt_injection_blocking_rate: `1.0`
-- latency_mean_ms: `0.0021790319806314074`
-- latency_p50_ms: `0.0011584997992031276`
-- latency_p95_ms: `0.005909008905291557`
+- latency_mean_ms: `0.00295765494229272`
+- latency_p50_ms: `0.0012035015970468521`
+- latency_p95_ms: `0.010064992238767445`
 - input_tokens_mean: `0`
 - output_tokens_mean: `0`
 - total_tokens_mean: `0`
@@ -69,4 +73,7 @@ Date : 2026-08-31T20:48:29.225704+00:00 — dataset `2026-08-26` — répétitio
 ## Limites
 
 Échantillon trop petit pour une preuve statistique robuste.
+Les résultats ne sont pas généralisables à tous les usages Text-to-SQL.
+SQLite est uniquement la fixture du POC et ne démontre pas une aptitude à la production.
 Les coûts restent absents sans grille tarifaire datée fournie à la campagne.
+Aucune mesure CO2e n’est produite sans facteur documenté.

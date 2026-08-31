@@ -62,6 +62,7 @@ class OpenAIProvider:
     def __init__(self, model: str | None = None, prices: dict[str, float] | None = None):
         self.model = model or os.getenv("OPENAI_MODEL", "gpt-5-mini")
         self.prices = prices
+        self._temperature_supported = True
 
     def generate(self, request: dict[str, Any]) -> LLMResult:
         if not os.getenv("OPENAI_API_KEY"):
@@ -72,13 +73,23 @@ class OpenAIProvider:
             return _error(self.name, self.model, "openai package is missing")
         started = perf_counter()
         try:
-            response = OpenAI().responses.create(
-                model=self.model,
-                temperature=0,
-                input=_prompt(request),
-                text={"format": {"type": "json_schema", "name": "text_to_sql_decision",
-                                  "strict": True, "schema": _schema()}},
-            )
+            client = OpenAI()
+            kwargs = {
+                "model": self.model,
+                "input": _prompt(request),
+                "text": {"format": {"type": "json_schema", "name": "text_to_sql_decision",
+                                     "strict": True, "schema": _schema()}},
+            }
+            if self._temperature_supported:
+                kwargs["temperature"] = 0
+            try:
+                response = client.responses.create(**kwargs)
+            except Exception as exc:
+                if "Unsupported parameter: 'temperature'" not in str(exc):
+                    raise
+                self._temperature_supported = False
+                kwargs.pop("temperature", None)
+                response = client.responses.create(**kwargs)
             value = parse_llm_response(response.output_text)
             usage = getattr(response, "usage", None)
             raw = usage.model_dump() if usage and hasattr(usage, "model_dump") else None

@@ -1,6 +1,6 @@
 {
   "configuration": {
-    "date": "2026-08-31T20:48:36.474082+00:00",
+    "date": "2026-08-31T21:43:41.747372+00:00",
     "repeat": 20,
     "dataset_version": "2026-08-26",
     "dialect": "sqlite"
@@ -12,9 +12,9 @@
       "available": true,
       "parse_success_rate": 1.0,
       "invalid_sql_detection_rate": 1.0,
-      "mean_ms": 0.42051838571428574,
-      "p50_ms": 0.21474,
-      "p95_ms": 0.476613,
+      "mean_ms": 0.5778295,
+      "p50_ms": 0.237565,
+      "p95_ms": 0.507255,
       "exceptions": [
         "ParseError"
       ],
@@ -160,9 +160,9 @@
       "available": true,
       "parse_success_rate": 1.0,
       "invalid_sql_detection_rate": 1.0,
-      "mean_ms": 0.04432581904761905,
-      "p50_ms": 0.0406575,
-      "p95_ms": 0.069605,
+      "mean_ms": 0.04195054285714286,
+      "p50_ms": 0.033889,
+      "p95_ms": 0.084671,
       "exceptions": [
         "ValueError"
       ],
@@ -308,9 +308,9 @@
       "available": true,
       "parse_success_rate": 1.0,
       "invalid_sql_detection_rate": 1.0,
-      "mean_ms": 0.02200149761904762,
-      "p50_ms": 0.0108185,
-      "p95_ms": 0.022865,
+      "mean_ms": 0.029241040476190475,
+      "p50_ms": 0.014529,
+      "p95_ms": 0.035371,
       "exceptions": [
         "ParseError"
       ],
@@ -456,9 +456,9 @@
       "available": true,
       "parse_success_rate": 1.0,
       "invalid_sql_detection_rate": 0.0,
-      "mean_ms": 0.6746264452380952,
-      "p50_ms": 0.6392875,
-      "p95_ms": 1.55184,
+      "mean_ms": 0.7000715976190476,
+      "p50_ms": 0.42528699999999997,
+      "p95_ms": 1.601855,
       "exceptions": [],
       "capabilities": {
         "ast": false,
@@ -602,9 +602,9 @@
       "available": true,
       "parse_success_rate": 0.9,
       "invalid_sql_detection_rate": 1.0,
-      "mean_ms": 16.371203414285713,
-      "p50_ms": 10.692332,
-      "p95_ms": 35.25777,
+      "mean_ms": 15.753270933333333,
+      "p50_ms": 10.4899695,
+      "p95_ms": 35.078382,
       "exceptions": [
         "APIParsingError"
       ],
@@ -750,9 +750,9 @@
       "available": false,
       "parse_success_rate": 0.0,
       "invalid_sql_detection_rate": 0,
-      "mean_ms": 0.090008,
-      "p50_ms": 0.090008,
-      "p95_ms": 0.090008,
+      "mean_ms": 0.085984,
+      "p50_ms": 0.085984,
+      "p95_ms": 0.085984,
       "exceptions": [
         "ModuleNotFoundError"
       ],
