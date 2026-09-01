@@ -105,11 +105,28 @@ class AnalyticsClient:
 
     def _get(self, path: str, params: dict) -> object:
         try:
-            response = requests.get(
-                f"{self.base_url}{path}",
-                params={key: value for key, value in params.items() if value is not None},
-                timeout=self.timeout_seconds,
+            internal_token = os.getenv("ASSISTANT_INTERNAL_TOKEN", "").strip()
+            headers = (
+                {"X-Internal-Token": internal_token}
+                if internal_token
+                else None
             )
+            request_params = {
+                key: value for key, value in params.items() if value is not None
+            }
+            if headers:
+                response = requests.get(
+                    f"{self.base_url}{path}",
+                    params=request_params,
+                    headers=headers,
+                    timeout=self.timeout_seconds,
+                )
+            else:
+                response = requests.get(
+                    f"{self.base_url}{path}",
+                    params=request_params,
+                    timeout=self.timeout_seconds,
+                )
             response.raise_for_status()
             return response.json()
         except (requests.RequestException, ValueError) as exc:

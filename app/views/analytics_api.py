@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Annotated
+
 from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy import select
 
@@ -14,12 +16,20 @@ from app.core.analytics import (
     table_columns,
     utc_now,
 )
-from app.schemas.analytics import MacroOverrideCreate, MacroOverrideRead, MacroOverrideUpdate
+from app.schemas.analytics import (
+    DepartmentRead,
+    IndicatorRead,
+    MacroOverrideCreate,
+    MacroOverrideRead,
+    MacroOverrideUpdate,
+    SurendettementObservationRead,
+)
 from src.storage.database import get_session_factory
 from src.storage.models import InclusionIndicator, InclusionObservation, InclusionSourceDocument
 from src.observability import build_observability_report
 
 analytics_api = APIRouter(prefix="/api/data", tags=["Analytical data"])
+public_analytics_api = APIRouter(prefix="/api/data", tags=["Health"])
 
 INDICATOR_POLARITY = {
     "risk_score": "higher_is_adverse",
@@ -44,7 +54,7 @@ def observability() -> dict:
     return build_observability_report()
 
 
-@analytics_api.get("/health")
+@public_analytics_api.get("/health")
 def health() -> dict:
     try:
         with analytics_connection() as connection:
@@ -171,8 +181,17 @@ def territorial_indicator_data(
         return fetch_all(connection, query, params)
 
 
-@analytics_api.get("/departments")
-def list_departments(limit: int = Query(200, ge=1, le=500), offset: int = Query(0, ge=0)) -> list[dict]:
+@analytics_api.get(
+    "/departments",
+    response_model=list[DepartmentRead],
+    summary="Référentiel des départements",
+    description="Retourne les territoires réellement présents dans PostgreSQL.",
+    responses={401: {"description": "Jeton absent"}, 403: {"description": "Jeton invalide"}},
+)
+def list_departments(
+    limit: int = Query(200, ge=1, le=500, description="Nombre maximal de lignes"),
+    offset: int = Query(0, ge=0, description="Décalage de pagination"),
+) -> list[dict]:
     with analytics_connection() as connection:
         return fetch_all(
             connection,
@@ -186,11 +205,19 @@ def list_departments(limit: int = Query(200, ge=1, le=500), offset: int = Query(
         )
 
 
-@analytics_api.get("/indicators")
+@analytics_api.get(
+    "/indicators",
+    response_model=list[IndicatorRead],
+    summary="Catalogue des indicateurs",
+    description="Liste les indicateurs disponibles, filtrables par système source.",
+    responses={401: {"description": "Jeton absent"}, 403: {"description": "Jeton invalide"}},
+)
 def list_indicators(
-    source_system: str | None = Query(None),
-    limit: int = Query(200, ge=1, le=1000),
-    offset: int = Query(0, ge=0),
+    source_system: Annotated[
+        str | None, Query(description="Système source exact")
+    ] = None,
+    limit: int = Query(200, ge=1, le=500, description="Nombre maximal de lignes"),
+    offset: int = Query(0, ge=0, description="Décalage de pagination"),
 ) -> list[dict]:
     where = "WHERE source_system = :source_system" if source_system else ""
     params = {"source_system": source_system, "limit": limit, "offset": offset}
@@ -248,13 +275,29 @@ def list_bdf_facts(
         )
 
 
-@analytics_api.get("/surendettement")
+@analytics_api.get(
+    "/surendettement",
+    response_model=list[SurendettementObservationRead],
+    summary="Observations de surendettement",
+    description=(
+        "Extrait en lecture seule les observations annuelles par département "
+        "depuis PostgreSQL. Aucun SQL libre n'est accepté."
+    ),
+    responses={401: {"description": "Jeton absent"}, 403: {"description": "Jeton invalide"}},
+)
 def list_surendettement_data(
-    departement_code: str | None = None,
-    indicator_code: str | None = None,
-    reference_year: int | None = None,
-    limit: int = Query(5000, ge=1, le=100000),
-    offset: int = Query(0, ge=0),
+    departement_code: Annotated[
+        str | None, Query(description="Code département")
+    ] = None,
+    indicator_code: Annotated[
+        str | None, Query(description="Code indicateur exact")
+    ] = None,
+    reference_year: Annotated[
+        int | None,
+        Query(ge=1900, le=2100, description="Année de référence"),
+    ] = None,
+    limit: int = Query(100, ge=1, le=500, description="Nombre maximal de lignes"),
+    offset: int = Query(0, ge=0, description="Décalage de pagination"),
 ) -> list[dict]:
     """Expose actual over-indebtedness facts from the surendettement source."""
     filters = []

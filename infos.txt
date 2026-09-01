@@ -548,3 +548,10 @@ A mettre : Refs #16 pour fermer.
 Procédure pour appeler lancer le notifier de grafana : python3 -m src.local_alert_notifier
 
 Utilisation de mermaid cli pour les svg des mcd et autress
+
+Pour tester les parsers SQL : 
+# Sans coût API : SQL de référence
+python benchmark.py
+
+# Avec génération depuis chaque question
+python benchmark.py --live

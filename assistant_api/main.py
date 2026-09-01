@@ -3,17 +3,17 @@
 import os
 import json
 import logging
-import secrets
 from collections import Counter
 from time import monotonic
 from uuid import uuid4
 
-from fastapi import Depends, FastAPI, Header, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.responses import PlainTextResponse
 from sqlalchemy import Engine
 from sqlalchemy.exc import SQLAlchemyError
 
 from assistant_api.repository import search_active_chunks
+from assistant_api.auth import get_internal_token, require_internal_token
 from assistant_api.analytics import AnalyticsClient, AnalyticsUnavailable
 from assistant_api.conversation_routing import classify_question
 from assistant_api.generation import (
@@ -141,7 +141,7 @@ def answer_question(
     engine: Engine = Depends(get_engine),
     analytics_client: AnalyticsClient = Depends(AnalyticsClient),
     generator: TextGenerator = Depends(get_text_generator),
-    x_internal_token: str | None = Header(default=None),
+    x_internal_token: str | None = Depends(get_internal_token),
 ) -> AnswerResponse:
     request_id = uuid4()
     category = classify_question(request.question, request.mode)
@@ -161,10 +161,7 @@ def answer_question(
             request_id=request_id,
         )
     if category == "advanced_sql":
-        configured_token = os.getenv("ASSISTANT_INTERNAL_TOKEN", "")
-        supplied_token = x_internal_token if isinstance(x_internal_token, str) else ""
-        if not configured_token or not secrets.compare_digest(configured_token, supplied_token):
-            raise HTTPException(status_code=403, detail="Capacité SQL non autorisée.")
+        require_internal_token(x_internal_token)
         try:
             sql_result = run_text_to_sql(
                 request.question,

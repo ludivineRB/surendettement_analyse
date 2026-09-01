@@ -20,6 +20,8 @@ from src.utils.logger import configure_logging, get_logger
 RAW_DIR = Path("data/raw/surendettement")
 GOLD_DIR = Path("data/processed/surendettement/gold")
 DEFAULT_GOLD_CSV = GOLD_DIR / "surendettement_departements.csv"
+DEFAULT_DEPARTMENT_REFERENCE = Path("data/processed/statinfo_departements_bi_curated.csv")
+PREPROCESSING_VERSION = "surendettement_typologie_v2"
 SUPPORTED_STRUCTURED_EXTENSIONS = {".csv", ".xlsx"}
 TARGET_COLUMNS = [
     "reference_year",
@@ -37,6 +39,7 @@ LOGGER = get_logger(__name__)
 
 @dataclass(slots=True)
 class SurendettementPipelineSummary:
+    preprocessing_version: str = PREPROCESSING_VERSION
     pages_crawled: int = 0
     files_discovered: int = 0
     files_selected_for_download: int = 0
@@ -137,12 +140,94 @@ def parse_structured_source(path: Path) -> pd.DataFrame:
         if not normalized.empty:
             candidates.append(normalized)
 
+    if not candidates and suffix == ".xlsx":
+        typology = _parse_typology_workbook(path)
+        if not typology.empty:
+            candidates.append(typology)
+
     if not candidates:
         raise ValueError("No valid department-level filings table found.")
 
     result = pd.concat(candidates, ignore_index=True)
     _validate_gold_quality(result, source_name=path.name, require_national_coverage=False)
     return result[TARGET_COLUMNS]
+
+
+def _parse_typology_workbook(
+    path: Path,
+    department_reference: Path = DEFAULT_DEPARTMENT_REFERENCE,
+) -> pd.DataFrame:
+    """Extract department filings from the official BDF 2025 workbook layout."""
+    try:
+        sheet = pd.read_excel(
+            path,
+            sheet_name="INDICATEURS-RÉGION-DÉPTS",
+            header=None,
+            engine="openpyxl",
+        )
+    except (ValueError, KeyError):
+        return pd.DataFrame(columns=TARGET_COLUMNS)
+
+    year_match = re.search(
+        r"DONN[ÉE]ES\s+(20\d{2})",
+        " ".join(str(value) for value in sheet.to_numpy().flat if pd.notna(value)),
+        re.IGNORECASE,
+    )
+    if not year_match or not department_reference.is_file():
+        return pd.DataFrame(columns=TARGET_COLUMNS)
+
+    reference = pd.read_csv(
+        department_reference,
+        dtype={"departement_code": str},
+        usecols=["departement_code", "departement_name"],
+    ).dropna().drop_duplicates("departement_code")
+    department_by_name = {
+        _normalize_column_name(row.departement_name): normalize_department_code(
+            row.departement_code
+        )
+        for row in reference.itertuples(index=False)
+    }
+    rows = []
+    filings_pattern = re.compile(
+        r"([\d\s\u00a0]+)\s+d[ée]p[oô]ts?\s+de\s+dossiers?\s+de\s+surendettement",
+        re.IGNORECASE,
+    )
+    for row_index in range(len(sheet)):
+        for column_index in range(len(sheet.columns)):
+            value = sheet.iat[row_index, column_index]
+            match = filings_pattern.search(str(value)) if pd.notna(value) else None
+            if not match:
+                continue
+            nearby = []
+            for header_row in range(max(0, row_index - 4), row_index + 1):
+                for header_column in range(
+                    max(0, column_index - 2),
+                    min(len(sheet.columns), column_index + 3),
+                ):
+                    header = sheet.iat[header_row, header_column]
+                    normalized = _normalize_column_name(header)
+                    code = department_by_name.get(normalized)
+                    if code:
+                        distance = (row_index - header_row) + abs(
+                            column_index - header_column
+                        )
+                        nearby.append((distance, code, str(header).strip()))
+            if not nearby:
+                continue
+            _, code, name = min(nearby)
+            rows.append(
+                {
+                    "reference_year": int(year_match.group(1)),
+                    "reference_month": pd.NA,
+                    "departement_code": code,
+                    "departement_name": name.title(),
+                    "indicator_code": "dossiers_deposes",
+                    "indicator_name": "Nombre de dossiers déposés",
+                    "value": float(re.sub(r"\s", "", match.group(1))),
+                    "source_file": path.name,
+                }
+            )
+    return pd.DataFrame(rows, columns=TARGET_COLUMNS)
 
 
 def build_gold_dataset(frames: list[pd.DataFrame]) -> pd.DataFrame:

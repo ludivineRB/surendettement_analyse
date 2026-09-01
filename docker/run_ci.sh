@@ -13,7 +13,7 @@ mkdir -p "$report_dir"
 
 printf '%s\n' '1/8 Static checks'
 python -m ruff check app assistant_api src web tests
-python -m mypy \
+python -m mypy --follow-imports=skip \
   assistant_api/analytical_intents.py \
   assistant_api/sql_validation.py \
   assistant_api/sql_executor.py

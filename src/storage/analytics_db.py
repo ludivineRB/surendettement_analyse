@@ -209,6 +209,9 @@ def _load_surendettement(path: Path) -> pd.DataFrame:
             }
         )
     df["value"] = pd.to_numeric(df["value"], errors="coerce")
+    df["indicator_code"] = df["indicator_code"].replace(
+        {"dossiers_deposes": "surendettement_dossiers_deposes"}
+    )
     df = df.dropna(subset=["reference_year", "departement_code", "value"]).copy()
     return df[
         df["departement_code"].isin(EXPECTED_DEPARTMENT_CODES)

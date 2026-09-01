@@ -7,7 +7,8 @@ from assistant_api.analytics import AnalyticsClient, AnalyticsUnavailable
 
 
 @patch("assistant_api.analytics.requests.get")
-def test_fetch_uses_allowlisted_path_and_bounded_limit(mock_get):
+def test_fetch_uses_allowlisted_path_and_bounded_limit(mock_get, monkeypatch):
+    monkeypatch.delenv("ASSISTANT_INTERNAL_TOKEN", raising=False)
     response = Mock()
     response.json.return_value = [{"indicator_code": "NB_DOSSIERS"}]
     response.raise_for_status.return_value = None
@@ -35,3 +36,18 @@ def test_fetch_hides_transport_details(mock_get):
         AnalyticsClient("http://analytics.test").fetch("indicators")
 
     assert "internal hostname" not in str(error.value)
+
+
+@patch("assistant_api.analytics.requests.get")
+def test_fetch_forwards_configured_internal_token(mock_get, monkeypatch):
+    monkeypatch.setenv("ASSISTANT_INTERNAL_TOKEN", "internal-test-token")
+    response = Mock()
+    response.json.return_value = []
+    response.raise_for_status.return_value = None
+    mock_get.return_value = response
+
+    AnalyticsClient("http://analytics.test").fetch("indicators")
+
+    assert mock_get.call_args.kwargs["headers"] == {
+        "X-Internal-Token": "internal-test-token"
+    }
