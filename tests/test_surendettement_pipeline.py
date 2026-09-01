@@ -10,6 +10,7 @@ from src.surendettement_pipeline import (
     _crawl_and_download,
     _is_relevant_structured_link,
     parse_structured_source,
+    _parse_typology_workbook,
     run_surendettement_pipeline,
 )
 
@@ -166,3 +167,29 @@ def test_targeted_start_url_selects_generic_structured_links(monkeypatch, tmp_pa
 
     assert paths == [downloaded]
     assert summary.files_selected_for_download == 1
+
+
+def test_parse_official_typology_workbook_layout(tmp_path: Path):
+    source = tmp_path / "typologie-2025.xlsx"
+    reference = tmp_path / "departments.csv"
+    pd.DataFrame(
+        [
+            [None, "SURENDETTEMENT – DONNÉES 2025", None, None],
+            [None, None, "NORD", None],
+            [None, "12 345 dépôts de dossiers de surendettement", None, None],
+        ]
+    ).to_excel(
+        source,
+        sheet_name="INDICATEURS-RÉGION-DÉPTS",
+        header=False,
+        index=False,
+    )
+    pd.DataFrame(
+        [{"departement_code": "59", "departement_name": "Nord"}]
+    ).to_csv(reference, index=False)
+
+    result = _parse_typology_workbook(source, department_reference=reference)
+
+    assert result[["reference_year", "departement_code", "value"]].to_dict(
+        "records"
+    ) == [{"reference_year": 2025, "departement_code": "59", "value": 12345.0}]

@@ -6,7 +6,7 @@ import os
 from typing import Literal
 from urllib.parse import quote
 
-import requests
+import requests  # type: ignore[import-untyped]
 
 
 AnalyticsDataset = Literal[
@@ -105,10 +105,18 @@ class AnalyticsClient:
 
     def _get(self, path: str, params: dict) -> object:
         try:
+            request_options: dict = {
+                "params": {
+                    key: value for key, value in params.items() if value is not None
+                },
+                "timeout": self.timeout_seconds,
+            }
+            internal_token = os.getenv("ASSISTANT_INTERNAL_TOKEN", "").strip()
+            if internal_token:
+                request_options["headers"] = {"X-Internal-Token": internal_token}
             response = requests.get(
                 f"{self.base_url}{path}",
-                params={key: value for key, value in params.items() if value is not None},
-                timeout=self.timeout_seconds,
+                **request_options,
             )
             response.raise_for_status()
             return response.json()

@@ -126,7 +126,7 @@ def test_sql_mode_rejects_missing_internal_token(monkeypatch):
             x_internal_token=None,
         )
 
-    assert error.value.status_code == 403
+    assert error.value.status_code == 401
 
 
 @patch("assistant_api.sql_service.record_sql_execution")

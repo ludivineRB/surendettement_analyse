@@ -3,18 +3,21 @@ import logging
 from time import monotonic
 from uuid import uuid4
 
-from fastapi import FastAPI, Response
+from fastapi import Depends, FastAPI, Response
 
 from app.core.config import settings
 from app.core.monitoring import metrics
-from app.views.analytics_api import analytics_api
+from app.views.analytics_api import analytics_api, public_analytics_api
 from app.views.risk_scores_api import risk_scores_api
+from assistant_api.auth import require_internal_token
 
 
 app = FastAPI(title=settings.APP_NAME, version=settings.APP_VERSION)
 logger = logging.getLogger("app.requests")
-app.include_router(analytics_api)
-app.include_router(risk_scores_api)
+app.include_router(public_analytics_api)
+protected = [Depends(require_internal_token)]
+app.include_router(analytics_api, dependencies=protected)
+app.include_router(risk_scores_api, dependencies=protected)
 
 
 @app.middleware("http")
