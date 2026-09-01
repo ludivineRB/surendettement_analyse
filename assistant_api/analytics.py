@@ -6,7 +6,7 @@ import os
 from typing import Literal
 from urllib.parse import quote
 
-import requests  # type: ignore[import-untyped]
+import requests
 
 
 AnalyticsDataset = Literal[
