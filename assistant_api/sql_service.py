@@ -4,10 +4,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import json
+import logging
 import re
 from uuid import UUID, uuid4
 
 from sqlalchemy import Engine
+from sqlalchemy.exc import SQLAlchemyError
 
 from assistant_api.generation import TextGenerator
 from assistant_api.repository import record_sql_execution
@@ -23,6 +25,9 @@ from assistant_api.sql_generation import (
 )
 from assistant_api.sql_validation import SQLValidationError
 from assistant_api.monitoring import metrics
+
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -130,7 +135,14 @@ def run_text_to_sql(
             reason=error_code,
         )
         audit["validation_error"] = error_code
-        record_sql_execution(audit_engine, audit)
+        try:
+            record_sql_execution(audit_engine, audit)
+        except SQLAlchemyError:
+            metrics.increment("assistant_sql_audit_errors_total")
+            logger.warning(
+                "SQL rejection audit could not be persisted",
+                extra={"request_id": str(request_id), "reason": error_code},
+            )
         raise
     audit.update(
         {

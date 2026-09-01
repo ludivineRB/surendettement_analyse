@@ -53,3 +53,54 @@ jobs:
       - name: Show final container state
         if: always()
         run: docker compose --profile ci -f docker/compose.yaml ps --all
+
+  package-assistant:
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build versioned Assistant API image
+        run: >-
+          docker build
+          --file docker/Dockerfile
+          --target assistant-api
+          --tag surendettement-assistant:${{ github.sha }}
+          .
+
+      - name: Smoke test versioned image
+        run: |
+          docker run --detach --rm --name assistant-smoke \
+            --publish 127.0.0.1:8030:8030 \
+            surendettement-assistant:${{ github.sha }}
+          for attempt in $(seq 1 20); do
+            if docker exec assistant-smoke python -c \
+              "import urllib.request; urllib.request.urlopen('http://localhost:8030/health', timeout=2)"; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs assistant-smoke
+          exit 1
+
+      - name: Export versioned image artifact
+        run: |
+          mkdir -p app/reports/delivery
+          docker image inspect surendettement-assistant:${{ github.sha }} \
+            > app/reports/delivery/image-metadata.json
+          docker save surendettement-assistant:${{ github.sha }} \
+            | gzip > app/reports/delivery/surendettement-assistant-${{ github.sha }}.tar.gz
+
+      - name: Publish delivery artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: assistant-image-${{ github.sha }}
+          path: app/reports/delivery/
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Show smoke-test logs
+        if: always()
+        run: docker logs assistant-smoke || true

@@ -49,6 +49,21 @@ tests:
 
   - interval: 1m
     input_series:
+      - series: 'assistant_http_request_duration_seconds_sum'
+        values: '0+600x20'
+      - series: 'assistant_http_request_duration_seconds_count'
+        values: '0+100x20'
+    alert_rule_test:
+      - eval_time: 16m
+        alertname: AssistantLatencyHigh
+        exp_alerts:
+          - exp_labels: {severity: warning}
+            exp_annotations:
+              summary: "Latence moyenne de l'assistant supérieure à 5 secondes"
+              runbook: "LOT-16-RUNBOOK#rag-et-agent-sql"
+
+  - interval: 1m
+    input_series:
       - series: 'assistant_rag_retrievals_total{status="hit"}'
         values: '0+5x35'
       - series: 'assistant_rag_retrievals_total{status="empty"}'

@@ -28,6 +28,7 @@ class DataReference(BaseModel):
 
 class AnswerResponse(BaseModel):
     answer: str
+    decision: Literal["execute", "clarify", "refuse"] = "execute"
     sources: list[SourceReference] = Field(default_factory=list)
     data_references: list[DataReference] = Field(default_factory=list)
     method: Literal["documents", "analytics", "hybrid", "advanced_sql", "refusal"]

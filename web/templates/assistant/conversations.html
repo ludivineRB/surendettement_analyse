@@ -33,6 +33,9 @@
         {% for message in conversation.messages.all %}
           <article class="message message-{{ message.role }}">
             <header>{% if message.role == "user" %}Vous{% else %}Assistant{% endif %}{% if message.method %}<small>{{ message.method }}</small>{% endif %}</header>
+            {% if message.role == "assistant" and message.response_metadata.decision %}
+              <p><strong>Décision :</strong> {{ message.response_metadata.decision }}</p>
+            {% endif %}
             <div>{{ message.content|linebreaksbr }}</div>
             {% if message.citations %}
               <details><summary>Sources et données</summary><ul>

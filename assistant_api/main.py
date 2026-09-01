@@ -112,6 +112,17 @@ def prometheus_metrics() -> str:
     return prometheus.render()
 
 
+@app.get("/monitoring/summary", dependencies=[Depends(require_internal_token)])
+def monitoring_summary() -> dict[str, object]:
+    return prometheus.summary()
+
+
+def _record_decision(decision: str, category: str) -> None:
+    prometheus.increment(
+        "assistant_decisions_total", decision=decision, category=category
+    )
+
+
 @app.post("/v1/retrieval/search", response_model=RetrievalResponse)
 def retrieval_search(
     request: RetrievalRequest,
@@ -142,6 +153,7 @@ def answer_question(
     analytics_client: AnalyticsClient = Depends(AnalyticsClient),
     generator: TextGenerator = Depends(get_text_generator),
     x_internal_token: str | None = Depends(get_internal_token),
+    _authenticated: None = Depends(require_internal_token),
 ) -> AnswerResponse:
     request_id = uuid4()
     category = classify_question(request.question, request.mode)
@@ -152,8 +164,10 @@ def answer_question(
             if category == "sensitive_or_individual_request"
             else "Cette demande est trop large ou ne correspond pas aux analyses autorisées."
         )
+        _record_decision("refuse", category)
         return AnswerResponse(
             answer=answer,
+            decision="refuse",
             sources=[],
             data_references=[],
             method="refusal",
@@ -179,8 +193,10 @@ def answer_question(
                 analytical_sql=sql_result.sql_execution.validated.sql,
             )
         except SQLClarificationRequired as exc:
+            _record_decision("clarify", category)
             return AnswerResponse(
                 answer=str(exc),
+                decision="clarify",
                 sources=[],
                 data_references=[],
                 method="refusal",
@@ -190,6 +206,8 @@ def answer_question(
         except Exception as exc:
             if isinstance(exc, HTTPException):
                 raise
+            if isinstance(exc, GeneratorUnavailable):
+                prometheus.increment("assistant_provider_errors_total")
             raise HTTPException(status_code=503, detail="Analyse SQL indisponible.") from exc
         row_count = len(sql_result.sql_execution.rows)
         if row_count == 0:
@@ -217,6 +235,11 @@ def answer_question(
                     "est temporairement indisponible ; consultez le SQL généré "
                     "et les résultats ci-dessous."
                 )
+        _record_decision("execute", category)
+        prometheus.increment(
+            "assistant_model_requests_total",
+            model=os.getenv("OPENAI_MODEL", "unknown"),
+        )
         return AnswerResponse(
             answer=answer,
             sources=[],
@@ -240,11 +263,13 @@ def answer_question(
             generator,
         )
     except InsufficientGrounding:
+        _record_decision("refuse", category)
         return AnswerResponse(
-            answer=(
+                answer=(
                 "Les sources approuvées disponibles ne permettent pas de "
                 "répondre à cette question de façon fiable."
-            ),
+                ),
+                decision="refuse",
             sources=[],
             data_references=[],
             method="refusal",
@@ -252,13 +277,11 @@ def answer_question(
             request_id=request_id,
         )
     except (AnalyticsUnavailable, GeneratorUnavailable, SQLAlchemyError) as exc:
+        if isinstance(exc, GeneratorUnavailable):
+            prometheus.increment("assistant_provider_errors_total")
         raise HTTPException(
             status_code=503,
-            detail={
-                "status": "not_ready",
-                "detail": str(exc),
-                "request_id": str(request_id),
-            },
+            detail="Service IA temporairement indisponible.",
         ) from exc
     sources = [
         SourceReference(
@@ -294,6 +317,11 @@ def answer_question(
         )
         for row in context.analytics_rows[:100]
     ]
+    _record_decision("execute", category)
+    prometheus.increment(
+        "assistant_model_requests_total",
+        model=os.getenv("OPENAI_MODEL", "unknown"),
+    )
     return AnswerResponse(
         answer=answer,
         sources=sources,

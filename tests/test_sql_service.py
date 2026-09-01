@@ -2,9 +2,10 @@ from unittest.mock import Mock, patch
 from uuid import uuid4
 
 import pytest
+from sqlalchemy.exc import SQLAlchemyError
 
 from assistant_api.sql_executor import SQLExecutionResult
-from assistant_api.sql_service import run_text_to_sql
+from assistant_api.sql_service import SQLClarificationRequired, run_text_to_sql
 from assistant_api.sql_validation import SQLValidationError, ValidatedSQL
 
 
@@ -61,3 +62,19 @@ def test_rejected_sql_is_audited_and_not_hidden(execute, record):
 
     assert record.call_args.args[1]["validation_status"] == "rejected"
     assert record.call_args.args[1]["validation_error"] == "read_only_required"
+
+
+@patch("assistant_api.sql_service.record_sql_execution")
+def test_audit_failure_does_not_mask_clarification(record):
+    record.side_effect = SQLAlchemyError("audit table unavailable")
+
+    with pytest.raises(SQLClarificationRequired, match="indicateur"):
+        run_text_to_sql(
+            "Compare Paris et Lyon.",
+            generator=Mock(),
+            readonly_engine=Mock(),
+            audit_engine=Mock(),
+            request_id=uuid4(),
+            actor_id="demonstration-e3",
+            model_version="test",
+        )
