@@ -23,7 +23,6 @@ def test_fetch_uses_allowlisted_path_and_bounded_limit(mock_get):
     mock_get.assert_called_once_with(
         "http://analytics.test/api/data/surendettement",
         params={"reference_year": 2024, "limit": 500},
-        headers=None,
         timeout=5,
     )
 

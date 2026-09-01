@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Annotated
+
 from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy import select
 
@@ -211,7 +213,9 @@ def list_departments(
     responses={401: {"description": "Jeton absent"}, 403: {"description": "Jeton invalide"}},
 )
 def list_indicators(
-    source_system: str | None = Query(None, description="Système source exact"),
+    source_system: Annotated[
+        str | None, Query(description="Système source exact")
+    ] = None,
     limit: int = Query(200, ge=1, le=500, description="Nombre maximal de lignes"),
     offset: int = Query(0, ge=0, description="Décalage de pagination"),
 ) -> list[dict]:
@@ -282,9 +286,16 @@ def list_bdf_facts(
     responses={401: {"description": "Jeton absent"}, 403: {"description": "Jeton invalide"}},
 )
 def list_surendettement_data(
-    departement_code: str | None = Query(None, description="Code département"),
-    indicator_code: str | None = Query(None, description="Code indicateur exact"),
-    reference_year: int | None = Query(None, ge=1900, le=2100, description="Année de référence"),
+    departement_code: Annotated[
+        str | None, Query(description="Code département")
+    ] = None,
+    indicator_code: Annotated[
+        str | None, Query(description="Code indicateur exact")
+    ] = None,
+    reference_year: Annotated[
+        int | None,
+        Query(ge=1900, le=2100, description="Année de référence"),
+    ] = None,
     limit: int = Query(100, ge=1, le=500, description="Nombre maximal de lignes"),
     offset: int = Query(0, ge=0, description="Décalage de pagination"),
 ) -> list[dict]:
