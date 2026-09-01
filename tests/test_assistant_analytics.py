@@ -7,7 +7,8 @@ from assistant_api.analytics import AnalyticsClient, AnalyticsUnavailable
 
 
 @patch("assistant_api.analytics.requests.get")
-def test_fetch_uses_allowlisted_path_and_bounded_limit(mock_get):
+def test_fetch_uses_allowlisted_path_and_bounded_limit(mock_get, monkeypatch):
+    monkeypatch.delenv("ASSISTANT_INTERNAL_TOKEN", raising=False)
     response = Mock()
     response.json.return_value = [{"indicator_code": "NB_DOSSIERS"}]
     response.raise_for_status.return_value = None
