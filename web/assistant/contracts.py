@@ -16,6 +16,7 @@ def validate_answer(payload: Any) -> dict:
         raise AssistantResponseError("answer response must be an object")
     required = {
         "answer",
+        "decision",
         "sources",
         "data_references",
         "method",
@@ -35,6 +36,8 @@ def validate_answer(payload: Any) -> dict:
         "documents", "analytics", "hybrid", "advanced_sql", "refusal"
     }:
         raise AssistantResponseError("answer method is invalid")
+    if payload["decision"] not in {"execute", "clarify", "refuse"}:
+        raise AssistantResponseError("answer decision is invalid")
     if not isinstance(payload["answer"], str) or not payload["answer"].strip():
         raise AssistantResponseError("answer text is empty")
     if not isinstance(payload["sources"], list):

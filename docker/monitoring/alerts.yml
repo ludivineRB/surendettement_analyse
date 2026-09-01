@@ -26,6 +26,15 @@ groups:
         annotations:
           summary: "Taux d'erreur assistant supérieur à 2 %"
           runbook: "LOT-16-RUNBOOK#rag-et-agent-sql"
+      - alert: AssistantLatencyHigh
+        expr: >-
+          sum(rate(assistant_http_request_duration_seconds_sum[5m]))
+          / clamp_min(sum(rate(assistant_http_request_duration_seconds_count[5m])), 0.001) > 5
+        for: 10m
+        labels: {severity: warning}
+        annotations:
+          summary: "Latence moyenne de l'assistant supérieure à 5 secondes"
+          runbook: "LOT-16-RUNBOOK#rag-et-agent-sql"
       - alert: RagEmptyResultsHigh
         expr: >-
           sum(rate(assistant_rag_retrievals_total{status="empty"}[15m]))

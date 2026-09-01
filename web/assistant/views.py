@@ -74,6 +74,7 @@ def _conversations(request, kind, conversation_id):
                 citations=citations,
                 generated_sql=response["generated_sql"] or "",
                 response_metadata={
+                    "decision": response["decision"],
                     "interpreted_filters": response["interpreted_filters"],
                     "result_rows": response["result_rows"],
                     "sql_execution_id": response["sql_execution_id"],

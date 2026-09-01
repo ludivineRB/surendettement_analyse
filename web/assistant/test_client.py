@@ -14,6 +14,7 @@ class AssistantClientTests(SimpleTestCase):
         response.raise_for_status.return_value = None
         response.json.return_value = {
             "answer": "Réponse [S1]",
+            "decision": "execute",
             "sources": [],
             "data_references": [],
             "method": "documents",
@@ -37,7 +38,8 @@ class AssistantClientTests(SimpleTestCase):
         response = Mock()
         response.raise_for_status.return_value = None
         response.json.return_value = {
-            "answer": "Résultat [D1]", "sources": [], "data_references": [],
+            "answer": "Résultat [D1]", "decision": "execute",
+            "sources": [], "data_references": [],
             "method": "advanced_sql", "category": "advanced_sql",
             "interpreted_filters": {}, "result_rows": [{"score": 42}],
             "generated_sql": "SELECT score FROM analytics_risk_scores LIMIT 1",
@@ -62,6 +64,27 @@ class AssistantClientTests(SimpleTestCase):
         with self.assertRaisesMessage(AssistantAPIError, "trop de temps"):
             client.answer("Question métier")
 
+    def test_information_mode_sends_internal_token(self):
+        response = Mock()
+        response.raise_for_status.return_value = None
+        response.json.return_value = {
+            "answer": "Réponse", "decision": "execute", "sources": [],
+            "data_references": [], "method": "documents",
+            "category": "documentary_question", "interpreted_filters": {},
+            "result_rows": [], "generated_sql": None,
+            "sql_execution_id": None, "request_id": str(uuid4()),
+        }
+        session = Mock()
+        session.post.return_value = response
+
+        with self.settings(ASSISTANT_INTERNAL_TOKEN="internal-test-token"):
+            AssistantClient("http://assistant.test", 3, session).answer("Question")
+
+        self.assertEqual(
+            session.post.call_args.kwargs["headers"]["X-Internal-Token"],
+            "internal-test-token",
+        )
+
     def test_invalid_response_is_rejected(self):
         response = Mock()
         response.raise_for_status.return_value = None
@@ -72,3 +95,23 @@ class AssistantClientTests(SimpleTestCase):
 
         with self.assertRaisesMessage(AssistantAPIError, "invalide"):
             client.answer("Question métier")
+
+    def test_authentication_error_has_safe_ui_message(self):
+        response = Mock()
+        response.raise_for_status.side_effect = requests.HTTPError(response=response)
+        response.status_code = 401
+        session = Mock()
+        session.post.return_value = response
+
+        with self.assertRaisesMessage(AssistantAPIError, "n’est pas autorisé"):
+            AssistantClient("http://assistant.test", 1, session).answer("Question")
+
+    def test_server_error_has_safe_ui_message(self):
+        response = Mock()
+        response.raise_for_status.side_effect = requests.HTTPError(response=response)
+        response.status_code = 503
+        session = Mock()
+        session.post.return_value = response
+
+        with self.assertRaisesMessage(AssistantAPIError, "temporairement indisponible"):
+            AssistantClient("http://assistant.test", 1, session).answer("Question")

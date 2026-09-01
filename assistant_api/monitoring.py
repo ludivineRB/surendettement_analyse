@@ -38,5 +38,35 @@ class AssistantMetrics:
             lines.append(f"{name}{suffix} {value:g}")
         return "\n".join(lines) + "\n"
 
+    def total(self, name: str, **labels: str) -> float:
+        """Return an aggregate without exposing the mutable metrics store."""
+        expected = {key: str(value) for key, value in labels.items()}
+        with self._lock:
+            return sum(
+                value
+                for (metric_name, metric_labels), value in self._values.items()
+                if metric_name == name
+                and expected.items() <= dict(metric_labels).items()
+            )
+
+    def summary(self) -> dict[str, object]:
+        decisions = {
+            decision: int(self.total("assistant_decisions_total", decision=decision))
+            for decision in ("execute", "clarify", "refuse")
+        }
+        duration_count = self.total("assistant_http_request_duration_seconds_count")
+        duration_sum = self.total("assistant_http_request_duration_seconds_sum")
+        return {
+            "decisions": decisions,
+            "provider_errors": int(self.total("assistant_provider_errors_total")),
+            "sql_validation_errors": int(
+                self.total("assistant_sql_executions_total", status="rejected")
+            ),
+            "average_http_latency_seconds": (
+                duration_sum / duration_count if duration_count else 0.0
+            ),
+            "persistence": "process_memory",
+        }
+
 
 metrics = AssistantMetrics()

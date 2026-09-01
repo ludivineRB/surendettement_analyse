@@ -41,6 +41,7 @@ class AssistantViewTests(TestCase):
     def test_successful_answer_is_persisted_with_provenance(self, answer):
         answer.return_value = {
             "answer": "L’inflation est mesurée par l’IPC. [S1]",
+            "decision": "execute",
             "sources": [
                 {
                     "title": "Définition IPC",
@@ -79,6 +80,7 @@ class AssistantViewTests(TestCase):
             ],
         )
         self.assertEqual(messages[1].method, "documents")
+        self.assertEqual(messages[1].response_metadata["decision"], "execute")
         self.assertEqual(messages[1].citations[0]["publisher"], "Insee")
 
     def test_viewer_cannot_access_sql_assistant(self):

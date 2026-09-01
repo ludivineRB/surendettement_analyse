@@ -45,8 +45,7 @@ class AssistantClient:
             payload["conversation_id"] = str(conversation_id)
         try:
             headers = {"Accept": "application/json"}
-            if mode == "sql":
-                headers["X-Internal-Token"] = settings.ASSISTANT_INTERNAL_TOKEN
+            headers["X-Internal-Token"] = settings.ASSISTANT_INTERNAL_TOKEN
             response = self.session.post(
                 f"{self.base_url}/v1/answers",
                 json=payload,
@@ -63,6 +62,16 @@ class AssistantClient:
             raise AssistantAPIError(
                 "La réponse de l’assistant est invalide."
             ) from exc
+        except requests.HTTPError as exc:
+            status = exc.response.status_code if exc.response is not None else 0
+            if status in {401, 403}:
+                message = "L’accès au service assistant n’est pas autorisé."
+            elif 400 <= status < 500:
+                message = "La demande n’a pas été acceptée par l’assistant."
+            else:
+                message = "L’assistant est temporairement indisponible."
+            logger.warning("Assistant API returned HTTP status %s", status)
+            raise AssistantAPIError(message) from exc
         except requests.RequestException as exc:
             logger.warning("Assistant API request failed")
             raise AssistantAPIError(

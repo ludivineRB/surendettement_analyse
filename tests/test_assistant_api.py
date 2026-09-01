@@ -1,9 +1,13 @@
 import pytest
 from fastapi import HTTPException
+from fastapi.testclient import TestClient
 
 from unittest.mock import Mock, patch
 
-from assistant_api.main import answer_question, health, metrics, retrieval_search
+from assistant_api.main import app, answer_question, health, metrics, retrieval_search
+from assistant_api.generation import GeneratorUnavailable
+from assistant_api.openai_provider import get_text_generator
+from assistant_api.storage import get_engine
 from assistant_api.schemas import AnswerRequest, RetrievalRequest
 from assistant_api.sql_service import SQLClarificationRequired, run_text_to_sql
 
@@ -15,8 +19,70 @@ def test_health_identifies_assistant_service():
     }
 
 
+@pytest.fixture
+def http_client():
+    app.dependency_overrides[get_engine] = lambda: Mock()
+    app.dependency_overrides[get_text_generator] = lambda: Mock()
+    try:
+        yield TestClient(app)
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_health_is_public_and_does_not_call_provider(http_client):
+    response = http_client.get("/health")
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "ok"
+
+
+def test_answer_http_requires_authentication(http_client, monkeypatch):
+    monkeypatch.setenv("ASSISTANT_INTERNAL_TOKEN", "expected-token")
+
+    response = http_client.post(
+        "/v1/answers", json={"question": "Question métier"}
+    )
+
+    assert response.status_code == 401
+
+
+def test_answer_http_rejects_incorrect_authentication(http_client, monkeypatch):
+    monkeypatch.setenv("ASSISTANT_INTERNAL_TOKEN", "expected-token")
+
+    response = http_client.post(
+        "/v1/answers",
+        json={"question": "Question métier"},
+        headers={"X-Internal-Token": "wrong-token"},
+    )
+
+    assert response.status_code == 403
+
+
+def test_answer_http_validates_input(http_client, monkeypatch):
+    monkeypatch.setenv("ASSISTANT_INTERNAL_TOKEN", "expected-token")
+
+    response = http_client.post(
+        "/v1/answers",
+        json={"question": "x"},
+        headers={"X-Internal-Token": "expected-token"},
+    )
+
+    assert response.status_code == 422
+
+
 def test_metrics_contract_is_machine_readable():
     assert isinstance(metrics(), dict)
+
+
+def test_openapi_documents_answer_authentication_and_decision():
+    schema = app.openapi()
+
+    operation = schema["paths"]["/v1/answers"]["post"]
+    response_schema = schema["components"]["schemas"]["AnswerResponse"]
+    assert {"InternalToken": []} in operation["security"]
+    assert response_schema["properties"]["decision"]["enum"] == [
+        "execute", "clarify", "refuse"
+    ]
 
 
 def test_answer_request_accepts_django_numeric_conversation_id():
@@ -36,6 +102,7 @@ def test_answer_refuses_to_invent_when_no_approved_evidence_exists():
     response = answer_question(request, Mock(), analytics, Mock())
 
     assert response.method == "refusal"
+    assert response.decision == "refuse"
     assert response.category == "structured_analytics"
     assert response.sources == []
     assert response.data_references == []
@@ -71,6 +138,7 @@ def test_answer_returns_method_and_citations(build_context):
     )
 
     assert response.method == "documents"
+    assert response.decision == "execute"
     assert response.answer == "Réponse [S1]"
     assert response.sources[0].publisher == "Insee"
 
@@ -186,9 +254,27 @@ def test_sql_mode_returns_clarification_instead_of_service_error(
     )
 
     assert response.method == "refusal"
+    assert response.decision == "clarify"
     assert response.category == "advanced_sql"
     assert "indicateur" in response.answer
     assert response.generated_sql is None
+
+
+@patch("assistant_api.main.build_grounding_context")
+def test_provider_error_is_normalized_without_remote_detail(build_context):
+    build_context.side_effect = GeneratorUnavailable("secret-remote-detail")
+
+    with pytest.raises(HTTPException) as error:
+        answer_question(
+            AnswerRequest(question="Expliquez le taux de chômage"),
+            Mock(),
+            Mock(),
+            Mock(),
+        )
+
+    assert error.value.status_code == 503
+    assert error.value.detail == "Service IA temporairement indisponible."
+    assert "secret" not in str(error.value.detail)
 
 
 @patch("assistant_api.main.search_active_chunks")
