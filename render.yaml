@@ -1,0 +1,113 @@
+services:
+  - type: pserv
+    name: surendettement-staging-api
+    runtime: docker
+    plan: 0.5c-512mb
+    region: frankfurt
+    dockerfilePath: ./docker/Dockerfile
+    dockerContext: .
+    dockerCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    preDeployCommand: >-
+      python -c "from src.storage.schema_migrations import apply_migrations;
+      print(apply_migrations())"
+    envVars:
+      - key: APP_ENV
+        value: staging
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: surendettement-staging-db
+          property: connectionString
+      - key: ANALYTICS_DATABASE_URL
+        fromDatabase:
+          name: surendettement-staging-db
+          property: connectionString
+      - key: ASSISTANT_INTERNAL_TOKEN
+        generateValue: true
+
+  - type: pserv
+    name: surendettement-staging-assistant
+    runtime: docker
+    plan: 0.5c-512mb
+    region: frankfurt
+    dockerfilePath: ./docker/Dockerfile
+    dockerContext: .
+    dockerCommand: uvicorn assistant_api.main:app --host 0.0.0.0 --port $PORT
+    preDeployCommand: python -m assistant_api.cli migrate
+    envVars:
+      - key: APP_ENV
+        value: staging
+      - key: PORT
+        value: 10000
+      - key: ASSISTANT_DATABASE_URL
+        fromDatabase:
+          name: surendettement-staging-db
+          property: connectionString
+      - key: ANALYTICS_API_BASE_URL
+        fromService:
+          name: surendettement-staging-api
+          type: pserv
+          property: hostport
+      - key: ASSISTANT_INTERNAL_TOKEN
+        fromService:
+          name: surendettement-staging-api
+          type: pserv
+          envVarKey: ASSISTANT_INTERNAL_TOKEN
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-5.6-terra
+      - key: ANALYTICS_READONLY_DATABASE_URL
+        sync: false
+
+  - type: web
+    name: surendettement-staging-web
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./docker/Dockerfile
+    dockerContext: .
+    dockerCommand: gunicorn web.config.wsgi:application --bind 0.0.0.0:$PORT
+    preDeployCommand: >-
+      python web/manage.py migrate --noinput &&
+      python web/manage.py collectstatic --noinput
+    healthCheckPath: /health/ready/
+    envVars:
+      - key: APP_ENV
+        value: staging
+      - key: DATABASE_URL
+        fromDatabase:
+          name: surendettement-staging-db
+          property: connectionString
+      - key: ANALYTICS_API_BASE_URL
+        fromService:
+          name: surendettement-staging-api
+          type: pserv
+          property: hostport
+      - key: ASSISTANT_API_BASE_URL
+        fromService:
+          name: surendettement-staging-assistant
+          type: pserv
+          property: hostport
+      - key: ASSISTANT_INTERNAL_TOKEN
+        fromService:
+          name: surendettement-staging-api
+          type: pserv
+          envVarKey: ASSISTANT_INTERNAL_TOKEN
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DJANGO_DEBUG
+        value: false
+      - key: DJANGO_SECURE_COOKIES
+        value: true
+      - key: DJANGO_TRUST_PROXY_HEADERS
+        value: true
+
+databases:
+  - name: surendettement-staging-db
+    plan: free
+    region: frankfurt
+    databaseName: surendettement_staging
+    user: surendettement_staging
+    ipAllowList: []

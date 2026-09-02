@@ -51,3 +51,9 @@ def test_fetch_forwards_configured_internal_token(mock_get, monkeypatch):
     assert mock_get.call_args.kwargs["headers"] == {
         "X-Internal-Token": "internal-test-token"
     }
+
+
+def test_render_private_hostport_gets_http_scheme():
+    client = AnalyticsClient(base_url="analytics-api:10000")
+
+    assert client.base_url == "http://analytics-api:10000"

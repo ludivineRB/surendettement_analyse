@@ -18,14 +18,13 @@ readiness reste destiné à l'environnement complet avec PostgreSQL.
 
 ## Publication et staging
 
-Aucun registry, credential, serveur ou nom de domaine réel n'est configuré dans le
-dépôt. Il n'existe donc volontairement aucun push. `docker/compose.staging.yaml` est un
-overlay de configuration et ne constitue pas une cible de déploiement.
+Le pipeline GitHub réellement validé reste inchangé jusqu'à l'artifact. `render.yaml`
+prépare maintenant PostgreSQL, deux services privés et Django public. Le Blueprint est
+une configuration de staging, pas la preuve d'un déploiement réussi.
 
-Pour publier réellement, il faudra choisir un registry, créer un dépôt d'images et
-fournir à GitHub un secret d'identité avec droit d'écriture. Pour staging, il faudra une
-cible, son mécanisme d'accès, ses variables/secrets et une URL de health. Ces éléments
-ne doivent jamais être inscrits en clair dans Git.
+La connexion GitHub/Render, la saisie des secrets, **Deploy Blueprint**, l'import des
+données et les contrôles restent manuels. Aucun déploiement Render n'est ajouté à GitHub
+Actions avant validation du premier staging. Voir `C13_RENDER_STAGING.md`.
 
 ## Rollback documenté
 

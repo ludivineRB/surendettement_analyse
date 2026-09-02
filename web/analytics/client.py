@@ -33,9 +33,12 @@ class AnalyticsClient:
         timeout: float | None = None,
         session=None,
     ):
-        self.base_url = (
+        configured_url = (
             base_url or settings.ANALYTICS_API_BASE_URL
-        ).rstrip("/")
+        )
+        if "://" not in configured_url:
+            configured_url = f"http://{configured_url}"
+        self.base_url = configured_url.rstrip("/")
         self.timeout = timeout or settings.ANALYTICS_API_TIMEOUT_SECONDS
         self.session = session or requests.Session()
 

@@ -13,6 +13,10 @@ class AssistantDatabaseConfigurationError(RuntimeError):
 
 def get_database_url() -> str:
     database_url = os.getenv("ASSISTANT_DATABASE_URL", "").strip()
+    if database_url.startswith("postgresql://"):
+        database_url = database_url.replace(
+            "postgresql://", "postgresql+psycopg://", 1
+        )
     if not database_url.startswith("postgresql+psycopg://"):
         raise AssistantDatabaseConfigurationError(
             "ASSISTANT_DATABASE_URL must use postgresql+psycopg"
