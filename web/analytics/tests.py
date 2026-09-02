@@ -1,7 +1,7 @@
 from unittest.mock import Mock
 
 import requests
-from django.test import SimpleTestCase
+from django.test import SimpleTestCase, override_settings
 
 from web.analytics.client import AnalyticsAPIError, AnalyticsClient
 
@@ -32,6 +32,7 @@ class AnalyticsClientTests(SimpleTestCase):
             session=session,
         ), session
 
+    @override_settings(ASSISTANT_INTERNAL_TOKEN="internal-test-token")
     def test_list_scores_validates_response_and_passes_filters(self):
         client, session = self.client_with_response([SCORE])
         result = client.list_scores(
@@ -44,6 +45,10 @@ class AnalyticsClientTests(SimpleTestCase):
             "59",
         )
         self.assertEqual(session.get.call_args.kwargs["timeout"], 2)
+        self.assertEqual(
+            session.get.call_args.kwargs["headers"]["X-Internal-Token"],
+            "internal-test-token",
+        )
 
     def test_series_escapes_path_and_validates_nested_scores(self):
         client, session = self.client_with_response(
