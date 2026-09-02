@@ -47,6 +47,8 @@ services:
           name: surendettement-staging-api
           type: web
           envVarKey: RENDER_EXTERNAL_URL
+      - key: ANALYTICS_API_TIMEOUT_SECONDS
+        value: 90
       - key: ASSISTANT_INTERNAL_TOKEN
         fromService:
           name: surendettement-staging-api
@@ -85,6 +87,10 @@ services:
           name: surendettement-staging-assistant
           type: web
           envVarKey: RENDER_EXTERNAL_URL
+      - key: ANALYTICS_API_TIMEOUT_SECONDS
+        value: 90
+      - key: ASSISTANT_API_TIMEOUT_SECONDS
+        value: 90
       - key: ASSISTANT_INTERNAL_TOKEN
         fromService:
           name: surendettement-staging-api
@@ -111,6 +117,8 @@ services:
     envVars:
       - key: APP_ENV
         value: staging
+      - key: SURENDETTEMENT_API_TIMEOUT
+        value: 90
       - key: SURENDETTEMENT_API_BASE_URL
         fromService:
           name: surendettement-staging-api
