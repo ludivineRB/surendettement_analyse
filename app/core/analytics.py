@@ -19,12 +19,7 @@ def analytics_connection(
     db_path: str | None = None,
 ) -> Iterator[sqlite3.Connection | Connection]:
     if settings.ANALYTICS_DATABASE_URL and db_path is None:
-        database_url = settings.ANALYTICS_DATABASE_URL
-        if database_url.startswith("postgresql://"):
-            database_url = database_url.replace(
-                "postgresql://", "postgresql+psycopg://", 1
-            )
-        engine = create_engine(database_url, future=True)
+        engine = create_engine(settings.ANALYTICS_DATABASE_URL, future=True)
         with engine.begin() as connection:
             ensure_override_table(connection)
             yield connection

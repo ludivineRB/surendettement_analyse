@@ -20,11 +20,6 @@ SCORE = {
 
 
 class AnalyticsClientTests(SimpleTestCase):
-    def test_render_private_hostport_gets_http_scheme(self):
-        client = AnalyticsClient("analytics-api:10000", 3, Mock())
-
-        self.assertEqual(client.base_url, "http://analytics-api:10000")
-
     def client_with_response(self, payload):
         response = Mock()
         response.json.return_value = payload
@@ -39,21 +34,16 @@ class AnalyticsClientTests(SimpleTestCase):
 
     def test_list_scores_validates_response_and_passes_filters(self):
         client, session = self.client_with_response([SCORE])
-        with self.settings(ASSISTANT_INTERNAL_TOKEN="render-token"):
-            result = client.list_scores(
-                geographic_level="department",
-                geographic_code="59",
-            )
+        result = client.list_scores(
+            geographic_level="department",
+            geographic_code="59",
+        )
         self.assertEqual(result[0]["score"], 42.5)
         self.assertEqual(
             session.get.call_args.kwargs["params"]["geographic_code"],
             "59",
         )
         self.assertEqual(session.get.call_args.kwargs["timeout"], 2)
-        self.assertEqual(
-            session.get.call_args.kwargs["headers"]["X-Internal-Token"],
-            "render-token",
-        )
 
     def test_series_escapes_path_and_validates_nested_scores(self):
         client, session = self.client_with_response(

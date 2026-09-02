@@ -24,12 +24,9 @@ class AssistantClient:
         timeout: float | None = None,
         session=None,
     ) -> None:
-        configured_url = (
+        self.base_url = (
             base_url or settings.ASSISTANT_API_BASE_URL
-        )
-        if "://" not in configured_url:
-            configured_url = f"http://{configured_url}"
-        self.base_url = configured_url.rstrip("/")
+        ).rstrip("/")
         self.timeout = timeout or settings.ASSISTANT_API_TIMEOUT_SECONDS
         self.session = session or requests.Session()
 

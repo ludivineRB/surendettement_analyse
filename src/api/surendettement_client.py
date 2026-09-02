@@ -5,11 +5,7 @@ from __future__ import annotations
 import pandas as pd
 import requests
 
-from config.settings import (
-    ANALYTICS_API_TOKEN,
-    API_TIMEOUT_SECONDS,
-    SURENDETTEMENT_API_URL,
-)
+from config.settings import API_TIMEOUT_SECONDS, SURENDETTEMENT_API_URL
 
 
 class SurendettementApiError(RuntimeError):
@@ -19,11 +15,7 @@ class SurendettementApiError(RuntimeError):
 def fetch_surendettement_api(api_url: str = SURENDETTEMENT_API_URL) -> pd.DataFrame:
     """Fetch joined analytical rows from the API and return a dataframe."""
     try:
-        response = requests.get(
-            api_url,
-            timeout=API_TIMEOUT_SECONDS,
-            headers={"X-Internal-Token": ANALYTICS_API_TOKEN},
-        )
+        response = requests.get(api_url, timeout=API_TIMEOUT_SECONDS)
         response.raise_for_status()
     except requests.RequestException as exc:
         raise SurendettementApiError(

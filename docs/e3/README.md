@@ -19,8 +19,6 @@ flowchart LR
   CI --> B[Build image tag SHA]
   B --> S[Health et smoke test]
   S --> R[Artifact image]
-  G --> RB[Blueprint Render préparé]
-  RB -. Apply manuel .-> ST[Staging non encore validé]
 ```
 
 ## Matrice de preuves
@@ -32,15 +30,6 @@ flowchart LR
 | C11 | `assistant_api/monitoring.py`, `docker/monitoring/` | synthèse et dashboard après requêtes |
 | C12 | tests et `.github/workflows/ci.yml` | pytest et exécution GitHub verte |
 | C13 | job `package-assistant` | tag SHA, smoke test et artifact téléchargé |
-
-## État C13
-
-- Réellement validé : tests GitHub, build Docker, tag SHA, smoke test et artifact.
-- Préparé dans le dépôt : Blueprint Render dans `render.yaml`.
-- Encore manuel : connexion Render, secrets, Apply, import PostgreSQL, healthchecks et
-  captures. Le staging n'est pas présenté comme opérationnel avant ces contrôles.
-
-La procédure détaillée est dans `docs/e3/C13_RENDER_STAGING.md`.
 
 ## Démonstration locale
 
