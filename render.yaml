@@ -116,6 +116,11 @@ services:
           name: surendettement-staging-api
           type: web
           envVarKey: RENDER_EXTERNAL_URL
+      - key: ASSISTANT_INTERNAL_TOKEN
+        fromService:
+          name: surendettement-staging-api
+          type: web
+          envVarKey: ASSISTANT_INTERNAL_TOKEN
 
 databases:
   - name: surendettement-staging-db
