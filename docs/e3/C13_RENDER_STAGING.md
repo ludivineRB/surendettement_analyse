@@ -7,9 +7,11 @@ Ce document prépare un vrai staging mais ne prétend pas qu'il est déjà dépl
 ```mermaid
 flowchart LR
   I[Internet] --> W[Django web public]
-  W --> A[Assistant API privée]
-  W --> D[API analytique privée]
-  A --> D
+  I --> S[Streamlit public]
+  W -->|HTTPS public| A[Assistant API publique]
+  W -->|HTTPS public| D[API analytique publique]
+  S -->|HTTPS public| D
+  A -->|HTTPS public| D
   A --> O[OpenAI]
   W --> P[(Render PostgreSQL)]
   A --> P
@@ -22,15 +24,17 @@ construit son dernier stage puis remplace la commande selon le service.
 
 | Service | Visibilité | Commande | Port | Health | Dépendances |
 |---|---|---|---:|---|---|
-| `surendettement-staging-web` | public | Gunicorn Django | `$PORT` | `/health/ready/` | DB, API, Assistant |
-| `surendettement-staging-api` | privé | Uvicorn `app.main` | 10000 | TCP Render, HTTP `/api/data/health` | DB |
-| `surendettement-staging-assistant` | privé | Uvicorn `assistant_api.main` | 10000 | TCP Render, HTTP `/health` | DB, API, OpenAI |
+| `surendettement-staging-web` | public | Gunicorn Django | `$PORT` | `/health/live/` | DB, API, Assistant |
+| `surendettement-staging-api` | public | Uvicorn `app.main` | `$PORT` | `/health/live` | DB |
+| `surendettement-staging-assistant` | public | Uvicorn `assistant_api.main` | `$PORT` | `/health/live` | DB, API, OpenAI |
 | `surendettement-staging-db` | privé | PostgreSQL managé | 5432 | géré par Render | aucune |
+| `surendettement-staging-streamlit` | public | Streamlit | `$PORT` | `/_stcore/health` | API |
 
-Les services privés nécessitent un plan payant. Les rendre publics uniquement pour
-éviter ce coût dégraderait l'isolation. Render ne propose pas de health check HTTP pour
-un service privé : son contrôle natif est TCP. Les endpoints HTTP restent testables
-depuis le Shell Render du service.
+Les quatre applications sont explicitement des Web Services `free`. Render interdit
+aux Web Services gratuits de recevoir du trafic privé : les appels inter-services
+utilisent donc les URL HTTPS publiques attribuées par Render. Le Blueprint les récupère
+avec `fromService.envVarKey: RENDER_EXTERNAL_URL` ; aucun hostname n'est fabriqué.
+PostgreSQL reste privé grâce à `fromDatabase.connectionString` et `ipAllowList: []`.
 
 ## Secrets à renseigner
 
@@ -48,21 +52,22 @@ entre services sans l'inscrire dans Git. `OPENAI_MODEL` reste configurable.
 4. Pousser la branche validée : Render ne voit pas le dépôt local.
 5. Choisir **New > Blueprint** puis sélectionner le dépôt et la branche.
 6. Conserver le chemin `render.yaml`.
-7. Vérifier les quatre ressources et la région `Frankfurt`.
+7. Vérifier les cinq ressources, leur plan `Free` et la région `Frankfurt`.
 8. Saisir les secrets demandés, sans les inclure dans une capture.
 9. Cliquer sur **Deploy Blueprint** et suivre séparément les builds.
 10. Attendre Django healthy sans conclure que les données métier sont déjà chargées.
 
-Les références `fromDatabase` et `fromService` injectent les connexions privées. Le
-hostname public Render est automatiquement ajouté aux hôtes Django et aux origines CSRF.
+`fromDatabase` injecte la connexion PostgreSQL interne avec ses identifiants, sans les
+écrire dans Git. `fromService` transmet les URL publiques dynamiques de l'API et de
+l'Assistant. Le hostname public Render est automatiquement ajouté aux hôtes Django et
+aux origines CSRF.
 
 ## Initialisation PostgreSQL
 
-Les pre-deploy commands des deux services privés créent de façon idempotente les
-schémas opérationnel et Assistant. Sur le service Django gratuit, les migrations et
-`collectstatic` sont exécutés au début de la commande de démarrage, car Render ne
-propose pas de pre-deploy command sur ce plan. Ces commandes ne téléchargent ni ne
-remplacent de données métier.
+Le plan gratuit ne supporte pas les pre-deploy commands. Les migrations idempotentes
+de l'API, de l'Assistant et de Django, ainsi que `collectstatic`, sont donc exécutées au
+début de leurs commandes de démarrage. Elles ne téléchargent ni ne remplacent de
+données métier.
 
 La base vierge permet le démarrage, mais tableaux, scores et réponses fondées sur les
 données restent vides. Les SQLite sources sont locaux et absents de l'image. Pour les
@@ -108,34 +113,25 @@ Après validation des sources documentaires, ouvrir le Shell de l'Assistant et l
 ```bash
 curl -i https://<django-host>/health/live/
 curl -i https://<django-host>/health/ready/
-```
-
-Depuis le Shell Render de l'API :
-
-```bash
-curl -i http://127.0.0.1:$PORT/api/data/health
-```
-
-Depuis le Shell Render de l'Assistant :
-
-```bash
-curl -i http://127.0.0.1:$PORT/health
-curl -i http://127.0.0.1:$PORT/health/ready
+curl -i https://<api-host>/health/live
+curl -i https://<assistant-host>/health/live
+curl -i https://<streamlit-host>/_stcore/health
 ```
 
 Ouvrir `https://<django-host>/`, créer explicitement un compte autorisé et vérifier le
-parcours Assistant. Aucun health check ne contacte OpenAI.
+parcours Assistant, puis ouvrir Streamlit. Aucun health check ne contacte OpenAI et les
+checks `/health/live` ne lancent pas de requête métier ou SQL.
 
 ## Preuves RNCP
 
 - Blueprint et commit Git associé ;
 - PostgreSQL créé, sans afficher sa connexion ;
-- quatre ressources Render vertes ;
-- logs de build, de pre-deploy et de démarrage Django sans secrets ;
+- cinq ressources Render vertes et toutes marquées Free ;
+- logs de build et de démarrage sans secrets ;
 - historique de déploiement ;
 - health Django public ;
-- health API et Assistant depuis leurs Shells ;
-- application Django publique et parcours Assistant ;
+- health publics API, Assistant et Streamlit ;
+- application Django publique, parcours Assistant et dashboard Streamlit ;
 - import et indexation seulement après réussite réelle.
 
 ## Rollback
@@ -146,9 +142,17 @@ n'a pas encore été testée sur un staging réel.
 
 ## Limites
 
-- PostgreSQL gratuit expire après 30 jours, sans sauvegarde.
-- Django gratuit peut subir un cold start après 15 minutes.
-- API et Assistant privés impliquent un coût ; vérifier le tarif avant Apply.
+- Un seul PostgreSQL gratuit est autorisé par workspace ; il est limité à 1 Go,
+  expire après 30 jours, et ne fournit ni sauvegarde ni connection pooling.
+- Chaque Web Service s'endort après 15 minutes sans trafic. Une requête Django peut
+  réveiller successivement Django, Assistant et API, avec plusieurs cold starts pouvant
+  prendre environ une minute chacun.
+- Les quatre services partagent les 750 heures gratuites mensuelles du workspace et
+  les quotas de bande passante/build. Sans carte, Render suspend les services ou les
+  nouveaux builds en cas de dépassement au lieu de facturer.
+- API et Assistant sont publiquement joignables pour contourner l'absence de trafic
+  privé entrant sur Free. Le token interne protège les routes Assistant concernées,
+  mais l'API data reste exposée : cette architecture convient uniquement à la démo RNCP.
 - Le système de fichiers Render est éphémère ; PostgreSQL porte la persistance.
 - OpenAI implique disponibilité, quota, coût et traitement externe.
 - Prometheus, Grafana, Loki et Alertmanager restent locaux.

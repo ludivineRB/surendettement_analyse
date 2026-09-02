@@ -1,15 +1,16 @@
 services:
-  - type: pserv
+  - type: web
     name: surendettement-staging-api
     runtime: docker
-    plan: 0.5c-512mb
+    plan: free
     region: frankfurt
     dockerfilePath: ./docker/Dockerfile
     dockerContext: .
-    dockerCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
-    preDeployCommand: >-
+    dockerCommand: >-
       python -c "from src.storage.schema_migrations import apply_migrations;
-      print(apply_migrations())"
+      print(apply_migrations())" &&
+      exec uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health/live
     envVars:
       - key: APP_ENV
         value: staging
@@ -26,15 +27,17 @@ services:
       - key: ASSISTANT_INTERNAL_TOKEN
         generateValue: true
 
-  - type: pserv
+  - type: web
     name: surendettement-staging-assistant
     runtime: docker
-    plan: 0.5c-512mb
+    plan: free
     region: frankfurt
     dockerfilePath: ./docker/Dockerfile
     dockerContext: .
-    dockerCommand: uvicorn assistant_api.main:app --host 0.0.0.0 --port $PORT
-    preDeployCommand: python -m assistant_api.cli migrate
+    dockerCommand: >-
+      python -m assistant_api.cli migrate &&
+      exec uvicorn assistant_api.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health/live
     envVars:
       - key: APP_ENV
         value: staging
@@ -47,12 +50,12 @@ services:
       - key: ANALYTICS_API_BASE_URL
         fromService:
           name: surendettement-staging-api
-          type: pserv
-          property: hostport
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
       - key: ASSISTANT_INTERNAL_TOKEN
         fromService:
           name: surendettement-staging-api
-          type: pserv
+          type: web
           envVarKey: ASSISTANT_INTERNAL_TOKEN
       - key: OPENAI_API_KEY
         sync: false
@@ -72,7 +75,7 @@ services:
       python web/manage.py migrate --noinput &&
       python web/manage.py collectstatic --noinput &&
       exec gunicorn web.config.wsgi:application --bind 0.0.0.0:$PORT
-    healthCheckPath: /health/ready/
+    healthCheckPath: /health/live/
     envVars:
       - key: APP_ENV
         value: staging
@@ -83,17 +86,17 @@ services:
       - key: ANALYTICS_API_BASE_URL
         fromService:
           name: surendettement-staging-api
-          type: pserv
-          property: hostport
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
       - key: ASSISTANT_API_BASE_URL
         fromService:
           name: surendettement-staging-assistant
-          type: pserv
-          property: hostport
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
       - key: ASSISTANT_INTERNAL_TOKEN
         fromService:
           name: surendettement-staging-api
-          type: pserv
+          type: web
           envVarKey: ASSISTANT_INTERNAL_TOKEN
       - key: DJANGO_SECRET_KEY
         generateValue: true
@@ -103,6 +106,26 @@ services:
         value: true
       - key: DJANGO_TRUST_PROXY_HEADERS
         value: true
+
+  - type: web
+    name: surendettement-staging-streamlit
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./docker/Dockerfile
+    dockerContext: .
+    dockerCommand: >-
+      exec streamlit run app.py --server.address 0.0.0.0
+      --server.port $PORT --server.headless true
+    healthCheckPath: /_stcore/health
+    envVars:
+      - key: APP_ENV
+        value: staging
+      - key: SURENDETTEMENT_API_BASE_URL
+        fromService:
+          name: surendettement-staging-api
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
 
 databases:
   - name: surendettement-staging-db
