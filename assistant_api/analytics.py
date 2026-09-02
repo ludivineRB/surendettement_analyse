@@ -30,7 +30,7 @@ class AnalyticsClient:
     def __init__(
         self,
         base_url: str | None = None,
-        timeout_seconds: float = 5,
+        timeout_seconds: float | None = None,
     ) -> None:
         configured_url = (
             base_url
@@ -40,7 +40,9 @@ class AnalyticsClient:
         if "://" not in configured_url:
             configured_url = f"http://{configured_url}"
         self.base_url = configured_url.rstrip("/")
-        self.timeout_seconds = timeout_seconds
+        self.timeout_seconds = timeout_seconds or float(
+            os.getenv("ANALYTICS_API_TIMEOUT_SECONDS", "5")
+        )
 
     def fetch(
         self,
