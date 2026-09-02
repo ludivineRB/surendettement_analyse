@@ -68,10 +68,10 @@ services:
     region: frankfurt
     dockerfilePath: ./docker/Dockerfile
     dockerContext: .
-    dockerCommand: gunicorn web.config.wsgi:application --bind 0.0.0.0:$PORT
-    preDeployCommand: >-
+    dockerCommand: >-
       python web/manage.py migrate --noinput &&
-      python web/manage.py collectstatic --noinput
+      python web/manage.py collectstatic --noinput &&
+      exec gunicorn web.config.wsgi:application --bind 0.0.0.0:$PORT
     healthCheckPath: /health/ready/
     envVars:
       - key: APP_ENV

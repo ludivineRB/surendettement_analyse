@@ -58,8 +58,10 @@ hostname public Render est automatiquement ajouté aux hôtes Django et aux orig
 
 ## Initialisation PostgreSQL
 
-Les pre-deploy commands créent de façon idempotente les schémas opérationnel,
-Assistant et Django, puis collectent les fichiers statiques. Ils ne téléchargent ni ne
+Les pre-deploy commands des deux services privés créent de façon idempotente les
+schémas opérationnel et Assistant. Sur le service Django gratuit, les migrations et
+`collectstatic` sont exécutés au début de la commande de démarrage, car Render ne
+propose pas de pre-deploy command sur ce plan. Ces commandes ne téléchargent ni ne
 remplacent de données métier.
 
 La base vierge permet le démarrage, mais tableaux, scores et réponses fondées sur les
@@ -129,7 +131,7 @@ parcours Assistant. Aucun health check ne contacte OpenAI.
 - Blueprint et commit Git associé ;
 - PostgreSQL créé, sans afficher sa connexion ;
 - quatre ressources Render vertes ;
-- logs de build et pre-deploy sans secrets ;
+- logs de build, de pre-deploy et de démarrage Django sans secrets ;
 - historique de déploiement ;
 - health Django public ;
 - health API et Assistant depuis leurs Shells ;
