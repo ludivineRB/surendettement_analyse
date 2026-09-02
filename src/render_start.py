@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import subprocess
 import sys
+from ipaddress import IPv4Address
 
 
 def _run(*command: str) -> None:
@@ -18,19 +19,20 @@ def _exec(*command: str) -> None:
 def main() -> None:
     service = sys.argv[1] if len(sys.argv) == 2 else ""
     port = os.getenv("PORT", "10000")
+    bind_host = os.getenv("RENDER_BIND_HOST", str(IPv4Address(0)))
 
     if service == "api":
         from src.storage.schema_migrations import apply_migrations
 
         print(apply_migrations(), flush=True)
-        _exec("uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", port)
+        _exec("uvicorn", "app.main:app", "--host", bind_host, "--port", port)
     elif service == "assistant":
         _run(sys.executable, "-m", "assistant_api.cli", "migrate")
         _exec(
             "uvicorn",
             "assistant_api.main:app",
             "--host",
-            "0.0.0.0",
+            bind_host,
             "--port",
             port,
         )
@@ -41,7 +43,7 @@ def main() -> None:
             "gunicorn",
             "web.config.wsgi:application",
             "--bind",
-            f"0.0.0.0:{port}",
+            f"{bind_host}:{port}",
         )
     elif service == "streamlit":
         _exec(
@@ -49,7 +51,7 @@ def main() -> None:
             "run",
             "app.py",
             "--server.address",
-            "0.0.0.0",
+            bind_host,
             "--server.port",
             port,
             "--server.headless",
