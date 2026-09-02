@@ -33,12 +33,9 @@ class AnalyticsClient:
         timeout: float | None = None,
         session=None,
     ):
-        configured_url = (
+        self.base_url = (
             base_url or settings.ANALYTICS_API_BASE_URL
-        )
-        if "://" not in configured_url:
-            configured_url = f"http://{configured_url}"
-        self.base_url = configured_url.rstrip("/")
+        ).rstrip("/")
         self.timeout = timeout or settings.ANALYTICS_API_TIMEOUT_SECONDS
         self.session = session or requests.Session()
 
@@ -133,10 +130,7 @@ class AnalyticsClient:
                 f"{self.base_url}{path}",
                 params=params,
                 timeout=self.timeout,
-                headers={
-                    "Accept": "application/json",
-                    "X-Internal-Token": settings.ASSISTANT_INTERNAL_TOKEN,
-                },
+                headers={"Accept": "application/json"},
             )
             response.raise_for_status()
             payload = response.json()

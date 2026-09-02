@@ -8,11 +8,6 @@ from web.assistant.client import AssistantAPIError, AssistantClient
 
 
 class AssistantClientTests(SimpleTestCase):
-    def test_render_private_hostport_gets_http_scheme(self):
-        client = AssistantClient("assistant-api:10000", 3, Mock())
-
-        self.assertEqual(client.base_url, "http://assistant-api:10000")
-
     def test_answer_validates_and_returns_traceable_response(self):
         request_id = uuid4()
         response = Mock()

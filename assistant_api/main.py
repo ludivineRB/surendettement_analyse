@@ -123,23 +123,6 @@ def _record_decision(decision: str, category: str) -> None:
     )
 
 
-def _log_provider_error(exc: GeneratorUnavailable) -> None:
-    allowed_reasons = {
-        "generator_not_configured",
-        "openai_api_key_missing",
-        "openai_insufficient_quota",
-        "openai_invalid_api_key",
-        "openai_model_not_available",
-        "openai_request_failed",
-        "openai_response_has_no_text",
-        "openai_provider_unavailable",
-    }
-    reason = str(exc)
-    if reason not in allowed_reasons:
-        reason = "openai_provider_unavailable"
-    logger.warning("Assistant provider unavailable reason=%s", reason)
-
-
 @app.post("/v1/retrieval/search", response_model=RetrievalResponse)
 def retrieval_search(
     request: RetrievalRequest,
@@ -225,7 +208,6 @@ def answer_question(
                 raise
             if isinstance(exc, GeneratorUnavailable):
                 prometheus.increment("assistant_provider_errors_total")
-                _log_provider_error(exc)
             raise HTTPException(status_code=503, detail="Analyse SQL indisponible.") from exc
         row_count = len(sql_result.sql_execution.rows)
         if row_count == 0:
@@ -297,7 +279,6 @@ def answer_question(
     except (AnalyticsUnavailable, GeneratorUnavailable, SQLAlchemyError) as exc:
         if isinstance(exc, GeneratorUnavailable):
             prometheus.increment("assistant_provider_errors_total")
-            _log_provider_error(exc)
         raise HTTPException(
             status_code=503,
             detail="Service IA temporairement indisponible.",

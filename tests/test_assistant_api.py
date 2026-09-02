@@ -261,7 +261,7 @@ def test_sql_mode_returns_clarification_instead_of_service_error(
 
 
 @patch("assistant_api.main.build_grounding_context")
-def test_provider_error_is_normalized_without_remote_detail(build_context, caplog):
+def test_provider_error_is_normalized_without_remote_detail(build_context):
     build_context.side_effect = GeneratorUnavailable("secret-remote-detail")
 
     with pytest.raises(HTTPException) as error:
@@ -275,8 +275,6 @@ def test_provider_error_is_normalized_without_remote_detail(build_context, caplo
     assert error.value.status_code == 503
     assert error.value.detail == "Service IA temporairement indisponible."
     assert "secret" not in str(error.value.detail)
-    assert "reason=openai_provider_unavailable" in caplog.text
-    assert "secret-remote-detail" not in caplog.text
 
 
 @patch("assistant_api.main.search_active_chunks")

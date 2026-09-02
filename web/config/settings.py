@@ -48,9 +48,6 @@ ALLOWED_HOSTS = [
     for host in os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
     if host.strip()
 ]
-RENDER_EXTERNAL_HOSTNAME = os.getenv("RENDER_EXTERNAL_HOSTNAME", "").strip()
-if RENDER_EXTERNAL_HOSTNAME and RENDER_EXTERNAL_HOSTNAME not in ALLOWED_HOSTS:
-    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -68,7 +65,6 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -130,18 +126,6 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATICFILES_DIRS = [WEB_ROOT / "static"]
-STATIC_ROOT = WEB_ROOT / "staticfiles"
-APP_ENV = os.getenv("APP_ENV", "development").strip().lower()
-STORAGES = {
-    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
-    "staticfiles": {
-        "BACKEND": (
-            "whitenoise.storage.CompressedManifestStaticFilesStorage"
-            if APP_ENV in {"staging", "production"}
-            else "django.contrib.staticfiles.storage.StaticFilesStorage"
-        )
-    },
-}
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 LOGIN_URL = "login"
@@ -166,10 +150,6 @@ CSRF_TRUSTED_ORIGINS = [
     for origin in os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",")
     if origin.strip()
 ]
-if RENDER_EXTERNAL_HOSTNAME:
-    render_origin = f"https://{RENDER_EXTERNAL_HOSTNAME}"
-    if render_origin not in CSRF_TRUSTED_ORIGINS:
-        CSRF_TRUSTED_ORIGINS.append(render_origin)
 SECURE_PROXY_SSL_HEADER = (
     ("HTTP_X_FORWARDED_PROTO", "https")
     if env_bool("DJANGO_TRUST_PROXY_HEADERS")
