@@ -39,16 +39,21 @@ class AnalyticsClientTests(SimpleTestCase):
 
     def test_list_scores_validates_response_and_passes_filters(self):
         client, session = self.client_with_response([SCORE])
-        result = client.list_scores(
-            geographic_level="department",
-            geographic_code="59",
-        )
+        with self.settings(ASSISTANT_INTERNAL_TOKEN="render-token"):
+            result = client.list_scores(
+                geographic_level="department",
+                geographic_code="59",
+            )
         self.assertEqual(result[0]["score"], 42.5)
         self.assertEqual(
             session.get.call_args.kwargs["params"]["geographic_code"],
             "59",
         )
         self.assertEqual(session.get.call_args.kwargs["timeout"], 2)
+        self.assertEqual(
+            session.get.call_args.kwargs["headers"]["X-Internal-Token"],
+            "render-token",
+        )
 
     def test_series_escapes_path_and_validates_nested_scores(self):
         client, session = self.client_with_response(
