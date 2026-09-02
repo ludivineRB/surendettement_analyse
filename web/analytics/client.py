@@ -130,7 +130,10 @@ class AnalyticsClient:
                 f"{self.base_url}{path}",
                 params=params,
                 timeout=self.timeout,
-                headers={"Accept": "application/json"},
+                headers={
+                    "Accept": "application/json",
+                    "X-Internal-Token": settings.ASSISTANT_INTERNAL_TOKEN,
+                },
             )
             response.raise_for_status()
             payload = response.json()

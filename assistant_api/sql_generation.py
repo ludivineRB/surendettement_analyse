@@ -7,7 +7,7 @@ import json
 from assistant_api.generation import TextGenerator
 
 
-PROMPT_VERSION = "text-to-sql-v3"
+PROMPT_VERSION = "text-to-sql-v4"
 SCHEMA_VERSION = "analytics-views-v2"
 ANALYTICS_SCHEMA = {
     "analytics_risk_scores": [
@@ -134,6 +134,11 @@ def generate_sql_candidate(question: str, generator: TextGenerator) -> str:
         "avec l'un des codes fournis dans semantics; ne devine jamais un "
         "indicator_label. Utilise exclusivement les valeurs de niveau "
         "géographique fournies. "
+        "Dans analytics_observations, reference_period peut être au format "
+        "YYYY ou YYYY-MM. Si la question donne seulement une année, accepte "
+        "les deux formats avec reference_period LIKE 'YYYY%' et trie d'abord "
+        "par reference_period DESC afin d'utiliser la période disponible la "
+        "plus récente avant de classer les valeurs. "
         "Pour une comparaison régionale macroéconomique, utilise la vue "
         "analytics_macro_regions et un code de regional_macro_indicator_codes. "
         "Quand la question porte sur un niveau ou une proportion, préfère un "

@@ -13,9 +13,9 @@
       "geographic_scope": "France hexagonale",
       "topics": ["surendettement", "profil des ménages", "dettes", "procédure"],
       "usage": "documents",
-      "reviewed_at": "2026-08-14",
-      "normalized_characters": 8715,
-      "content_sha256": "04f0640974e36b9cd6dc33416a9388adc0783ff3a4e50b622facca21a402cb0f"
+      "reviewed_at": "2026-09-03",
+      "normalized_characters": 8893,
+      "content_sha256": "ac0c84f33f99e792aff76b4d97b9cefb4dcef14335f6e8780bed4437178efe8a"
     },
     {
       "id": "bdf-inclusion-financiere-decembre-2025",
@@ -28,9 +28,9 @@
       "geographic_scope": "France",
       "topics": ["inclusion financière", "surendettement", "FICP", "FCC"],
       "usage": "hybrid",
-      "reviewed_at": "2026-08-14",
-      "normalized_characters": 1221,
-      "content_sha256": "1a6af4e5d137bc1c26f007324a996d12548564847c33967718a5eac70f8ec3f7"
+      "reviewed_at": "2026-09-03",
+      "normalized_characters": 1550,
+      "content_sha256": "f094b359f48ebbceb5f7de4ad20529df422eb3b5acef5462de061bde386841d5"
     },
     {
       "id": "insee-definition-ipc",

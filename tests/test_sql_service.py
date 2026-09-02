@@ -4,9 +4,23 @@ from uuid import uuid4
 import pytest
 from sqlalchemy.exc import SQLAlchemyError
 
+from assistant_api.sql_generation import generate_sql_candidate
 from assistant_api.sql_executor import SQLExecutionResult
 from assistant_api.sql_service import SQLClarificationRequired, run_text_to_sql
 from assistant_api.sql_validation import SQLValidationError, ValidatedSQL
+
+
+def test_sql_prompt_explains_yearly_filter_for_monthly_periods():
+    generator = Mock()
+    generator.generate.return_value = (
+        '{"sql":"SELECT id FROM analytics_observations LIMIT 1"}'
+    )
+
+    generate_sql_candidate("Revenu médian en 2026 ?", generator)
+
+    system_prompt = generator.generate.call_args.kwargs["system_prompt"]
+    assert "reference_period LIKE 'YYYY%'" in system_prompt
+    assert "reference_period DESC" in system_prompt
 
 
 @patch("assistant_api.sql_service.record_sql_execution")
