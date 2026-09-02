@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import os
 
 import requests
@@ -11,6 +12,9 @@ from assistant_api.generation import (
     TextGenerator,
     UnconfiguredGenerator,
 )
+
+
+logger = logging.getLogger(__name__)
 
 
 class OpenAIResponsesGenerator:
@@ -45,12 +49,19 @@ class OpenAIResponsesGenerator:
                 timeout=self.timeout_seconds,
             )
             if not response.ok:
-                raise GeneratorUnavailable(_safe_error_code(response))
+                error_code = _safe_error_code(response)
+                logger.warning(
+                    "OpenAI request rejected status=%s reason=%s",
+                    response.status_code,
+                    error_code,
+                )
+                raise GeneratorUnavailable(error_code)
             response.raise_for_status()
             payload = response.json()
         except GeneratorUnavailable:
             raise
         except (requests.RequestException, ValueError) as exc:
+            logger.warning("OpenAI request failed reason=openai_transport_error")
             raise GeneratorUnavailable("openai_request_failed") from exc
         output_text = _extract_output_text(payload)
         if not output_text:

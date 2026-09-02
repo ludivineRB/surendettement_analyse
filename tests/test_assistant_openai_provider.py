@@ -45,7 +45,7 @@ def test_generator_is_unconfigured_without_key(monkeypatch):
 
 
 @patch("assistant_api.openai_provider.requests.post")
-def test_provider_does_not_expose_remote_error_body(post):
+def test_provider_logs_only_normalized_error(post, caplog):
     response = Mock()
     response.ok = False
     response.json.return_value = {
@@ -54,6 +54,7 @@ def test_provider_does_not_expose_remote_error_body(post):
             "message": "secret remote body",
         }
     }
+    response.status_code = 429
     post.return_value = response
     generator = OpenAIResponsesGenerator(api_key="test-key")
 
@@ -62,3 +63,6 @@ def test_provider_does_not_expose_remote_error_body(post):
         match="^openai_insufficient_quota$",
     ):
         generator.generate(system_prompt="System", user_prompt="User")
+
+    assert "status=429 reason=openai_insufficient_quota" in caplog.text
+    assert "secret remote body" not in caplog.text
