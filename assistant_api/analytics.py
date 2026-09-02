@@ -32,11 +32,14 @@ class AnalyticsClient:
         base_url: str | None = None,
         timeout_seconds: float = 5,
     ) -> None:
-        self.base_url = (
+        configured_url = (
             base_url
             or os.getenv("ANALYTICS_API_BASE_URL")
             or "http://api:8020"
-        ).rstrip("/")
+        )
+        if "://" not in configured_url:
+            configured_url = f"http://{configured_url}"
+        self.base_url = configured_url.rstrip("/")
         self.timeout_seconds = timeout_seconds
 
     def fetch(

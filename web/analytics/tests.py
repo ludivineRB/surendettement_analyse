@@ -20,6 +20,11 @@ SCORE = {
 
 
 class AnalyticsClientTests(SimpleTestCase):
+    def test_render_private_hostport_gets_http_scheme(self):
+        client = AnalyticsClient("analytics-api:10000", 3, Mock())
+
+        self.assertEqual(client.base_url, "http://analytics-api:10000")
+
     def client_with_response(self, payload):
         response = Mock()
         response.json.return_value = payload
