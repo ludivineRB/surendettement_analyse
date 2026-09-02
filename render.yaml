@@ -6,10 +6,7 @@ services:
     region: frankfurt
     dockerfilePath: ./docker/Dockerfile
     dockerContext: .
-    dockerCommand: >-
-      python -c "from src.storage.schema_migrations import apply_migrations;
-      print(apply_migrations())" &&
-      exec uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    dockerCommand: python -m src.render_start api
     healthCheckPath: /health/live
     envVars:
       - key: APP_ENV
@@ -34,9 +31,7 @@ services:
     region: frankfurt
     dockerfilePath: ./docker/Dockerfile
     dockerContext: .
-    dockerCommand: >-
-      python -m assistant_api.cli migrate &&
-      exec uvicorn assistant_api.main:app --host 0.0.0.0 --port $PORT
+    dockerCommand: python -m src.render_start assistant
     healthCheckPath: /health/live
     envVars:
       - key: APP_ENV
@@ -71,10 +66,7 @@ services:
     region: frankfurt
     dockerfilePath: ./docker/Dockerfile
     dockerContext: .
-    dockerCommand: >-
-      python web/manage.py migrate --noinput &&
-      python web/manage.py collectstatic --noinput &&
-      exec gunicorn web.config.wsgi:application --bind 0.0.0.0:$PORT
+    dockerCommand: python -m src.render_start django
     healthCheckPath: /health/live/
     envVars:
       - key: APP_ENV
@@ -114,9 +106,7 @@ services:
     region: frankfurt
     dockerfilePath: ./docker/Dockerfile
     dockerContext: .
-    dockerCommand: >-
-      exec streamlit run app.py --server.address 0.0.0.0
-      --server.port $PORT --server.headless true
+    dockerCommand: python -m src.render_start streamlit
     healthCheckPath: /_stcore/health
     envVars:
       - key: APP_ENV
