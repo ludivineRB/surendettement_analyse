@@ -1,9 +1,11 @@
+from pathlib import Path
+from unittest.mock import call, patch
+
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.urls import reverse
-from unittest.mock import call, patch
 
 from web.accounts.services import ROLE_NAMES, assign_role
 from web.analytics.client import AnalyticsAPIError
@@ -144,6 +146,15 @@ class DashboardTests(TestCase):
         with self.assertRaises(ValidationError):
             assign_role(self.viewer, "unsupported")
 
+    def test_map_summary_does_not_interpret_external_labels_as_html(self):
+        script = (
+            Path(__file__).resolve().parents[1] / "static" / "js" / "site.js"
+        ).read_text()
+
+        self.assertNotIn("summary.innerHTML = `", script)
+        self.assertIn("heading.textContent = featureName(feature)", script)
+        self.assertIn("summary.replaceChildren(", script)
+
 
 class DataQualityTests(TestCase):
     @classmethod
@@ -155,9 +166,18 @@ class DataQualityTests(TestCase):
             username="quality-viewer", password="test-password"
         )
         assign_role(cls.viewer, "viewer")
+        cls.administrator = get_user_model().objects.create_user(
+            username="quality-application-administrator", password="test-password"
+        )
+        assign_role(cls.administrator, "administrator")
 
     def test_page_is_reserved_for_superusers(self):
         self.client.force_login(self.viewer)
+        response = self.client.get(reverse("data-quality"))
+        self.assertEqual(response.status_code, 403)
+
+    def test_application_administrator_cannot_view_quality_report(self):
+        self.client.force_login(self.administrator)
         response = self.client.get(reverse("data-quality"))
         self.assertEqual(response.status_code, 403)
 

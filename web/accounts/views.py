@@ -2,7 +2,7 @@
 
 from django.contrib import messages
 from django.contrib.auth import get_user_model
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, permission_required
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404, redirect, render
 
@@ -33,10 +33,8 @@ def register(request):
 
 
 @login_required
+@permission_required("accounts.manage_application", raise_exception=True)
 def access_requests(request):
-    if not request.user.is_superuser:
-        raise PermissionDenied
-
     if request.method == "POST":
         role = request.POST.get("role")
         if role not in ROLE_NAMES:
@@ -59,8 +57,10 @@ def access_requests(request):
     pending_users = get_user_model().objects.filter(is_active=False).order_by(
         "date_joined", "username"
     )
-    users = get_user_model().objects.prefetch_related("groups").order_by(
-        "username"
+    users = (
+        get_user_model().objects.prefetch_related("groups").order_by("username")
+        if request.user.is_superuser
+        else []
     )
     return render(
         request,
