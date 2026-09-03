@@ -104,3 +104,114 @@ jobs:
       - name: Show smoke-test logs
         if: always()
         run: docker logs assistant-smoke || true
+
+  deliver-application:
+    needs: [validate, package-assistant]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    env:
+      API_IMAGE: ghcr.io/ludivinerb/surendettement-api:${{ github.sha }}
+      DJANGO_IMAGE: ghcr.io/ludivinerb/surendettement-django:${{ github.sha }}
+      ASSISTANT_IMAGE: ghcr.io/ludivinerb/surendettement-assistant:${{ github.sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download tested Assistant API image
+        uses: actions/download-artifact@v4
+        with:
+          name: assistant-image-${{ github.sha }}
+          path: app/reports/delivery
+
+      - name: Load and tag tested Assistant API image
+        run: |
+          gzip --decompress --stdout \
+            "app/reports/delivery/surendettement-assistant-${{ github.sha }}.tar.gz" \
+            | docker load
+          docker tag \
+            "surendettement-assistant:${{ github.sha }}" \
+            "$ASSISTANT_IMAGE"
+
+      - name: Build versioned API and Django images
+        run: |
+          docker build --file docker/Dockerfile --target api \
+            --tag "$API_IMAGE" .
+          docker build --file docker/Dockerfile --target django \
+            --tag "$DJANGO_IMAGE" .
+
+      - name: Smoke test delivery images
+        run: |
+          docker network create delivery-smoke
+          docker run --detach --rm --name delivery-postgres \
+            --network delivery-smoke \
+            --env POSTGRES_DB=smoke \
+            --env POSTGRES_USER=smoke \
+            --env POSTGRES_PASSWORD=smoke \
+            postgres:16-alpine
+
+          for attempt in $(seq 1 20); do
+            if docker exec delivery-postgres pg_isready --username smoke --dbname smoke; then
+              break
+            fi
+            if [ "$attempt" -eq 20 ]; then
+              docker logs delivery-postgres
+              exit 1
+            fi
+            sleep 2
+          done
+
+          docker run --detach --rm --name delivery-api \
+            --network delivery-smoke "$API_IMAGE"
+          docker run --detach --rm --name delivery-django \
+            --network delivery-smoke \
+            --env DJANGO_SECRET_KEY=ci-only-django-secret-key-not-for-production \
+            --env DATABASE_URL=postgresql+psycopg://smoke:smoke@delivery-postgres:5432/smoke \
+            "$DJANGO_IMAGE"
+          docker run --detach --rm --name delivery-assistant \
+            --network delivery-smoke "$ASSISTANT_IMAGE"
+
+          wait_for_health() {
+            container="$1"
+            url="$2"
+            for attempt in $(seq 1 20); do
+              if docker exec "$container" python -c \
+                "import urllib.request; urllib.request.urlopen('$url', timeout=2)"; then
+                return 0
+              fi
+              sleep 2
+            done
+            docker logs "$container"
+            return 1
+          }
+
+          wait_for_health delivery-api http://localhost:8020/health/live
+          wait_for_health delivery-django http://localhost:8000/health/live/
+          wait_for_health delivery-assistant http://localhost:8030/health
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish versioned application images
+        run: |
+          docker push "$API_IMAGE"
+          docker push "$DJANGO_IMAGE"
+          docker push "$ASSISTANT_IMAGE"
+
+      - name: Show delivery smoke-test logs
+        if: always()
+        run: |
+          docker logs delivery-api || true
+          docker logs delivery-django || true
+          docker logs delivery-assistant || true
+          docker logs delivery-postgres || true
+          docker stop delivery-api delivery-django delivery-assistant \
+            delivery-postgres || true
+          docker network rm delivery-smoke || true
