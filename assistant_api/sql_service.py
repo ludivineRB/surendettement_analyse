@@ -9,7 +9,7 @@ import re
 from uuid import UUID, uuid4
 
 from sqlalchemy import Engine
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import ProgrammingError, SQLAlchemyError
 
 from assistant_api.generation import TextGenerator
 from assistant_api.repository import record_sql_execution
@@ -117,12 +117,32 @@ def run_text_to_sql(
     }
     try:
         require_specific_question(question)
-        sql = generate_sql_candidate(question, generator)
-        audit["generated_sql"] = sql
-        execution = execute_readonly_sql(
-            sql,
-            engine=readonly_engine or get_readonly_engine(),
-        )
+        rejection_reason = None
+        for attempt in range(2):
+            sql = generate_sql_candidate(
+                question,
+                generator,
+                rejected_sql=sql or None,
+                rejection_reason=rejection_reason,
+            )
+            audit["generated_sql"] = sql
+            try:
+                execution = execute_readonly_sql(
+                    sql,
+                    engine=readonly_engine or get_readonly_engine(),
+                )
+                if attempt == 0 and not execution.rows:
+                    rejection_reason = "empty_result"
+                    continue
+                break
+            except (SQLValidationError, ProgrammingError) as exc:
+                if attempt == 1:
+                    raise
+                rejection_reason = (
+                    exc.code
+                    if isinstance(exc, SQLValidationError)
+                    else "invalid_postgresql"
+                )
     except Exception as exc:
         error_code = (
             exc.code

@@ -37,7 +37,7 @@ Le score affiché est un indicateur statistique territorial. Il ne constitue ni 
 - le dashboard et les assistants dépendent de services HTTP et de PostgreSQL correctement configurés ;
 - l’assistant refuse de produire une réponse documentaire sans preuve approuvée ;
 - les anciennes tables RAG Django restent présentes pour compatibilité/audit mais sont dépréciées ; la source active est `assistant.corpus_chunks` ;
-- `administrator` reçoit `manage_application`, mais les vues de gestion des comptes et de qualité contrôlent `is_superuser` : l’équivalence entre rôle applicatif et superuser n’est donc pas implémentée ;
+- `administrator` reçoit `manage_application` et peut approuver les demandes d’accès ; la modification/suppression des comptes, la qualité et l’administration Django restent réservées au superuser ;
 - aucune recette utilisateur ni aucun audit complet d’accessibilité n’est attesté dans le dépôt.
 
 ## 3. Utilisateurs et rôles
@@ -47,8 +47,8 @@ Le score affiché est un indicateur statistique territorial. Il ne constitue ni 
 | Visiteur non authentifié | Découvrir le service et demander un accès | Accueil, confidentialité, inscription, connexion | Aucun dashboard ni assistant |
 | `viewer` | Consulter l’analyse territoriale | Dashboard, méthodologie, carte, assistant d’information | Assistant SQL interdit |
 | `analyst` | Réaliser des analyses avancées | Droits du viewer et assistant SQL | Pas de gestion des comptes par le seul rôle |
-| `administrator` | Porter les permissions applicatives d’administration | Droits analyste et permission `manage_application` | Les écrans d’administration métier exigent actuellement `is_superuser` |
-| Superuser Django | Administrer l’instance | Valider/modifier/supprimer les comptes, consulter la qualité, administration Django | Statut technique distinct du groupe `administrator` |
+| `administrator` | Administrer les accès applicatifs sans privilège technique | Droits analyste, consulter et approuver les demandes d’accès | Ne peut ni modifier/supprimer les comptes existants, ni consulter la qualité, ni attribuer `is_staff`/`is_superuser` |
+| Superuser Django | Administrer l’instance | Approuver, modifier ou supprimer les comptes, consulter la qualité, administration Django | Statut technique distinct du groupe `administrator` |
 
 Sources : `web/accounts/migrations/0001_initial_roles.py`, `web/accounts/services.py`, `web/accounts/views.py`, `web/dashboard/views.py`, `web/assistant/views.py`.
 
@@ -59,7 +59,7 @@ Sources : `web/accounts/migrations/0001_initial_roles.py`, `web/accounts/service
 | AUTH-01 | Demande d’accès | Visiteur | Crée un compte inactif sans rôle, en attente d’approbation | `web/accounts/forms.py`, `web/accounts/views.py`, `web/accounts/tests.py` |
 | AUTH-02 | Connexion/déconnexion | Utilisateur actif | Ouvre ou clôt une session Django | `web/config/urls.py`, `web/config/settings.py`, `web/templates/registration/login.html` |
 | AUTH-03 | Contrôle d’accès | Utilisateur authentifié | Vérifie session et permissions `view_dashboard` / `use_analytics` | `web/dashboard/views.py`, `web/assistant/views.py`, `web/dashboard/tests.py` |
-| ADMIN-01 | Gestion des comptes | Superuser | Approuve, attribue un rôle, modifie ou supprime un compte | `web/accounts/views.py`, `web/accounts/services.py`, `web/accounts/tests.py` |
+| ADMIN-01 | Gestion des accès et comptes | Administrator / superuser | L’administrator approuve une demande et attribue un rôle ; le superuser peut aussi modifier ou supprimer un compte | `web/accounts/views.py`, `web/accounts/services.py`, `web/accounts/tests.py` |
 | DASH-01 | Dashboard territorial | Viewer et plus | Affiche score, niveau, couverture, facteurs et évolution | `web/dashboard/views.py`, `web/templates/dashboard/index.html` |
 | DASH-02 | Filtres et comparaisons | Viewer et plus | Filtre niveau, territoire, période, version ; compare périodes/modèles | `web/dashboard/forms.py`, `web/dashboard/views.py`, `web/analytics/client.py` |
 | DASH-03 | Carte et indicateurs | Viewer et plus | Charge catalogue, données et contours, puis affiche carte et tendance | `web/dashboard/views.py`, `web/static/js/site.js`, `web/templates/dashboard/index.html` |
@@ -80,7 +80,7 @@ L’application réserve ses fonctions analytiques aux comptes validés.
 
 **Utilisateur / rôle**
 
-Visiteur, puis superuser pour l’approbation.
+Visiteur, puis administrator ou superuser pour l’approbation.
 
 **Besoin**
 
@@ -94,7 +94,7 @@ Le visiteur n’est pas connecté ; son adresse électronique n’est pas déjà
 
 1. Le visiteur renseigne identifiant, adresse électronique et mot de passe.
 2. L’application crée un compte inactif sans rôle et confirme la demande.
-3. Un superuser sélectionne un rôle et approuve le compte.
+3. Un administrator ou superuser sélectionne un rôle et approuve le compte.
 4. Le compte devient actif et peut se connecter.
 
 **Scénarios alternatifs / erreurs**
@@ -771,5 +771,5 @@ Les captures suivantes doivent être réalisées manuellement sur une instance c
 - résultats d’une recette ou de tests utilisateurs réels ;
 - identité détaillée de personas métier ou exigences attribuées à Sofinco ;
 - disponibilité effective des données et services dans un environnement de soutenance sans exécution de cet environnement ;
-- administration par le groupe `administrator` sans attribution parallèle de `is_superuser` ;
+- administration technique complète par le groupe `administrator` : ce rôle approuve les demandes mais les opérations sensibles restent volontairement réservées au superuser ;
 - équivalence complète en texte/tabulaire de toutes les informations portées par les visualisations.

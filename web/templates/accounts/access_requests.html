@@ -7,7 +7,10 @@
     <div>
       <p class="eyebrow">Administration</p>
       <h1>Gestion des accès</h1>
-      <p>Validez les demandes, modifiez les autorisations et gérez l’ensemble des comptes.</p>
+      <p>
+        Validez les demandes d’accès.
+        {% if user.is_superuser %}Vous pouvez aussi modifier les autorisations et gérer l’ensemble des comptes.{% endif %}
+      </p>
     </div>
     <span class="badge">{{ pending_users|length }} en attente</span>
   </header>
@@ -52,7 +55,7 @@
     {% endif %}
   </section>
 
-  <section class="data-card account-list" aria-labelledby="accounts-title">
+  {% if user.is_superuser %}<section class="data-card account-list" aria-labelledby="accounts-title">
     <header class="data-card__header">
       <div><p class="eyebrow">Administration</p><h2 id="accounts-title">Tous les comptes</h2></div>
       <span class="badge">{{ users|length }} compte{{ users|length|pluralize }}</span>
@@ -80,5 +83,5 @@
         </tbody>
       </table>
     </div>
-  </section>
+  </section>{% endif %}
 {% endblock %}

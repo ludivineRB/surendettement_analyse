@@ -49,16 +49,16 @@ Les retours d’erreur principaux sont prévus : identifiants invalides, indispo
 | US-07 — Retrouver ses conversations | Liste personnelle et historique séparé par type | 20 conversations récentes, filtrage propriétaire/type, ordre des messages | `web/assistant/test_views.py`, `web/assistant/test_retention.py` | Conforme |
 | US-08 — Assistant SQL read-only | Accès analyste, SQL, résultat, clarification/refus | Vue protégée, réponse et SQL persistés, validation/exécution séparées | `web/assistant/test_views.py`, `tests/test_sql_validation.py`, `tests/test_sql_executor.py` | Conforme par composants ; base read-only réelle à vérifier |
 | US-09 — Évaluer une réponse | Boutons utile/inutile et retour conversation | POST, contrôle propriétaire/message assistant et persistance | `web/assistant/test_views.py` | Conforme |
-| US-10 — Administrer les comptes | Modification/suppression, garde-fous et anonymisation audit | Écrans superuser, cascade conversations et anonymisation `actor_id` | `web/accounts/tests.py`, `web/accounts/test_privacy.py` | Conforme à la restriction C14 ; écart de conception du rôle administrator |
+| US-10 — Administrer les comptes | Approbation administrator ; modification/suppression superuser avec garde-fous | Permission `manage_application` pour les demandes ; opérations sensibles maintenues au superuser | `web/accounts/tests.py`, `web/accounts/test_privacy.py` | Conforme |
 
 ### 3.3 Limites de preuve d’interface
 
 - Aucun test de bout en bout dans un navigateur réel n’a été identifié.
 - La carte, le focus, les raccourcis clavier, les graphiques et les états dynamiques sont à recetter manuellement.
-- `web/static/js/site.js` construit la synthèse du territoire avec `summary.innerHTML` en interpolant notamment un nom GeoJSON et des libellés de catalogue. L’origine actuelle est encadrée, mais l’utilisation d’un puits HTML pour des données externes est une faiblesse évitable.
+- La synthèse cartographique construit ses éléments avec `createElement`, affecte les données externes avec `textContent`, puis utilise `replaceChildren`.
 - Aucune campagne multi-navigateurs ni mesure de performance front n’est présente.
 
-**Conclusion interface : partiellement conforme**, principalement faute de tests navigateur et en raison du puits DOM à sécuriser.
+**Conclusion interface : conforme sous réserve d’une recette navigateur**, le puits DOM dynamique identifié ayant été supprimé.
 
 ## 4. Conformité des composants métier
 
@@ -66,7 +66,7 @@ Les retours d’erreur principaux sont prévus : identifiants invalides, indispo
 |---|---|---|---|---|
 | Authentification | Session et accès réservé | Middleware/session Django, LoginView, décorateurs | `web/dashboard/tests.py` | Conforme |
 | Comptes | Inscription inactive, approbation et gestion | Formulaires, services et vues dédiées | `web/accounts/tests.py` | Conforme |
-| Rôles | Viewer, analyst, administrator | Groupes et permissions créés par migration | `web/dashboard/tests.py::test_roles_and_permissions_are_seeded` | Partiel : `manage_application` inutilisée |
+| Rôles | Viewer, analyst, administrator | Groupes et permissions créés par migration ; `manage_application` appliquée à l’approbation | Tests de rôles et d’administrator dans `web/accounts/tests.py` | Conforme |
 | Dashboard | Score territorial, couverture et erreurs | Vue orchestrant modèles, scores, séries, facteurs et observabilité | `web/dashboard/tests.py` | Conforme par composants |
 | Filtres | Niveau, territoire, période et versions | `DashboardFilterForm`, valeurs par défaut et paramètres API | `web/analytics/tests.py` | Conforme |
 | Scores | Modèles et scores territoriaux | Routes FastAPI, ORM et schémas | `app/tests/test_risk_score.py`, `app/tests/views/test_analytics_api.py` | Conforme |
@@ -108,8 +108,9 @@ La migration `web/accounts/migrations/0001_initial_roles.py` crée :
 | Assistant information | Oui | Oui | Oui | Oui | `login_required` + `accounts.view_dashboard` | Oui |
 | Assistant SQL | Non | Oui | Oui | Oui | `login_required` + `accounts.use_analytics` | Oui |
 | Feedback sur sa réponse | Oui si conversation accessible | Oui | Oui | Oui | `login_required`, POST, propriétaire et rôle assistant contrôlés par requête | Oui |
-| Gestion des comptes | Non | Non | **Non sans superuser** | Oui | Contrôle manuel `request.user.is_superuser` | Écart avec la finalité implicite de `manage_application` |
-| Page qualité | Non | Non | **Non sans superuser** | Oui | Contrôle manuel `request.user.is_superuser` | Écart avec la finalité implicite du rôle administrator |
+| Approbation des demandes | Non | Non | Oui | Oui | `accounts.manage_application` ; liste des comptes existants masquée hors superuser | Oui |
+| Modification/suppression des comptes | Non | Non | Non | Oui | Contrôle `is_superuser` conservé pour empêcher l’élévation technique | Oui, séparation volontaire |
+| Page qualité | Non | Non | Non | Oui | Contrôle `is_superuser`, testé aussi avec un administrator | Oui, fonction technique |
 | Administration Django | Non | Non | Non sauf attributs Django séparés | Oui / staff autorisé selon Django | Contrôle Django `is_staff`/permissions | Cohérent avec Django, distinct du rôle applicatif |
 
 Un superuser Django bénéficie normalement des permissions sans appartenir à un groupe. Les colonnes ci-dessus décrivent donc les capacités effectives, pas seulement l’appartenance aux groupes.
@@ -123,9 +124,9 @@ Un superuser Django bénéficie normalement des permissions sans appartenir à u
 
 ### 5.4 Conclusion sur `administrator` / `superuser`
 
-L’écart est **réellement fonctionnel** : `manage_application` existe mais aucune vue auditée ne l’utilise. Un membre du groupe `administrator` qui n’est pas superuser ne peut ni gérer les comptes ni consulter la qualité. C14 documente honnêtement cette restriction ; la réalisation correspond donc au document C14 actuel, mais pas à la finalité suggérée par le nom du rôle et de la permission.
+L’écart a été corrigé sans donner accès aux attributs techniques. `manage_application` autorise désormais la consultation et l’approbation des demandes. Les vues d’édition/suppression restent superuser, car leur formulaire expose notamment `is_staff` et `is_superuser`. La page qualité et l’administration Django restent également techniques.
 
-**Classement : écart majeur, correction nécessaire pour une matrice de droits cohérente avant revendication complète C17.** Deux décisions minimales sont possibles ultérieurement : utiliser `manage_application` sur les vues applicatives concernées, ou retirer/renommer le rôle et la permission si l’administration doit rester exclusivement technique. Cette étape d’audit ne choisit ni n’implémente la solution.
+**Classement après correction : conforme.** Les tests prouvent qu’un administrator approuve une demande, ne voit pas les liens sensibles et reçoit un refus sur édition, suppression et qualité.
 
 ## 6. Intégration des flux de données
 
@@ -157,10 +158,10 @@ La correspondance est proportionnée au projet et reprend les catégories OWASP 
 
 | Risque OWASP | Mesure présente | Preuve | Limite | Statut |
 |---|---|---|---|---|
-| A01 — Contrôle d’accès défaillant | Sessions, décorateurs, permissions, propriété des conversations/messages et token interservice | `web/*/views.py`, `assistant_api/auth.py`, tests web | `manage_application` inutilisée ; contrôles superuser manuels | Partiel / écart majeur sur le modèle de rôles |
+| A01 — Contrôle d’accès défaillant | Sessions, décorateurs, permission `manage_application`, propriété des conversations/messages et token interservice | `web/*/views.py`, `assistant_api/auth.py`, tests web | Administration technique toujours distincte et réservée au superuser | Mesures présentes |
 | A02 — Défaillances cryptographiques | Secrets par environnement, comparaison constante du token, cookies sécurisables, HSTS configurable | `web/config/settings.py`, `assistant_api/auth.py`, `docker/compose.yaml` | TLS, HSTS et cookies sécurisés dépendent de la cible non démontrée | Partiel |
-| A03 — Injection | ORM/requêtes paramétrées, AST SQLGlot, listes blanches, interdiction écriture/commentaires/joker | `assistant_api/sql_validation.py`, `assistant_api/repository.py`, tests SQL | `summary.innerHTML` reçoit des libellés externes ; défense SQL dépend aussi des privilèges DB | Partiel / correction DOM recommandée |
-| A04 — Conception non sécurisée | Séparation génération/validation/exécution, refus sans preuve, limites et quotas | `assistant_api/`, `web/security/middleware.py` | Pas de threat model formalisé dans C17 ; rôle administrator ambigu | Partiel |
+| A03 — Injection | ORM/requêtes paramétrées, AST SQLGlot, listes blanches ; données cartographiques affectées avec `textContent` | Code et tests SQL ; `web/static/js/site.js` | Défense SQL dépend aussi des privilèges DB réels | Mesures présentes |
+| A04 — Conception non sécurisée | Séparation génération/validation/exécution, refus sans preuve, limites, quotas et séparation administration applicative/technique | `assistant_api/`, `web/security/middleware.py`, vues comptes | Pas de threat model formalisé | Partiel |
 | A05 — Mauvaise configuration | Paramètres Django de sécurité, hôtes/origines, debug configurable, ports liés localement, checklist | `web/config/settings.py`, `docker/PRODUCTION_CHECKLIST.md` | Image Django utilise `runserver`; configuration cible non prouvée | Partiel |
 | A06 — Composants vulnérables | Versions fixées et `pip-audit` en CI | fichiers `requirements*`, `docker/run_ci.sh` | Résultat courant de l’audit dépend de chaque exécution ; images tierces à surveiller | Mesures présentes |
 | A07 — Authentification défaillante | Validateurs de mot de passe, sessions Django, rate limit de connexion, compte inactif avant approbation | `web/config/settings.py`, `web/security/middleware.py`, `web/accounts/forms.py` | Pas de MFA, verrouillage durable ou test de session complet démontré | Partiel adapté au POC |
@@ -170,7 +171,7 @@ La correspondance est proportionnée au projet et reprend les catégories OWASP 
 
 ### Observation DOM
 
-À la ligne construisant le résumé cartographique, `web/static/js/site.js` interpole `featureName(feature)`, `item.unit`, `item.label` et une période dans `innerHTML`. Les données actuelles proviennent de routes et d’une URL déterminées, ce qui réduit l’exposition, mais ce choix crée une surface d’injection DOM inutile. La correction minimale recommandée consiste à créer les éléments avec `document.createElement` et à affecter les valeurs variables via `textContent`.
+Le puits DOM identifié a été supprimé. `web/static/js/site.js` crée désormais les mêmes éléments et classes avec `document.createElement`, affecte les libellés variables par `textContent` et remplace le contenu avec `replaceChildren`. Un test statique ciblé empêche la réintroduction de l’affectation dynamique précédente.
 
 ## 8. Éco-conception
 
@@ -217,6 +218,15 @@ Améliorations non bloquantes : mesurer temps CPU, taille des images, volume ré
 | Parcours E2E complet | Système/navigateur | Aucun fichier identifié | Django + deux APIs + PostgreSQL + OpenAI | Non démontré |
 | Accessibilité | Audit automatisé/manuel | Aucun rapport complet identifié | RGAA/WCAG | Non démontré |
 
+### 9.1 Validation des corrections C17
+
+| Suite | Avant modification | Après permissions | Après permissions + DOM |
+|---|---:|---:|---:|
+| `web.accounts.tests`, `web.accounts.test_privacy`, `web.dashboard.tests`, `web.assistant.test_views` | 28/28 réussis | 30/30 réussis | 32/32 réussis |
+| Suite Django `web` | Non exécutée avant modification | Non exécutée à cette étape | 55/55 réussis |
+
+Aucun test qui réussissait avant la modification n’échoue après celle-ci. Les quatre tests ajoutés couvrent l’approbation administrator, le maintien des vues sensibles au superuser, la qualité refusée à l’administrator et l’absence du puits DOM dynamique.
+
 Le minimum RNCP — composants métier et gestion des accès — est couvert par plusieurs familles de tests. Les lacunes concernent surtout l’intégration complète, le navigateur et l’environnement réel.
 
 ## 10. Versionnement des sources
@@ -239,8 +249,8 @@ La CI contient des valeurs explicitement éphémères destinées aux tests, pas 
 
 | ID | Écart | Impact C17 | Gravité | Correction recommandée |
 |---|---|---|---|---|
-| C17-E01 | `manage_application` est attribuée au rôle `administrator` mais non utilisée ; comptes et qualité exigent `is_superuser` | Matrice des droits incohérente avec la finalité du rôle | Majeure | Décider la frontière métier/technique puis appliquer `permission_required` ou retirer/renommer la permission |
-| C17-E02 | `summary.innerHTML` interpole des données de catalogue/GeoJSON | Surface d’injection DOM et écart de robustesse OWASP A03 | Modérée | Construire les nœuds et affecter les valeurs par `textContent` |
+| C17-E01 | Permission `manage_application` initialement inutilisée | Matrice des droits incohérente | Corrigée | Permission appliquée à l’approbation ; opérations techniques maintenues au superuser |
+| C17-E02 | `summary.innerHTML` interpolait des données de catalogue/GeoJSON | Surface d’injection DOM | Corrigée | Nœuds créés explicitement et valeurs affectées par `textContent` |
 | C17-E03 | Aucun test navigateur de la carte et de la navigation dynamique | Comportements d’interface non démontrés automatiquement | Modérée | Ajouter quelques tests E2E ciblés clavier, chargement, erreur et sélection |
 | C17-E04 | Aucun test E2E traversant Django, APIs et PostgreSQL réels | Flux global C15 seulement démontré par composants | Modérée | Ajouter un smoke test intégré Compose sans fournisseur externe, puis une recette IA manuelle |
 | C17-E05 | Droits effectifs du compte `analytics_readonly` non prouvés dans l’environnement de soutenance | La sécurité SQL dépend d’une configuration externe | Majeure pour déploiement, modérée pour code | Exécuter le test de privilèges et capturer son résultat sur la cible |
@@ -256,20 +266,19 @@ Aucun écart ne justifie de modifier le code dans cette étape documentaire.
 
 Les composants métier principaux, la gestion des accès usuels, les flux internes, la validation SQL et le versionnement sont effectivement réalisés et largement couverts par des tests. Le dépôt montre aussi plusieurs mesures concrètes vis-à-vis de l’OWASP Top 10 et de la sobriété des traitements.
 
-La conformité complète n’est toutefois pas démontrable : la permission d’administration applicative n’est pas consommée, le JavaScript contient un puits `innerHTML`, les parcours navigateur et système ne sont pas testés de bout en bout, et plusieurs garanties dépendent de l’environnement réel.
+La permission d’administration applicative et le puits DOM identifiés ont été corrigés et couverts par des tests. Les réserves restantes portent sur les parcours navigateur/système non testés de bout en bout et sur plusieurs garanties dépendant de l’environnement réel.
 
-**Statut global : C17 partiellement conforme.**
+**Statut global : C17 conforme sous réserve de corrections mineures.**
 
-L’écart de droits `administrator` / `superuser` doit être tranché et corrigé avant de présenter la matrice d’autorisation comme pleinement cohérente. Les autres corrections majeures concernent surtout une éventuelle mise en production ; elles n’empêchent pas une démonstration locale contrôlée si les preuves manuelles sont réalisées.
+La matrice d’autorisation est désormais cohérente : administration des demandes pour `administrator`, administration technique pour le superuser. Les réserves majeures concernent une éventuelle mise en production ; elles n’empêchent pas une démonstration locale contrôlée si les preuves manuelles sont réalisées.
 
 ## 13. Corrections recommandées
 
 ### A. Corrections nécessaires avant rédaction finale E4
 
-1. Décider et formaliser la portée du rôle `administrator`, puis aligner ultérieurement code et tests sur cette décision.
-2. Remplacer ultérieurement le `innerHTML` dynamique de la carte par une construction DOM sûre.
-3. Vérifier sur l’environnement de démonstration les privilèges du compte SQL read-only, les healthchecks et les refus SQL.
-4. Présenter C17 comme partiellement conforme tant que ces preuves/corrections ne sont pas obtenues.
+1. Vérifier sur l’environnement de démonstration les privilèges du compte SQL read-only, les healthchecks et les refus SQL.
+2. Réaliser la recette manuelle navigateur de la carte et de la navigation.
+3. Présenter les limites de production séparément de la conformité du POC local.
 
 ### B. Améliorations non bloquantes
 
@@ -304,7 +313,7 @@ L’écart de droits `administrator` / `superuser` doit être tranché et corrig
 | Assistant SQL viewer | Accès refusé | Gestion des accès |
 | Refus SQL dangereux | Message de refus et absence d’exécution | OWASP/injection |
 | Conversations/feedback | Isolation de l’historique et feedback persisté | Métier et accès |
-| Administrator sans superuser | Refus de comptes/qualité | Preuve de l’écart C17-E01 |
+| Administrator sans superuser | Approbation autorisée ; édition, suppression et qualité refusées | Preuve de la séparation applicative/technique |
 | Superuser | Gestion des comptes et page qualité | Matrice des droits réelle |
 | Privilèges read-only | Test SELECT accepté et écriture refusée | Sécurité SQL externe |
 | Tests | Résumé pytest/Django/benchmark | Couverture métier et accès |
@@ -315,9 +324,9 @@ L’écart de droits `administrator` / `superuser` doit être tranché et corrig
 
 | Critère C17 | Preuve | Statut | Écart restant |
 |---|---|---|---|
-| 1. Interface et navigation conformes aux spécifications | Routes, vues, templates et matrice US section 3 | Partiel | Carte/JavaScript sans test navigateur ; puits `innerHTML` |
+| 1. Interface et navigation conformes aux spécifications | Routes, vues, templates et matrice US section 3 | Conforme sous réserve de recette | Carte sans test navigateur complet |
 | 2. Composants métier conformes | Matrice section 4 et tests associés | Conforme par composants | Parcours complet avec dépendances réelles à recetter |
-| 3. Droits d’accès implémentés | Migration des rôles, décorateurs et tests section 5 | Partiel | `manage_application` inutilisée ; administrator ≠ superuser |
+| 3. Droits d’accès implémentés | Migration des rôles, décorateurs et tests section 5 | Conforme | Séparation administrator/superuser volontaire et testée |
 | 4. Flux de données intégrés | Clients, APIs, stockage et contrôles section 6 | Partiel | Pas de test E2E système complet |
 | 5. Bonnes pratiques d’éco-conception | Images légères, limites, cache et rétentions section 8 | Mesures présentes | Aucune mesure environnementale chiffrée |
 | 6. Recommandations OWASP prises en compte | Analyse proportionnée section 7 | Partiel | Configuration cible, DOM, audits complets et rôle à traiter |

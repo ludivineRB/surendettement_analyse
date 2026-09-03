@@ -61,6 +61,11 @@ class AccessRequestTests(TestCase):
             password="password",
             is_active=False,
         )
+        self.administrator = get_user_model().objects.create_user(
+            username="application-administrator",
+            password="password",
+        )
+        self.administrator.groups.add(Group.objects.get(name="administrator"))
 
     def test_page_is_reserved_for_superusers(self):
         ordinary_user = get_user_model().objects.create_user(
@@ -87,6 +92,36 @@ class AccessRequestTests(TestCase):
             set(self.pending.groups.values_list("name", flat=True)), {"analyst"}
         )
         self.assertContains(response, "a été approuvé comme analyste")
+
+    def test_application_administrator_can_approve_pending_account(self):
+        self.client.force_login(self.administrator)
+
+        response = self.client.post(
+            reverse("access-requests"),
+            {"user_id": self.pending.pk, "role": "viewer"},
+            follow=True,
+        )
+
+        self.pending.refresh_from_db()
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(self.pending.is_active)
+        self.assertEqual(
+            set(self.pending.groups.values_list("name", flat=True)), {"viewer"}
+        )
+        self.assertNotContains(response, reverse("edit-account", args=[self.pending.pk]))
+
+    def test_application_administrator_cannot_edit_or_delete_accounts(self):
+        self.client.force_login(self.administrator)
+
+        edit_response = self.client.get(
+            reverse("edit-account", args=[self.pending.pk])
+        )
+        delete_response = self.client.get(
+            reverse("delete-account", args=[self.pending.pk])
+        )
+
+        self.assertEqual(edit_response.status_code, 403)
+        self.assertEqual(delete_response.status_code, 403)
 
     def test_superuser_can_edit_account_and_role(self):
         self.client.force_login(self.superuser)
