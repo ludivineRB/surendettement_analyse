@@ -1,8 +1,12 @@
+import json
+import logging
+
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.test import RequestFactory, SimpleTestCase, override_settings
 
 from web.security.middleware import RequestSecurityMiddleware
+from web.security.logging import JSONFormatter
 
 
 @override_settings(
@@ -34,6 +38,27 @@ class RequestSecurityMiddlewareTests(SimpleTestCase):
         request = self.factory.get("/", REMOTE_ADDR="192.0.2.1")
         request.user = _anonymous()
         self.assertEqual(self.middleware(request).status_code, 429)
+
+
+class JSONFormatterTests(SimpleTestCase):
+    def test_redacts_credentials_and_ignores_actor_identifier(self):
+        record = logging.LogRecord(
+            "web.requests",
+            logging.INFO,
+            __file__,
+            1,
+            "request failed token=visible-secret",
+            (),
+            None,
+        )
+        record.request_id = "8ec1389e-49c7-42fe-ab81-2d6476309a35"
+        record.actor_id = "42"
+
+        payload = json.loads(JSONFormatter().format(record))
+
+        self.assertEqual(payload["message"], "request failed token=[REDACTED]")
+        self.assertNotIn("visible-secret", str(payload))
+        self.assertNotIn("actor_id", payload)
 
 
 def _response():
