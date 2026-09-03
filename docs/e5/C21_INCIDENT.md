@@ -73,9 +73,10 @@ python -m pytest -q tests/test_sql_service.py \
   -k 'invalid_generated_sql_is_corrected_once or empty_result_is_retried_once'
 ```
 
-Résultat obtenu dans l'image locale `surendettement_staging_validation-ci:latest` :
-les tests SQL ciblés font partie d'un lot de 30 tests réussis. La démonstration
-doit néanmoins conserver une capture lisible des deux tests spécifiques.
+Résultat obtenu dans l'image reconstruite `surendettement-e5-validation:096d4b9` :
+2 tests réussis et 4 désélectionnés en 0,52 s. Le lot SQL/Assistant complet a
+également obtenu 44 tests réussis. La démonstration doit néanmoins conserver une
+capture lisible des deux tests spécifiques.
 
 [PREUVE À FOURNIR — E5-P06]
 Description : reproduction du comportement avant correction.
@@ -128,10 +129,11 @@ python -m pytest -q tests/test_assistant_api.py tests/test_assistant_monitoring.
 ```
 
 Le rapport historique `app/reports/ci/pytest.xml` indique 154 tests, zéro échec
-et zéro erreur. Nouvelle exécution Docker : 30 tests observabilité/SQL réussis,
-puis 3 tests Django réussis. `tests/test_assistant_api.py` n'a pas été exécuté :
-sa collecte exige `httpx2`, absent de l'image CI. C'est une erreur d'environnement,
-pas un résultat fonctionnel négatif ; la suite Assistant complète reste partielle.
+et zéro erreur. Nouvelle exécution Docker sur l'image reconstruite : 17 tests
+Assistant API, 1 test de monitoring Assistant et 44 tests SQL/Assistant combinés
+réussis, sans échec ni test ignoré. L'échec de collecte antérieur provenait d'une
+image CI obsolète dans laquelle `httpx2` n'était pas encore installé ; la
+dépendance déclarée `httpx2==2.12.0` est correcte pour Starlette 1.6.0.
 
 [PREUVE À FOURNIR — E5-P08]
 Description : tests après correction.

@@ -50,8 +50,8 @@ d'exécution E5-P01 à E5-P05.
 | Correction | Seconde tentative et contexte de rejet | `assistant_api/sql_service.py:117-145` ; `sql_generation.py` ; `380c5a9` | code/Git | couvert |
 | Test SQL invalide | Correction au second essai | `tests/test_sql_service.py:27-70` | test | couvert |
 | Test résultat vide | Seconde tentative bornée | `tests/test_sql_service.py:73-116` | test | couvert |
-| Non-régression exécutée | 30 tests observabilité/SQL et 3 tests Django réussis ; 154 historiques | exécution Docker ; `app/reports/ci/pytest.xml` | test actuel/historique | partiel — Assistant API bloqué par `httpx2` absent |
-| Retour au fonctionnement actuel | Tests SQL ciblés réussis | exécution Docker ; E5-P08 | test/capture à réaliser | partiel |
+| Non-régression exécutée | 44 tests SQL/Assistant, 17 API, 1 monitoring et 5 security réussis ; 154 historiques | image reconstruite depuis `096d4b9` ; `app/reports/ci/pytest.xml` | test actuel/historique | couvert pour le périmètre ciblé |
+| Retour au fonctionnement actuel | 2 scénarios C21 et lot de 44 tests réussis | exécution Docker ; E5-P08 | test/capture à réaliser | partiel — capture requise |
 | Preuve GitHub | Commit, PR et checks | E5-P09 et E5-P10 | capture à réaliser | manquant |
 | Mesures préventives | Tests, limite de deux essais, validation read-only, métriques | `C21_INCIDENT.md` §10 | code/documentation | couvert |
 

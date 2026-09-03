@@ -31,7 +31,7 @@ environnement supervisé.
 ## État des validations
 
 Le dépôt contient `app/reports/ci/pytest.xml`, qui rapporte historiquement 154
-tests réussis. La validation Docker de cette préparation a obtenu 30 tests
-observabilité/SQL réussis et 3 tests Django réussis. Le test Assistant API est
-resté bloqué à la collecte par l'absence de `httpx2` dans l'image CI ; il s'agit
-d'un écart d'environnement distinct du code testé.
+tests réussis. Une image CI reconstruite depuis `096d4b9` a installé
+`httpx2==2.12.0` avec succès. La validation a obtenu 17 tests Assistant API,
+1 test de monitoring Assistant, 44 tests SQL/Assistant combinés et 5 tests
+Django/security réussis, sans échec ni test ignoré.
