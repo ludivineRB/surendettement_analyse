@@ -1,0 +1,87 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-surendettement}
+      POSTGRES_USER: ${POSTGRES_USER:-surendettement}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-surendettement}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    image: ghcr.io/ludivinerb/surendettement-api:${IMAGE_TAG:?IMAGE_TAG is required}
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-surendettement}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-surendettement}
+      ANALYTICS_DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-surendettement}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-surendettement}
+      ASSISTANT_INTERNAL_TOKEN: ${ASSISTANT_INTERNAL_TOKEN:-}
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${API_PORT:-8020}:8020"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8020/api/data/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  assistant-api:
+    image: ghcr.io/ludivinerb/surendettement-assistant:${IMAGE_TAG:?IMAGE_TAG is required}
+    environment:
+      ANALYTICS_API_BASE_URL: http://api:8020
+      ASSISTANT_DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-surendettement}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-surendettement}
+      ANALYTICS_READONLY_DATABASE_URL: ${ANALYTICS_READONLY_DATABASE_URL:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-5.6-terra}
+      ASSISTANT_INTERNAL_TOKEN: ${ASSISTANT_INTERNAL_TOKEN:-}
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${ASSISTANT_API_PORT:-8030}:8030"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8030/health/ready', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      api:
+        condition: service_started
+
+  django:
+    image: ghcr.io/ludivinerb/surendettement-django:${IMAGE_TAG:?IMAGE_TAG is required}
+    environment:
+      APP_ENV: ${APP_ENV:-delivery}
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-surendettement}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-surendettement}
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?DJANGO_SECRET_KEY is required}
+      DJANGO_DEBUG: ${DJANGO_DEBUG:-false}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1},django
+      ANALYTICS_API_BASE_URL: http://api:8020
+      ANALYTICS_API_TIMEOUT_SECONDS: ${ANALYTICS_API_TIMEOUT_SECONDS:-5}
+      ASSISTANT_API_BASE_URL: http://assistant-api:8030
+      ASSISTANT_API_TIMEOUT_SECONDS: ${ASSISTANT_API_TIMEOUT_SECONDS:-90}
+      ASSISTANT_INTERNAL_TOKEN: ${ASSISTANT_INTERNAL_TOKEN:-}
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${DJANGO_PORT:-8000}:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/ready/', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      api:
+        condition: service_started
+      assistant-api:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
