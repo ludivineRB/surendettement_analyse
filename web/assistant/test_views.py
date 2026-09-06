@@ -108,3 +108,25 @@ class AssistantViewTests(TestCase):
         )
         message.refresh_from_db()
         self.assertEqual(message.feedback, "useful")
+
+    def test_prometheus_metrics_expose_aggregated_feedback_only(self):
+        conversation = Conversation.objects.create(
+            user=self.user, title="Test", kind=Conversation.Kind.INFORMATION
+        )
+        ConversationMessage.objects.create(
+            conversation=conversation,
+            role=ConversationMessage.Role.ASSISTANT,
+            content="Réponse privée",
+            feedback="not_useful",
+        )
+
+        response = self.client.get(reverse("prometheus-metrics"))
+        body = response.content.decode()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("django_assistant_feedback_collection_available 1", body)
+        self.assertIn(
+            'django_assistant_feedback_total{kind="information",feedback="not_useful"} 1',
+            body,
+        )
+        self.assertNotIn("Réponse privée", body)

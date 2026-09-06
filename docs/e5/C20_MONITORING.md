@@ -57,11 +57,21 @@ Prometheus, Alertmanager et Grafana sont liées à `127.0.0.1` par défaut.
 | `assistant_sql_audit_errors_total` | compteur | aucun | échec de persistance d'audit |
 | `assistant_sql_execution_duration_seconds_{count,sum}` | résumé simple | aucun | durée SQL |
 | `assistant_sql_result_rows_{count,sum}` | résumé simple | aucun | lignes SQL |
+| `assistant_evaluation_report_available` | gauge | aucun | rapport d'évaluation RAG lisible |
+| `assistant_evaluation_report_timestamp_seconds` | gauge | aucun | date Unix du rapport RAG exposé |
+| `assistant_evaluation_report_age_seconds` | gauge | aucun | ancienneté en secondes du rapport RAG |
+| `assistant_evaluation_score` | gauge | metric | scores du dernier rapport RAG versionné |
+| `assistant_evaluation_cases` | gauge | result | cas réussis et cas totaux du rapport RAG |
+| `assistant_evaluation_status` | gauge | status | statut pass/fail/unknown du rapport RAG |
+| `django_assistant_feedback_collection_available` | gauge | aucun | disponibilité de l'agrégation PostgreSQL |
+| `django_assistant_feedback_total` | compteur durable | kind, feedback | retours useful/not_useful agrégés |
 | `pg_stat_activity_count` | gauge exporté | labels postgres-exporter | connexions PostgreSQL |
 | rapport métier | rapport JSON | sans labels Prometheus | fraîcheur, intégrité, pipelines |
 
-Les métriques applicatives sont conservées en mémoire du processus et repartent
-à zéro au redémarrage. Prometheus conserve ses séries 15 jours.
+Les métriques applicatives d'exécution sont conservées en mémoire du processus
+et repartent à zéro au redémarrage. Les métriques d'évaluation proviennent du
+rapport versionné, et les feedbacks de PostgreSQL : elles résistent donc aux
+redémarrages. Prometheus conserve ses séries 15 jours.
 
 ## 5. Collecte et dashboard
 
@@ -88,9 +98,10 @@ PostgreSQL, recherches RAG, exécutions SQL et logs centralisés.
 | `AssistantLatencyHigh` | latence moyenne sur 5 min | > 5 s | 10 min | warning | Assistant |
 | `RagEmptyResultsHigh` | ratio vide sur 15 min | > 20 % | 15 min | warning | RAG |
 | `SqlRejectionRateHigh` | ratio rejeté sur 15 min | > 25 % | 15 min | warning | Text-to-SQL |
+| `AssistantEvaluationReportStale` | âge du rapport RAG | > 7 jours | 30 min | warning | Assistant |
 | `PostgreSQLConnectionsHigh` | somme connexions | > 80 | 10 min | warning | PostgreSQL |
 
-Les sept scénarios sont testés dans `docker/monitoring/alerts.test.yml`. La
+Les huit scénarios sont testés dans `docker/monitoring/alerts.test.yml`. La
 constante Python `http_latency_p95_warning_seconds=1.0` ne correspond pas à
 l'alerte Prometheus (moyenne > 5 s) : cette seconde source concerne le rapport
 métier et ne doit pas être présentée comme le seuil déployé de l'alerte.
@@ -132,7 +143,7 @@ docker compose -f docker/compose.yaml ps
 sh docker/test_observability.sh
 ```
 
-Le script vérifie les sept scénarios d'alerte, trois endpoints de métriques,
+Le script vérifie les huit scénarios d'alerte, trois endpoints de métriques,
 toutes les cibles Prometheus et la santé Grafana. Il ne supprime aucun volume.
 
 ## 10. Vérifications opérationnelles

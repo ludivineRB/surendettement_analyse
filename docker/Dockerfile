@@ -44,6 +44,7 @@ COPY assistant_api/requirements.txt assistant-requirements.txt
 RUN pip install --no-cache-dir -r assistant-requirements.txt
 
 COPY assistant_api ./assistant_api
+COPY app/reports/rag/rag_evaluation.json ./app/reports/rag/rag_evaluation.json
 
 FROM assistant-runtime AS assistant-api
 EXPOSE 8030
