@@ -2,8 +2,60 @@
 
 from __future__ import annotations
 
+import json
+import os
 from collections import defaultdict
+from pathlib import Path
 from threading import Lock
+from time import time
+
+
+EVALUATION_METRICS = (
+    "availability",
+    "case_pass_rate",
+    "category_accuracy",
+    "method_accuracy",
+    "refusal_recall",
+    "evidence_compliance",
+    "publisher_compliance",
+    "required_publisher_compliance",
+)
+DEFAULT_EVALUATION_REPORT = Path("app/reports/rag/rag_evaluation.json")
+
+
+def render_evaluation_metrics(report_path: str | Path | None = None) -> str:
+    """Render low-cardinality gauges from the latest versioned RAG evaluation."""
+    path = Path(
+        report_path
+        or os.getenv("ASSISTANT_EVALUATION_REPORT", str(DEFAULT_EVALUATION_REPORT))
+    )
+    try:
+        report = json.loads(path.read_text(encoding="utf-8"))
+        raw_metrics = report["metrics"]
+        report_timestamp = path.stat().st_mtime
+    except (OSError, json.JSONDecodeError, KeyError, TypeError):
+        return "assistant_evaluation_report_available 0\n"
+
+    lines = [
+        "assistant_evaluation_report_available 1",
+        f"assistant_evaluation_report_timestamp_seconds {report_timestamp:g}",
+        f"assistant_evaluation_report_age_seconds {max(0.0, time() - report_timestamp):g}",
+    ]
+    for name in EVALUATION_METRICS:
+        value = raw_metrics.get(name)
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            lines.append(f'assistant_evaluation_score{{metric="{name}"}} {value:g}')
+
+    for result, key in (("passed", "passed_cases"), ("total", "total_cases")):
+        value = raw_metrics.get(key)
+        if isinstance(value, int) and not isinstance(value, bool) and value >= 0:
+            lines.append(f'assistant_evaluation_cases{{result="{result}"}} {value}')
+
+    status = str(report.get("status", "unknown")).strip().lower()
+    if status not in {"pass", "fail"}:
+        status = "unknown"
+    lines.append(f'assistant_evaluation_status{{status="{status}"}} 1')
+    return "\n".join(lines) + "\n"
 
 
 class AssistantMetrics:

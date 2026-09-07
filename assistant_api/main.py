@@ -34,7 +34,7 @@ from assistant_api.schemas import (
 )
 from assistant_api.storage import get_engine
 from assistant_api.sql_service import SQLClarificationRequired, run_text_to_sql
-from assistant_api.monitoring import metrics as prometheus
+from assistant_api.monitoring import metrics as prometheus, render_evaluation_metrics
 
 
 app = FastAPI(
@@ -109,7 +109,7 @@ def metrics() -> dict[str, int]:
 
 @app.get("/metrics/prometheus", response_class=PlainTextResponse, include_in_schema=False)
 def prometheus_metrics() -> str:
-    return prometheus.render()
+    return prometheus.render() + render_evaluation_metrics()
 
 
 @app.get("/monitoring/summary", dependencies=[Depends(require_internal_token)])

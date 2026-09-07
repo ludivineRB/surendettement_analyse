@@ -53,6 +53,13 @@ groups:
         annotations:
           summary: "Plus de 25 % des requêtes SQL sont rejetées"
           runbook: "LOT-16-RUNBOOK#rag-et-agent-sql"
+      - alert: AssistantEvaluationReportStale
+        expr: assistant_evaluation_report_age_seconds > 604800
+        for: 30m
+        labels: {severity: warning}
+        annotations:
+          summary: "Le rapport d'évaluation de l'assistant date de plus de 7 jours"
+          runbook: "LOT-16-RUNBOOK#rag-et-agent-sql"
       - alert: PostgreSQLConnectionsHigh
         expr: sum(pg_stat_activity_count) > 80
         for: 10m

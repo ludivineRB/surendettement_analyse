@@ -34,11 +34,6 @@ class RequestSecurityMiddleware:
                 "http_path": request.path,
                 "http_status": response.status_code,
                 "duration_ms": round((monotonic() - started) * 1000),
-                "actor_id": (
-                    str(request.user.pk)
-                    if getattr(request, "user", None) and request.user.is_authenticated
-                    else None
-                ),
             },
         )
         record_request(

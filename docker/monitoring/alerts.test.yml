@@ -104,3 +104,16 @@ tests:
             exp_annotations:
               summary: "Nombre élevé de connexions PostgreSQL"
               runbook: "LOT-16-RUNBOOK#postgresql"
+
+  - interval: 1m
+    input_series:
+      - series: 'assistant_evaluation_report_age_seconds'
+        values: '691200+60x40'
+    alert_rule_test:
+      - eval_time: 31m
+        alertname: AssistantEvaluationReportStale
+        exp_alerts:
+          - exp_labels: {severity: warning}
+            exp_annotations:
+              summary: "Le rapport d'évaluation de l'assistant date de plus de 7 jours"
+              runbook: "LOT-16-RUNBOOK#rag-et-agent-sql"
