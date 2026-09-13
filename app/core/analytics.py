@@ -12,6 +12,7 @@ from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.engine import Connection
 
 from app.core.config import settings
+from src.storage.database import normalize_postgres_url
 
 
 @contextmanager
@@ -19,7 +20,10 @@ def analytics_connection(
     db_path: str | None = None,
 ) -> Iterator[sqlite3.Connection | Connection]:
     if settings.ANALYTICS_DATABASE_URL and db_path is None:
-        engine = create_engine(settings.ANALYTICS_DATABASE_URL, future=True)
+        engine = create_engine(
+            normalize_postgres_url(settings.ANALYTICS_DATABASE_URL),
+            future=True,
+        )
         with engine.begin() as connection:
             ensure_override_table(connection)
             yield connection

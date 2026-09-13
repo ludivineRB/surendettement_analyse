@@ -14,7 +14,18 @@ from src.storage.models import Base, SurendettementData
 
 def get_database_url() -> str:
     """Return DB URL, SQLite by default, overridable for PostgreSQL."""
-    return os.getenv("DATABASE_URL", "sqlite:///data/processed/surendettement.db")
+    database_url = os.getenv(
+        "DATABASE_URL",
+        "sqlite:///data/processed/surendettement.db",
+    )
+    return normalize_postgres_url(database_url)
+
+
+def normalize_postgres_url(database_url: str) -> str:
+    """Select psycopg 3 for provider URLs using the generic PostgreSQL scheme."""
+    if database_url.startswith("postgresql://"):
+        return database_url.replace("postgresql://", "postgresql+psycopg://", 1)
+    return database_url
 
 
 def get_engine():

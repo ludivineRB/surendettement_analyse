@@ -21,6 +21,17 @@ def test_database_configuration_requires_psycopg(monkeypatch):
         get_database_url()
 
 
+def test_render_database_url_uses_psycopg(monkeypatch):
+    monkeypatch.setenv(
+        "ASSISTANT_DATABASE_URL",
+        "postgresql://user:password@host/database",
+    )
+
+    assert get_database_url() == (
+        "postgresql+psycopg://user:password@host/database"
+    )
+
+
 def test_corpus_schema_has_a_versioned_first_migration():
     assert migration_versions() == (
         "001_corpus_chunks",

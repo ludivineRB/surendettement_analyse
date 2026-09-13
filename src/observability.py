@@ -12,7 +12,7 @@ from pathlib import Path
 from sqlalchemy import create_engine, text
 
 from src.storage.conformed_dimensions import ANALYTICS_DB
-from src.storage.database import get_database_url
+from src.storage.database import get_database_url, normalize_postgres_url
 from src.observability_thresholds import THRESHOLDS, THRESHOLDS_VERSION
 
 
@@ -45,7 +45,7 @@ def build_observability_report(
     analytics_url = os.getenv("ANALYTICS_DATABASE_URL")
     if analytics_url:
         started = monotonic()
-        with create_engine(analytics_url).connect() as connection:
+        with create_engine(normalize_postgres_url(analytics_url)).connect() as connection:
             _analytics_report(connection, report)
         report["services"]["postgres_analytics"] = _database_status(started)
     else:
