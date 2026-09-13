@@ -1,0 +1,24 @@
+FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+WORKDIR /workspace
+
+COPY requirements.txt ./requirements.txt
+COPY web/requirements.txt ./web-requirements.txt
+COPY assistant_api/requirements.txt ./assistant-requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt \
+    && pip install --no-cache-dir -r web-requirements.txt \
+    && pip install --no-cache-dir -r assistant-requirements.txt
+
+COPY app ./app
+COPY assistant_api ./assistant_api
+COPY web ./web
+COPY src ./src
+COPY config ./config
+COPY benchmark ./benchmark
+COPY models ./models
+COPY app.py ./app.py
+
+CMD ["python", "-m", "src.render_start", "api"]
