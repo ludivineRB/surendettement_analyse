@@ -66,6 +66,9 @@
     const status = dashboard.querySelector(".map-status");
     const trendNote = dashboard.querySelector("[data-trend-note]");
     const trendLegend = dashboard.querySelector("[data-trend-legend]");
+    const indicatorExport = document.querySelector("[data-export-indicator]");
+    const scoreExports = document.querySelectorAll("[data-export-scores]");
+    const exportStatus = document.querySelector("[data-export-status]");
     const state = { catalog: [], rows: [], geo: {}, selected: null };
 
     const normalize = (value) => String(value ?? "").normalize("NFD")
@@ -89,6 +92,32 @@
       });
       if (!response.ok) throw new Error("Impossible de récupérer les données.");
       return response.json();
+    };
+    const csvCell = (value) => {
+      let text = String(value ?? "");
+      if (/^[=+\-@]/.test(text)) text = `'${text}`;
+      return `"${text.replaceAll('"', '""')}"`;
+    };
+    const downloadCsv = (filename, rows, extraColumns = {}) => {
+      if (!rows.length) throw new Error("Aucune donnée disponible pour cet export.");
+      const columns = [
+        ["niveau_geographique", "geographic_level"],
+        ["code_geographique", "geographic_code"],
+        ["nom_geographique", "geographic_name"],
+        ["periode_reference", "reference_period"],
+        ["valeur", "value_numeric"],
+        ...Object.entries(extraColumns),
+      ];
+      const content = [
+        columns.map(([label]) => csvCell(label)).join(";"),
+        ...rows.map((row) => columns.map(([, key]) => csvCell(row[key])).join(";")),
+      ].join("\r\n");
+      const url = URL.createObjectURL(new Blob(["\uFEFF", content], { type: "text/csv;charset=utf-8" }));
+      const link = document.createElement("a");
+      link.href = url; link.download = filename; link.hidden = true;
+      document.body.append(link); link.click(); link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      return rows.length;
     };
     const polygons = (geometry) => geometry.type === "Polygon"
       ? [geometry.coordinates] : geometry.coordinates;
@@ -276,6 +305,43 @@
     controls.indicator.addEventListener("change", () => loadIndicator().catch((error) => { status.textContent = error.message; }));
     controls.period.addEventListener("change", () => renderMap().catch((error) => { status.textContent = error.message; }));
     controls.from.addEventListener("change", renderChart); controls.to.addEventListener("change", renderChart);
+    indicatorExport.addEventListener("click", () => {
+      try {
+        const item = selectedCatalog();
+        const count = downloadCsv(
+          `indicateur_${item.code}_${item.level}.csv`,
+          state.rows.map((row) => ({
+            ...row,
+            geographic_level: item.level,
+            indicateur: item.code,
+            libelle: item.label,
+            unite: item.unit,
+          })),
+          { indicateur: "indicateur", libelle: "libelle", unite: "unite" },
+        );
+        exportStatus.textContent = `${count} lignes exportées.`;
+      } catch (error) {
+        exportStatus.textContent = error.message;
+      }
+    });
+    scoreExports.forEach((button) => button.addEventListener("click", async () => {
+      const level = button.dataset.exportScores;
+      button.disabled = true; exportStatus.textContent = "Préparation de l’export…";
+      try {
+        const rows = await api({
+          source: "risk_score", indicator_code: "risk_score", geographic_level: level,
+        });
+        const count = downloadCsv(
+          `scores_${level === "region" ? "regions" : "departements"}.csv`,
+          rows.map((row) => ({ ...row, geographic_level: level })),
+        );
+        exportStatus.textContent = `${count} lignes exportées.`;
+      } catch (error) {
+        exportStatus.textContent = error.message;
+      } finally {
+        button.disabled = false;
+      }
+    }));
     api({ catalog: "1" }).then((catalog) => { state.catalog = catalog; return syncIndicators(); })
       .catch((error) => { status.textContent = error.message; });
   }

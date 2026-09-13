@@ -19,13 +19,6 @@
     </div>
   {% endif %}
 
-  {% if form %}
-    <form method="get" class="filters card" aria-label="Filtres de l’analyse">
-      {{ form.as_p }}
-      <button type="submit">Afficher l’analyse</button>
-    </form>
-  {% endif %}
-
   {% if score %}
     <section class="territorial-dashboard data-card" data-territorial-dashboard
              data-api-url="{% url 'territorial-indicators' %}"
@@ -77,38 +70,6 @@
       </div>
     </section>
 
-    <section aria-labelledby="territory-title">
-      <div class="data-card__header">
-        <div>
-          <p class="eyebrow">Territoire sélectionné</p>
-          <h2 id="territory-title">{{ score.geographic_name|default:score.geographic_code }}</h2>
-        </div>
-        <span class="badge">{{ score.reference_period }}</span>
-      </div>
-      <div class="grid grid--kpis" aria-label="Indicateurs principaux">
-        <article class="card kpi-card">
-          <span class="kpi-card__label">Score territorial</span>
-          <strong class="kpi-card__value">{{ score.score|floatformat:2|default:"Indisponible" }}</strong>
-          <p class="kpi-card__meta">Indicateur agrégé du territoire</p>
-        </article>
-        <article class="card kpi-card">
-          <span class="kpi-card__label">Couverture des données</span>
-          <strong class="kpi-card__value">{% widthratio score.coverage_ratio 1 100 %} %</strong>
-          <p class="kpi-card__meta">Part des indicateurs disponibles</p>
-        </article>
-        <article class="card kpi-card">
-          <span class="kpi-card__label">Niveau observé</span>
-          <strong class="kpi-card__value">{{ score.status|default:"Non qualifié" }}</strong>
-          <p class="kpi-card__meta">Signal statistique, non individuel</p>
-        </article>
-        <article class="card kpi-card">
-          <span class="kpi-card__label">Version du modèle</span>
-          <strong class="kpi-card__value">{{ score.model.version }}</strong>
-          <p class="kpi-card__meta">Modèle utilisé pour ce calcul</p>
-        </article>
-      </div>
-    </section>
-
     <div class="section-stack">
       <section class="data-card" aria-labelledby="factors-title">
         <header class="data-card__header">
@@ -141,14 +102,14 @@
         </div>
       </section>
 
-      {% if series %}
+      {% if region_ranking %}
         <section class="data-card" aria-labelledby="series-title">
-          <header class="data-card__header"><div><p class="eyebrow">Tendance</p><h2 id="series-title">Évolution observée</h2></div></header>
+          <header class="data-card__header"><div><p class="eyebrow">Tendance</p><h2 id="series-title">Classement des scores régionaux</h2><small>{{ score.reference_period }}</small></div></header>
           <div class="data-card__body">
-            <div class="series" role="img" aria-label="Évolution du score territorial par période">
-              {% for item in series %}
+            <div class="series" aria-label="Classement des scores régionaux">
+              {% for item in region_ranking %}
                 <div class="series-row">
-                  <span>{{ item.reference_period }}</span>
+                  <span>{{ item.rank }}. {{ item.geographic_name|default:item.geographic_code }}</span>
                   <span class="score-track"><span class="score-fill" style="width: {{ item.score|default:0 }}%"></span></span>
                   <strong>{{ item.score|floatformat:2|default:"—" }}</strong>
                 </div>
@@ -190,6 +151,19 @@
           </section>
         {% endif %}
       </div>
+      <section class="data-card" aria-labelledby="exports-title">
+        <header class="data-card__header">
+          <div><p class="eyebrow">Téléchargement</p><h2 id="exports-title">Exporter les données en CSV</h2></div>
+        </header>
+        <div class="data-card__body">
+          <div class="map-controls" aria-label="Exports des données">
+            <button type="button" data-export-indicator>Exporter l’indicateur sélectionné</button>
+            <button type="button" data-export-scores="region">Exporter les scores des régions</button>
+            <button type="button" data-export-scores="department">Exporter les scores des départements</button>
+          </div>
+          <p class="trend-note" data-export-status role="status" aria-live="polite"></p>
+        </div>
+      </section>
     </div>
   {% elif form and not analytics_error %}
     <div class="data-card empty-state"><h2>Aucune donnée disponible</h2><p>Aucun score ne correspond aux filtres sélectionnés.</p></div>

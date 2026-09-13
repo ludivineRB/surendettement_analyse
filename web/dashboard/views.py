@@ -24,6 +24,7 @@ def dashboard(request):
         "score": None,
         "factors": [],
         "series": [],
+        "region_ranking": [],
         "period_comparison": [],
         "model_comparison": None,
         "observability": None,
@@ -61,6 +62,25 @@ def dashboard(request):
             model_version=filters["model_version"],
         )
         context["series"] = series_response["series"]
+        region_scores = client.list_scores(
+            geographic_level="region",
+            reference_period=filters["reference_period"],
+            model_code="default",
+            model_version=filters["model_version"],
+        )
+        context["region_ranking"] = [
+            {**item, "rank": rank}
+            for rank, item in enumerate(
+                sorted(
+                    region_scores,
+                    key=lambda item: item.get("score")
+                    if item.get("score") is not None
+                    else float("-inf"),
+                    reverse=True,
+                ),
+                start=1,
+            )
+        ]
         if context["score"]:
             factor_response = client.get_factors(
                 filters["geographic_level"],

@@ -73,6 +73,14 @@ class DashboardTests(TestCase):
         response = self.client.get(reverse("dashboard"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "42,50")
+        self.assertContains(response, "Classement des scores régionaux")
+        self.assertNotContains(response, 'aria-label="Filtres de l’analyse"')
+        self.assertNotContains(response, 'id="territory-title"')
+        self.assertContains(response, "Exporter l’indicateur sélectionné")
+        self.assertGreater(
+            response.content.index(b'id="exports-title"'),
+            response.content.index(b"Classement des scores r"),
+        )
         self.assertIn(
             {"active_model_only": True, "include_details": False},
             [call.kwargs for call in analytics.list_scores.call_args_list],
@@ -81,6 +89,15 @@ class DashboardTests(TestCase):
             "department",
             "59",
             model_version="1.2.0",
+        )
+        self.assertIn(
+            {
+                "geographic_level": "region",
+                "reference_period": "2025",
+                "model_code": "default",
+                "model_version": "1.2.0",
+            },
+            [call.kwargs for call in analytics.list_scores.call_args_list],
         )
 
     @patch("web.dashboard.views.AnalyticsClient")
@@ -154,6 +171,26 @@ class DashboardTests(TestCase):
         self.assertNotIn("summary.innerHTML = `", script)
         self.assertIn("heading.textContent = featureName(feature)", script)
         self.assertIn("summary.replaceChildren(", script)
+
+    def test_csv_exports_escape_values_and_cover_both_score_levels(self):
+        script = (
+            Path(__file__).resolve().parents[1] / "static" / "js" / "site.js"
+        ).read_text()
+
+        self.assertIn("const csvCell = (value)", script)
+        self.assertIn("/^[=+\\-@]/", script)
+        self.assertIn("document.body.append(link)", script)
+        self.assertIn("window.setTimeout(() => URL.revokeObjectURL(url), 1000)", script)
+        self.assertIn(
+            'document.querySelector("[data-export-indicator]")',
+            script,
+        )
+        self.assertNotIn(
+            'dashboard.querySelector("[data-export-indicator]")',
+            script,
+        )
+        self.assertIn('data-export-scores', script)
+        self.assertIn('geographic_level: level', script)
 
 
 class DataQualityTests(TestCase):
