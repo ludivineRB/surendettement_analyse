@@ -7,6 +7,7 @@ aucune ligne métier, aucun mot de passe et aucune chaîne de connexion ne sont
 
 ## Schémas directement consultables
 
+- [MCD, MLD et MPD du seul domaine analytique](analytique/README.md)
 - [MCD métier](diagrams/mcd.svg)
 - [MLD global simplifié](diagrams/mld.svg)
 - [Architecture globale et domaines](diagrams/global.svg)
